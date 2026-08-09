@@ -1,22 +1,144 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
-  margin-bottom: 60px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f5f7fa;
+    color: #1f2937;
+}
+
+/* LOGIN */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient( 135deg, #f5f7fa, #eaf2fb );
+}
+
+.login-card {
+    width: 420px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 34px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+}
+
+.brand {
+    font-weight: 700;
+    color: #174a8b;
+    font-size: 21px;
+}
+
+.form-label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #174a8b;
+    border-color: #174a8b;
+}
+
+    .btn-primary:hover {
+        background: #123a6d;
+        border-color: #123a6d;
+    }
+/* =========================================
+   LAYOUT
+========================================= */
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 250px;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 20px 14px;
+    z-index: 1000;
+}
+
+    .sidebar .nav-link {
+        color: #4b5563;
+        border-radius: 9px;
+        margin: 3px 0;
+        padding: 10px 12px;
+    }
+
+        .sidebar .nav-link:hover {
+            background: #eaf2fb;
+            color: #174a8b;
+        }
+
+    .sidebar .brand small {
+        display: block;
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 400;
+    }
+
+.main {
+    margin-left: 250px;
+    min-height: 100vh;
+}
+
+.topbar {
+    height: 68px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+}
+
+.content {
+    padding: 28px;
+}
+/* =========================================
+   DASHBOARD
+========================================= */
+
+.page-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    margin-bottom: 24px;
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.metric {
+    padding: 20px;
+}
+
+    .metric .label {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .metric .value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-top: 5px;
+    }
+
+.icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #eaf2fb;
+    color: #174a8b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

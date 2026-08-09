@@ -1,49 +1,186 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CharlieShop</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/CharlieShop.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">CharlieShop</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+<html lang="es">
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - CharlieShop - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        Charlie Shop - @ViewData["Title"]
+    </title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <link rel="stylesheet"
+          href="~/css/site.css" />
+
+</head>
+
+<body>
+
+    <!-- MENÚ LATERAL -->
+
+    <aside class="sidebar">
+
+        <div class="brand mb-4">
+
+            Charlie Shop
+
+            <small>
+                Sistema Integral de Gestión Comercial
+            </small>
+
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+        <nav>
+
+            <a class="nav-link"
+               asp-controller="Dashboard"
+               asp-action="Index">
+
+                <i class="bi bi-grid-1x2-fill me-2"></i>
+
+                Dashboard
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Usuarios"
+               asp-action="Index">
+
+                <i class="bi bi-people me-2"></i>
+
+                Usuarios
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Productos"
+               asp-action="Index">
+
+                <i class="bi bi-box-seam me-2"></i>
+
+                Productos
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Inventario"
+               asp-action="Index">
+
+                <i class="bi bi-clipboard-data me-2"></i>
+
+                Inventario
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Ventas"
+               asp-action="Index">
+
+                <i class="bi bi-cart3 me-2"></i>
+
+                Ventas
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Clientes"
+               asp-action="Index">
+
+                <i class="bi bi-person-vcard me-2"></i>
+
+                Clientes
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="CuentasPorCobrar"
+               asp-action="Index">
+
+                <i class="bi bi-cash-stack me-2"></i>
+
+                Cuentas por cobrar
+
+            </a>
+
+            <a class="nav-link"
+               asp-controller="Reportes"
+               asp-action="Index">
+
+                <i class="bi bi-bar-chart-line me-2"></i>
+
+                Reportes
+
+            </a>
+
+        </nav>
+
+        <hr />
+
+        <a class="nav-link"
+           asp-controller="Home"
+           asp-action="Index">
+
+            <i class="bi bi-box-arrow-left me-2"></i>
+
+            Cerrar sesión
+
+        </a>
+
+    </aside>
+
+
+    <!-- CONTENIDO PRINCIPAL -->
+
+    <main class="main">
+
+        <!-- BARRA SUPERIOR -->
+
+        <header class="topbar">
+
+            <div class="fw-semibold">
+
+                @ViewData["Title"]
+
+            </div>
+
+            <div>
+
+                <span class="text-secondary small me-2">
+                    Administrador
+                </span>
+
+                <i class="bi bi-person-circle fs-4"></i>
+
+            </div>
+
+        </header>
+
+
+        <!-- CONTENIDO DE CADA VISTA -->
+
+        <section class="content">
+
+            @RenderBody()
+
+        </section>
+
+    </main>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
+
 </html>

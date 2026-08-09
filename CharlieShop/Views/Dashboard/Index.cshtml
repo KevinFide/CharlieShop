@@ -1,0 +1,285 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-title">
+    Dashboard
+</div>
+
+<div class="page-subtitle">
+    Resumen general de la operación comercial de Charlie Shop.
+</div>
+
+
+<div class="row g-3 mb-4">
+
+    <!-- VENTAS -->
+
+    <div class="col-md-3">
+
+        <div class="card metric">
+
+            <div class="d-flex justify-content-between">
+
+                <div>
+
+                    <div class="label">
+                        Ventas del mes
+                    </div>
+
+                    <div class="value">
+                        ₡1.250.000
+                    </div>
+
+                </div>
+
+                <div class="icon-box">
+
+                    <i class="bi bi-cart-check"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- PRODUCTOS -->
+
+    <div class="col-md-3">
+
+        <div class="card metric">
+
+            <div class="d-flex justify-content-between">
+
+                <div>
+
+                    <div class="label">
+                        Productos
+                    </div>
+
+                    <div class="value">
+                        128
+                    </div>
+
+                </div>
+
+                <div class="icon-box">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CLIENTES -->
+
+    <div class="col-md-3">
+
+        <div class="card metric">
+
+            <div class="d-flex justify-content-between">
+
+                <div>
+
+                    <div class="label">
+                        Clientes
+                    </div>
+
+                    <div class="value">
+                        86
+                    </div>
+
+                </div>
+
+                <div class="icon-box">
+
+                    <i class="bi bi-people"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUENTAS -->
+
+    <div class="col-md-3">
+
+        <div class="card metric">
+
+            <div class="d-flex justify-content-between">
+
+                <div>
+
+                    <div class="label">
+                        Por cobrar
+                    </div>
+
+                    <div class="value">
+                        ₡420.000
+                    </div>
+
+                </div>
+
+                <div class="icon-box">
+
+                    <i class="bi bi-cash-stack"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="row g-3">
+
+
+    <!-- VENTAS RECIENTES -->
+
+    <div class="col-lg-8">
+
+        <div class="card p-4">
+
+            <h5 class="mb-3">
+                Ventas recientes
+            </h5>
+
+            <div class="table-responsive">
+
+                <table class="table align-middle">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Venta</th>
+                            <th>Cliente</th>
+                            <th>Fecha</th>
+                            <th>Total</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        <tr>
+
+                            <td>#V-1048</td>
+
+                            <td>
+                                María López
+                            </td>
+
+                            <td>
+                                08/08/2026
+                            </td>
+
+                            <td>
+                                ₡45.000
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <td>#V-1047</td>
+
+                            <td>
+                                Carlos Mora
+                            </td>
+
+                            <td>
+                                08/08/2026
+                            </td>
+
+                            <td>
+                                ₡72.500
+                            </td>
+
+                        </tr>
+
+                        <tr>
+
+                            <td>#V-1046</td>
+
+                            <td>
+                                Andrea Solís
+                            </td>
+
+                            <td>
+                                07/08/2026
+                            </td>
+
+                            <td>
+                                ₡31.000
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ALERTAS -->
+
+    <div class="col-lg-4">
+
+        <div class="card p-4">
+
+            <h5 class="mb-3">
+                Alertas
+            </h5>
+
+            <div class="alert alert-warning">
+
+                <i class="bi bi-exclamation-triangle me-2"></i>
+
+                5 productos con stock bajo.
+
+            </div>
+
+            <div class="alert alert-info">
+
+                <i class="bi bi-info-circle me-2"></i>
+
+                3 cuentas pendientes de pago.
+
+            </div>
+
+            <a asp-controller="Inventario"
+               asp-action="Index"
+               class="btn btn-outline-primary w-100">
+
+                Revisar inventario
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
