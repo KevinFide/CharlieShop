@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Detalle de cliente";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div><div class="page-title">Detalle de cliente</div><div class="page-subtitle">Perfil comercial, historial de compras y estado de cuenta.</div></div>
+    <div class="d-flex gap-2"><a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Clientes</a><button class="btn btn-primary"><i class="bi bi-pencil me-1"></i> Editar cliente</button></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card p-4 mb-4"><div class="d-flex align-items-center gap-3 mb-4"><div class="avatar-large">CM</div><div><h4 class="mb-1">Carlos Mora</h4><span class="badge bg-success">Cliente activo</span></div></div><div class="detail-row"><span>ID de cliente</span><strong>C-002</strong></div><div class="detail-row"><span>Teléfono</span><strong>8888-2222</strong></div><div class="detail-row"><span>Correo</span><strong>carlos@email.com</strong></div><div class="detail-row"><span>Dirección</span><strong>San José, Costa Rica</strong></div><div class="detail-row"><span>Registrado</span><strong>12/02/2025</strong></div></div>
+        <div class="card p-4"><h5 class="mb-3">Estado de cuenta</h5><div class="d-flex justify-content-between mb-2"><span class="text-secondary">Crédito autorizado</span><strong>₡200.000</strong></div><div class="d-flex justify-content-between mb-2"><span class="text-secondary">Saldo pendiente</span><strong class="text-warning">₡52.500</strong></div><div class="d-flex justify-content-between"><span class="text-secondary">Crédito disponible</span><strong class="text-success">₡147.500</strong></div><div class="progress mt-3"><div class="progress-bar bg-warning" style="width:26%"></div></div></div>
+    </div>
+    <div class="col-lg-8">
+        <div class="row g-3 mb-4"><div class="col-md-4"><div class="card metric"><div class="label">Compras realizadas</div><div class="value">14</div></div></div><div class="col-md-4"><div class="card metric"><div class="label">Total comprado</div><div class="value">₡397.500</div></div></div><div class="col-md-4"><div class="card metric"><div class="label">Última compra</div><div class="value fs-5">08/08/2026</div></div></div></div>
+        <div class="card p-4 mb-4"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Compras recientes</h5><a asp-controller="Ventas" asp-action="Historial" class="btn btn-sm btn-outline-primary">Ver todas</a></div><table class="table align-middle mb-0"><thead><tr><th>Venta</th><th>Fecha</th><th>Productos</th><th>Forma de pago</th><th>Total</th><th>Estado</th></tr></thead><tbody><tr><td><a asp-controller="Ventas" asp-action="Detalle">#V-1047</a></td><td>08/08/2026</td><td>2</td><td>Crédito</td><td>₡72.500</td><td><span class="badge bg-warning text-dark">Por cobrar</span></td></tr><tr><td>#V-1012</td><td>18/07/2026</td><td>3</td><td>Contado</td><td>₡43.500</td><td><span class="badge bg-success">Pagada</span></td></tr><tr><td>#V-0988</td><td>03/07/2026</td><td>1</td><td>Contado</td><td>₡25.000</td><td><span class="badge bg-success">Pagada</span></td></tr></tbody></table></div>
+        <div class="card p-4"><h5 class="mb-3">Notas del cliente</h5><div class="alert alert-light border mb-0"><i class="bi bi-sticky me-2 text-primary"></i>Cliente frecuente. Prefiere recibir comprobantes por correo electrónico y realizar pagos mediante transferencia.</div></div>
+    </div>
+</div>

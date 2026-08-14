@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Detalle de producto";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <div class="page-title">Detalle de producto</div>
+        <div class="page-subtitle">Información general, precios y existencias del producto.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
+        <button class="btn btn-primary"><i class="bi bi-pencil me-1"></i> Editar producto</button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card p-4 text-center h-100">
+            <div class="product-placeholder mx-auto mb-3"><i class="bi bi-box-seam"></i></div>
+            <h4 class="mb-1">Camisa básica</h4>
+            <div class="text-secondary mb-3">Código P-001</div>
+            <span class="badge bg-success align-self-center px-3 py-2">Producto activo</span>
+            <hr />
+            <div class="row text-start g-3">
+                <div class="col-6"><div class="info-label">Categoría</div><strong>Ropa</strong></div>
+                <div class="col-6"><div class="info-label">Marca</div><strong>Charlie Basic</strong></div>
+                <div class="col-6"><div class="info-label">Unidad</div><strong>Unidad</strong></div>
+                <div class="col-6"><div class="info-label">Creado</div><strong>15/01/2026</strong></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="card metric"><div class="label">Precio de venta</div><div class="value">₡12.000</div></div></div>
+            <div class="col-md-4"><div class="card metric"><div class="label">Stock actual</div><div class="value text-success">24</div></div></div>
+            <div class="col-md-4"><div class="card metric"><div class="label">Stock mínimo</div><div class="value">10</div></div></div>
+        </div>
+        <div class="card p-4 mb-4">
+            <h5>Descripción</h5>
+            <p class="text-secondary mb-0">Camisa básica de algodón, corte unisex y alta durabilidad. Disponible en varias tallas y colores para venta minorista.</p>
+        </div>
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Últimos movimientos</h5>
+                <a asp-controller="Inventario" asp-action="Historial" class="btn btn-sm btn-outline-primary">Ver historial completo</a>
+            </div>
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Fecha</th><th>Movimiento</th><th>Cantidad</th><th>Existencia</th><th>Usuario</th></tr></thead>
+                <tbody>
+                    <tr><td>09/08/2026</td><td><span class="badge bg-success-subtle text-success">Entrada</span></td><td class="text-success">+12</td><td>24</td><td>Kevin Hidalgo</td></tr>
+                    <tr><td>08/08/2026</td><td><span class="badge bg-danger-subtle text-danger">Venta</span></td><td class="text-danger">-2</td><td>12</td><td>Ana Pérez</td></tr>
+                    <tr><td>05/08/2026</td><td><span class="badge bg-secondary-subtle text-secondary">Ajuste</span></td><td>+1</td><td>14</td><td>Kevin Hidalgo</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

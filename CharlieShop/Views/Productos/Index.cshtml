@@ -1,0 +1,226 @@
+﻿@{
+    ViewData["Title"] = "Productos";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+
+    <div>
+
+        <div class="page-title">
+            Productos
+        </div>
+
+        <div class="page-subtitle">
+            Gestión de productos, precios y existencias.
+        </div>
+
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Detalle" class="btn btn-outline-primary"><i class="bi bi-eye me-1"></i> Ver detalle</a>
+        <button class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nuevo producto
+        </button>
+    </div>
+
+</div>
+
+
+<div class="card p-4">
+
+    <div class="row g-3 mb-3">
+
+        <div class="col-md-5">
+
+            <input type="text"
+                   class="form-control"
+                   placeholder="Buscar producto..." />
+
+        </div>
+
+        <div class="col-md-3">
+
+            <select class="form-select">
+
+                <option selected>
+                    Todas las categorías
+                </option>
+
+                <option>
+                    Ropa
+                </option>
+
+                <option>
+                    Accesorios
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle">
+
+            <thead>
+
+                <tr>
+
+                    <th>Código</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acciones</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+
+                    <td>
+                        P-001
+                    </td>
+
+                    <td>
+                        <a asp-action="Detalle" class="fw-semibold text-decoration-none">Camisa básica</a>
+                    </td>
+
+                    <td>
+                        Ropa
+                    </td>
+
+                    <td>
+                        ₡12.000
+                    </td>
+
+                    <td>
+
+                        <span class="badge bg-success">
+                            24
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        <button class="btn btn-sm btn-outline-primary">
+
+                            <i class="bi bi-pencil"></i>
+
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger">
+
+                            <i class="bi bi-trash"></i>
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td>
+                        P-002
+                    </td>
+
+                    <td>
+                        Pantalón jeans
+                    </td>
+
+                    <td>
+                        Ropa
+                    </td>
+
+                    <td>
+                        ₡25.000
+                    </td>
+
+                    <td>
+
+                        <span class="badge bg-warning text-dark">
+                            8
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        <button class="btn btn-sm btn-outline-primary">
+
+                            <i class="bi bi-pencil"></i>
+
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger">
+
+                            <i class="bi bi-trash"></i>
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+
+                <tr>
+
+                    <td>
+                        P-003
+                    </td>
+
+                    <td>
+                        Gorra
+                    </td>
+
+                    <td>
+                        Accesorios
+                    </td>
+
+                    <td>
+                        ₡8.500
+                    </td>
+
+                    <td>
+
+                        <span class="badge bg-danger">
+                            4
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        <button class="btn btn-sm btn-outline-primary">
+
+                            <i class="bi bi-pencil"></i>
+
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger">
+
+                            <i class="bi bi-trash"></i>
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

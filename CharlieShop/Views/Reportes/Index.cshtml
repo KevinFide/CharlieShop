@@ -1,0 +1,236 @@
+﻿@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="page-title">
+    Reportes y Dashboard
+</div>
+
+<div class="page-subtitle">
+    Información e indicadores para apoyar la toma de decisiones.
+</div>
+
+
+<div class="row g-3">
+
+    <!-- REPORTE DE VENTAS -->
+
+    <div class="col-md-4">
+
+        <div class="card p-4 h-100">
+
+            <div class="icon-box mb-3">
+
+                <i class="bi bi-cart-check"></i>
+
+            </div>
+
+            <h5>
+                Reporte de ventas
+            </h5>
+
+            <p class="text-secondary">
+                Consulta las ventas realizadas durante
+                un período determinado.
+            </p>
+
+            <a asp-controller="Ventas" asp-action="Historial" class="btn btn-outline-primary">
+                Ver reporte
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- PRODUCTOS -->
+
+    <div class="col-md-4">
+
+        <div class="card p-4 h-100">
+
+            <div class="icon-box mb-3">
+
+                <i class="bi bi-box-seam"></i>
+
+            </div>
+
+            <h5>
+                Productos más vendidos
+            </h5>
+
+            <p class="text-secondary">
+                Identificación de los productos con
+                mayor movimiento.
+            </p>
+
+            <button class="btn btn-outline-primary">
+                Ver reporte
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- CUENTAS -->
+
+    <div class="col-md-4">
+
+        <div class="card p-4 h-100">
+
+            <div class="icon-box mb-3">
+
+                <i class="bi bi-cash-stack"></i>
+
+            </div>
+
+            <h5>
+                Cuentas por cobrar
+            </h5>
+
+            <p class="text-secondary">
+                Consulta los saldos pendientes y
+                seguimiento de pagos.
+            </p>
+
+            <button class="btn btn-outline-primary">
+                Ver reporte
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <div class="icon-box mb-3"><i class="bi bi-clipboard-data"></i></div>
+            <h5>Reporte de inventario</h5>
+            <p class="text-secondary">Existencias, valorización, rotación y productos con niveles críticos.</p>
+            <a asp-action="Inventario" class="btn btn-outline-primary">Ver reporte</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <div class="icon-box mb-3"><i class="bi bi-people"></i></div>
+            <h5>Reporte de clientes</h5>
+            <p class="text-secondary">Segmentación, comportamiento de compra y saldos de clientes.</p>
+            <a asp-action="Clientes" class="btn btn-outline-primary">Ver reporte</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- INDICADORES -->
+
+<div class="card p-4 mt-4">
+
+    <h5 class="mb-4">
+        Indicadores generales
+    </h5>
+
+    <div class="row g-3">
+
+        <div class="col-md-3">
+
+            <div class="metric">
+
+                <div class="label">
+                    Ventas del mes
+                </div>
+
+                <div class="value">
+                    ₡1.250.000
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="metric">
+
+                <div class="label">
+                    Productos vendidos
+                </div>
+
+                <div class="value">
+                    156
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="metric">
+
+                <div class="label">
+                    Clientes atendidos
+                </div>
+
+                <div class="value">
+                    86
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3">
+
+            <div class="metric">
+
+                <div class="label">
+                    Por cobrar
+                </div>
+
+                <div class="value">
+                    ₡420.000
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- RESUMEN -->
+
+<div class="card p-4 mt-4">
+
+    <h5 class="mb-3">
+        Resumen de ventas
+    </h5>
+
+    <div class="progress"
+         style="height: 28px;">
+
+        <div class="progress-bar"
+             style="width: 78%;">
+
+            78% de la meta mensual
+
+        </div>
+
+    </div>
+
+    <p class="text-secondary mt-3 mb-0">
+
+        Esta información será obtenida posteriormente
+        desde la base de datos del sistema.
+
+    </p>
+
+</div>

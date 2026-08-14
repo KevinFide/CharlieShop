@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Cambiar contraseña";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <div class="page-title">Cambiar contraseña</div>
+        <div class="page-subtitle">Actualice sus credenciales de acceso de forma segura.</div>
+    </div>
+    <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Volver a usuarios
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card p-4">
+            <h5 class="mb-1">Seguridad de la cuenta</h5>
+            <p class="text-secondary mb-4">La nueva contraseña debe cumplir los requisitos indicados.</p>
+
+            <div class="mb-3">
+                <label class="form-label">Contraseña actual</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" value="Password123" />
+                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-eye"></i></button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nueva contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                    <input type="password" class="form-control" value="Charlie2026!" />
+                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-eye"></i></button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Confirmar nueva contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                    <input type="password" class="form-control" value="Charlie2026!" />
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-secondary">Cancelar</button>
+                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Actualizar contraseña</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card p-4">
+            <div class="icon-box mb-3"><i class="bi bi-shield-check"></i></div>
+            <h5>Requisitos de seguridad</h5>
+            <ul class="security-list mt-3 mb-0">
+                <li><i class="bi bi-check-circle-fill text-success"></i> Al menos 8 caracteres</li>
+                <li><i class="bi bi-check-circle-fill text-success"></i> Una letra mayúscula y una minúscula</li>
+                <li><i class="bi bi-check-circle-fill text-success"></i> Al menos un número</li>
+                <li><i class="bi bi-check-circle-fill text-success"></i> Un carácter especial</li>
+            </ul>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Reporte de inventario";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div><div class="page-title">Reporte de inventario</div><div class="page-subtitle">Análisis de existencias, valorización y productos que requieren atención.</div></div>
+    <div class="d-flex gap-2"><a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Reportes</a><button class="btn btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i> Exportar PDF</button><button class="btn btn-primary"><i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel</button></div>
+</div>
+
+<div class="card p-3 mb-4"><div class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label">Categoría</label><select class="form-select"><option>Todas las categorías</option><option>Ropa</option><option>Accesorios</option></select></div><div class="col-md-3"><label class="form-label">Estado</label><select class="form-select"><option>Todos los estados</option><option>Disponible</option><option>Stock bajo</option><option>Sin existencias</option></select></div><div class="col-md-2"><label class="form-label">Fecha de corte</label><input type="date" class="form-control" value="2026-08-09" /></div><div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Aplicar</button></div></div></div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card metric"><div class="label">Productos</div><div class="value">128</div></div></div><div class="col-md-3"><div class="card metric"><div class="label">Unidades en stock</div><div class="value">1.842</div></div></div><div class="col-md-3"><div class="card metric"><div class="label">Valor del inventario</div><div class="value">₡8.450.000</div></div></div><div class="col-md-3"><div class="card metric"><div class="label">Productos críticos</div><div class="value text-danger">7</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7"><div class="card p-4 h-100"><h5 class="mb-4">Existencias por categoría</h5><div class="report-bars"><div><div class="d-flex justify-content-between"><span>Ropa</span><strong>62%</strong></div><div class="progress"><div class="progress-bar" style="width:62%"></div></div></div><div><div class="d-flex justify-content-between"><span>Accesorios</span><strong>24%</strong></div><div class="progress"><div class="progress-bar bg-info" style="width:24%"></div></div></div><div><div class="d-flex justify-content-between"><span>Calzado</span><strong>14%</strong></div><div class="progress"><div class="progress-bar bg-warning" style="width:14%"></div></div></div></div></div></div>
+    <div class="col-lg-5"><div class="card p-4 h-100"><h5 class="mb-3">Estado del inventario</h5><div class="donut-summary"><div class="donut-chart"><div><strong>128</strong><small>productos</small></div></div><div class="legend-list"><span><i class="legend-dot bg-success"></i> 121 disponibles</span><span><i class="legend-dot bg-warning"></i> 5 con stock bajo</span><span><i class="legend-dot bg-danger"></i> 2 sin existencias</span></div></div></div></div>
+</div>
+
+<div class="card p-4 mt-4"><h5 class="mb-3">Productos que requieren atención</h5><table class="table align-middle mb-0"><thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Valor estimado</th></tr></thead><tbody><tr><td>P-004</td><td>Zapatos deportivos</td><td>Calzado</td><td>0</td><td>5</td><td><span class="badge bg-danger">Sin existencias</span></td><td>₡0</td></tr><tr><td>P-003</td><td>Gorra</td><td>Accesorios</td><td>4</td><td>8</td><td><span class="badge bg-warning text-dark">Stock bajo</span></td><td>₡34.000</td></tr><tr><td>P-002</td><td>Pantalón jeans</td><td>Ropa</td><td>8</td><td>10</td><td><span class="badge bg-warning text-dark">Stock bajo</span></td><td>₡200.000</td></tr></tbody></table></div>
