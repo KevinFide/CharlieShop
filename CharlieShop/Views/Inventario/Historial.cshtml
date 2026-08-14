@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Movimientos de inventario";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <div class="page-title">Historial y ajustes de inventario</div>
+        <div class="page-subtitle">Trazabilidad de entradas, salidas y correcciones de existencias.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Inventario</a>
+        <button class="btn btn-primary"><i class="bi bi-sliders me-1"></i> Nuevo ajuste</button>
+    </div>
+</div>
+
+<div class="card p-4 mb-4">
+    <h5 class="mb-3">Registrar ajuste manual</h5>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3"><label class="form-label">Producto</label><select class="form-select"><option>Camisa básica — P-001</option><option>Pantalón jeans — P-002</option></select></div>
+        <div class="col-md-2"><label class="form-label">Tipo</label><select class="form-select"><option>Entrada</option><option>Salida</option><option selected>Ajuste</option></select></div>
+        <div class="col-md-2"><label class="form-label">Cantidad</label><input class="form-control" type="number" value="3" /></div>
+        <div class="col-md-3"><label class="form-label">Motivo</label><input class="form-control" value="Corrección por conteo físico" /></div>
+        <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-check-lg me-1"></i> Registrar</button></div>
+    </div>
+</div>
+
+<div class="card p-4">
+    <div class="row g-3 mb-3">
+        <div class="col-md-4"><div class="input-group"><span class="input-group-text"><i class="bi bi-search"></i></span><input class="form-control" placeholder="Buscar producto o referencia..." /></div></div>
+        <div class="col-md-3"><select class="form-select"><option>Todos los movimientos</option><option>Entradas</option><option>Salidas</option><option>Ajustes</option></select></div>
+        <div class="col-md-3"><input class="form-control" type="date" value="2026-08-09" /></div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Referencia</th><th>Fecha y hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Saldo</th><th>Motivo</th><th>Usuario</th></tr></thead>
+            <tbody>
+                <tr><td>#MOV-2091</td><td>09/08/2026 10:35</td><td>Camisa básica</td><td><span class="badge bg-success">Entrada</span></td><td class="text-success fw-semibold">+12</td><td>24</td><td>Compra a proveedor</td><td>Kevin Hidalgo</td></tr>
+                <tr><td>#MOV-2090</td><td>09/08/2026 09:10</td><td>Gorra</td><td><span class="badge bg-secondary">Ajuste</span></td><td class="fw-semibold">-1</td><td>4</td><td>Conteo físico</td><td>Kevin Hidalgo</td></tr>
+                <tr><td>#MOV-2089</td><td>08/08/2026 16:42</td><td>Pantalón jeans</td><td><span class="badge bg-danger">Salida</span></td><td class="text-danger fw-semibold">-1</td><td>8</td><td>Venta #V-1047</td><td>Ana Pérez</td></tr>
+                <tr><td>#MOV-2088</td><td>08/08/2026 14:20</td><td>Camisa básica</td><td><span class="badge bg-danger">Salida</span></td><td class="text-danger fw-semibold">-2</td><td>12</td><td>Venta #V-1048</td><td>Ana Pérez</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

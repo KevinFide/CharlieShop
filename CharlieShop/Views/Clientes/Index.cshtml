@@ -16,13 +16,10 @@
 
     </div>
 
-    <button class="btn btn-primary">
-
-        <i class="bi bi-plus-lg me-1"></i>
-
-        Nuevo cliente
-
-    </button>
+    <div class="d-flex gap-2">
+        <a asp-action="Detalle" class="btn btn-outline-primary"><i class="bi bi-person-lines-fill me-1"></i> Ver detalle</a>
+        <button class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo cliente</button>
+    </div>
 
 </div>
 
@@ -69,9 +66,7 @@
                         C-001
                     </td>
 
-                    <td>
-                        María López
-                    </td>
+                    <td><a asp-action="Detalle" class="fw-semibold text-decoration-none">María López</a></td>
 
                     <td>
                         8888-1111
@@ -114,9 +109,7 @@
                         C-002
                     </td>
 
-                    <td>
-                        Carlos Mora
-                    </td>
+                    <td><a asp-action="Detalle" class="fw-semibold text-decoration-none">Carlos Mora</a></td>
 
                     <td>
                         8888-2222

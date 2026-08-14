@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Detalle de venta";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2"><div class="page-title mb-0">Venta #V-1047</div><span class="badge bg-warning text-dark">Por cobrar</span></div>
+        <div class="page-subtitle">Registrada el 08 de agosto de 2026 a las 4:42 p. m.</div>
+    </div>
+    <div class="d-flex gap-2"><a asp-action="Historial" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Historial</a><button class="btn btn-outline-primary"><i class="bi bi-printer me-1"></i> Imprimir</button></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card p-4 mb-4">
+            <h5 class="mb-3">Productos vendidos</h5>
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th class="text-end">Subtotal</th></tr></thead>
+                <tbody><tr><td>P-002</td><td>Pantalón jeans</td><td>2</td><td>₡25.000</td><td class="text-end">₡50.000</td></tr><tr><td>P-003</td><td>Gorra</td><td>1</td><td>₡8.500</td><td class="text-end">₡8.500</td></tr></tbody>
+            </table>
+        </div>
+        <div class="card p-4">
+            <h5 class="mb-3">Seguimiento de pago</h5>
+            <div class="timeline-item"><span class="timeline-dot bg-primary"></span><div><strong>Venta registrada a crédito</strong><div class="text-secondary small">08/08/2026 · Ana Pérez</div></div></div>
+            <div class="timeline-item"><span class="timeline-dot bg-success"></span><div><strong>Abono recibido: ₡20.000</strong><div class="text-secondary small">10/08/2026 · Kevin Hidalgo</div></div></div>
+            <div class="timeline-item mb-0"><span class="timeline-dot bg-warning"></span><div><strong>Saldo pendiente: ₡52.500</strong><div class="text-secondary small">Vence el 22/08/2026</div></div></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card p-4 mb-4">
+            <h5>Información de la venta</h5>
+            <div class="detail-row"><span>Cliente</span><strong>Carlos Mora</strong></div><div class="detail-row"><span>Vendedor</span><strong>Ana Pérez</strong></div><div class="detail-row"><span>Forma de pago</span><strong>Crédito</strong></div><div class="detail-row"><span>Vencimiento</span><strong>22/08/2026</strong></div>
+        </div>
+        <div class="card p-4">
+            <h5>Resumen</h5>
+            <div class="detail-row"><span>Subtotal</span><strong>₡58.500</strong></div><div class="detail-row"><span>Impuestos</span><strong>₡7.605</strong></div><div class="detail-row"><span>Otros</span><strong>₡6.395</strong></div><hr/><div class="d-flex justify-content-between fs-5"><span>Total</span><strong>₡72.500</strong></div><div class="d-flex justify-content-between text-success mt-2"><span>Abonado</span><strong>₡20.000</strong></div><div class="d-flex justify-content-between text-danger mt-2"><span>Saldo</span><strong>₡52.500</strong></div>
+            <button class="btn btn-primary w-100 mt-4"><i class="bi bi-cash-coin me-1"></i> Registrar pago</button>
+        </div>
+    </div>
+</div>

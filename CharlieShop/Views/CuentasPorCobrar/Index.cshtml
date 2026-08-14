@@ -16,13 +16,12 @@
 
     </div>
 
-    <button class="btn btn-primary">
-
-        <i class="bi bi-cash-coin me-1"></i>
-
-        Registrar pago
-
-    </button>
+    <div class="d-flex gap-2">
+        <a asp-action="HistorialPagos" class="btn btn-outline-primary">
+            <i class="bi bi-clock-history me-1"></i> Historial de pagos
+        </a>
+        <button class="btn btn-primary"><i class="bi bi-cash-coin me-1"></i> Registrar pago</button>
+    </div>
 
 </div>
 
@@ -107,6 +106,8 @@
                 <option>
                     Pendiente
                 </option>
+
+                <option>Vencida</option>
 
                 <option>
                     Pagada
@@ -205,8 +206,8 @@
 
                     <td>
 
-                        <span class="badge bg-warning text-dark">
-                            Pendiente
+                        <span class="badge bg-danger">
+                            Vencida · 7 días
                         </span>
 
                     </td>

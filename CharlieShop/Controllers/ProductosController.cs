@@ -8,5 +8,10 @@ namespace CharlieShop.Controllers
         {
             return View();
         }
+
+        public IActionResult Detalle()
+        {
+            return View();
+        }
     }
 }

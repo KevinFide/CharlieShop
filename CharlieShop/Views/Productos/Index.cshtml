@@ -16,10 +16,13 @@
 
     </div>
 
-    <button class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>
-        Nuevo producto
-    </button>
+    <div class="d-flex gap-2">
+        <a asp-action="Detalle" class="btn btn-outline-primary"><i class="bi bi-eye me-1"></i> Ver detalle</a>
+        <button class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nuevo producto
+        </button>
+    </div>
 
 </div>
 
@@ -87,7 +90,7 @@
                     </td>
 
                     <td>
-                        Camisa básica
+                        <a asp-action="Detalle" class="fw-semibold text-decoration-none">Camisa básica</a>
                     </td>
 
                     <td>

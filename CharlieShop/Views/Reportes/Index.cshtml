@@ -34,9 +34,9 @@
                 un período determinado.
             </p>
 
-            <button class="btn btn-outline-primary">
+            <a asp-controller="Ventas" asp-action="Historial" class="btn btn-outline-primary">
                 Ver reporte
-            </button>
+            </a>
 
         </div>
 
@@ -102,6 +102,25 @@
 
     </div>
 
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <div class="icon-box mb-3"><i class="bi bi-clipboard-data"></i></div>
+            <h5>Reporte de inventario</h5>
+            <p class="text-secondary">Existencias, valorización, rotación y productos con niveles críticos.</p>
+            <a asp-action="Inventario" class="btn btn-outline-primary">Ver reporte</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 h-100">
+            <div class="icon-box mb-3"><i class="bi bi-people"></i></div>
+            <h5>Reporte de clientes</h5>
+            <p class="text-secondary">Segmentación, comportamiento de compra y saldos de clientes.</p>
+            <a asp-action="Clientes" class="btn btn-outline-primary">Ver reporte</a>
+        </div>
+    </div>
 </div>
 
 

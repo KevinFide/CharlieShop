@@ -16,10 +16,16 @@
 
     </div>
 
-    <button class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>
-        Nuevo usuario
-    </button>
+    <div class="d-flex gap-2">
+        <a asp-action="CambiarContrasena" class="btn btn-outline-primary">
+            <i class="bi bi-key me-1"></i>
+            Cambiar contraseña
+        </a>
+        <button class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nuevo usuario
+        </button>
+    </div>
 
 </div>
 
@@ -138,6 +144,17 @@
 
                     </td>
 
+                </tr>
+
+                <tr>
+                    <td>Laura Jiménez</td>
+                    <td>laura@charlieshop.local</td>
+                    <td>Vendedor</td>
+                    <td><span class="badge bg-secondary">Inactivo</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" title="Editar usuario"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-success" title="Activar usuario"><i class="bi bi-person-check"></i></button>
+                    </td>
                 </tr>
 
             </tbody>

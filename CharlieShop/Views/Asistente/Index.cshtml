@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Asistente virtual";
+    ViewData["HideChatbotFab"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div><div class="page-title">Asistente virtual Charlie</div><div class="page-subtitle">Chatbot de apoyo para consultas operativas y navegación del sistema.</div></div>
+    <span class="status-online"><i class="bi bi-circle-fill"></i> En línea</span>
+</div>
+
+<div class="chat-layout">
+    <aside class="card chat-sidebar-card">
+        <div class="p-3 border-bottom"><button class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i> Nueva conversación</button></div>
+        <div class="p-3"><small class="text-uppercase text-secondary fw-semibold">Conversaciones recientes</small><div class="chat-history-item active"><i class="bi bi-chat-left-text"></i><div><strong>Consulta de inventario</strong><small>Hace unos minutos</small></div></div><div class="chat-history-item"><i class="bi bi-chat-left-text"></i><div><strong>Ventas del mes</strong><small>Ayer</small></div></div><div class="chat-history-item"><i class="bi bi-chat-left-text"></i><div><strong>Cuenta de Carlos Mora</strong><small>05/08/2026</small></div></div></div>
+        <div class="chat-capabilities"><small><i class="bi bi-shield-check me-1"></i> Prototipo de interfaz</small><p>El asistente mostrará respuestas usando los datos del sistema cuando se conecte la lógica.</p></div>
+    </aside>
+
+    <section class="card chat-window">
+        <header class="chat-header"><div class="bot-avatar"><i class="bi bi-robot"></i></div><div><strong>Charlie</strong><small>Asistente comercial</small></div><button class="btn btn-sm btn-light ms-auto"><i class="bi bi-three-dots-vertical"></i></button></header>
+        <div class="chat-messages">
+            <div class="message bot"><div class="message-avatar"><i class="bi bi-robot"></i></div><div><div class="message-bubble">¡Hola! Soy <strong>Charlie</strong>, tu asistente virtual. Puedo ayudarte a consultar ventas, productos, inventario, clientes y cuentas por cobrar.</div><span class="message-time">10:32 a. m.</span></div></div>
+            <div class="message user"><div><div class="message-bubble">¿Qué productos tienen existencias bajas?</div><span class="message-time">10:33 a. m.</span></div></div>
+            <div class="message bot"><div class="message-avatar"><i class="bi bi-robot"></i></div><div><div class="message-bubble"><p>Encontré <strong>5 productos con stock bajo</strong> y 2 sin existencias.</p><div class="chat-result"><span>Gorra</span><strong class="text-warning">4 unidades</strong></div><div class="chat-result"><span>Pantalón jeans</span><strong class="text-warning">8 unidades</strong></div><div class="chat-result"><span>Zapatos deportivos</span><strong class="text-danger">Sin existencias</strong></div><a asp-controller="Inventario" asp-action="Index" class="btn btn-sm btn-outline-primary mt-2">Ver inventario completo</a></div><span class="message-time">10:33 a. m.</span></div></div>
+            <div class="suggestion-row"><button>Ventas de hoy</button><button>Cuentas vencidas</button><button>Productos más vendidos</button></div>
+        </div>
+        <footer class="chat-input"><button class="btn btn-light"><i class="bi bi-paperclip"></i></button><input class="form-control" placeholder="Escriba una consulta para Charlie..." /><button class="btn btn-primary px-3"><i class="bi bi-send"></i></button></footer>
+    </section>
+</div>
