@@ -1,0 +1,584 @@
+@model CharlieShop.Models.CrearUsuarioViewModel
+
+@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>Charlie Shop - Crear cuenta</title>
+
+
+    <!-- Bootstrap -->
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+
+    <!-- Bootstrap Icons -->
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+
+    <!-- CSS Charlie Shop -->
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+
+    <!-- =========================================
+         ESTILOS DE VALIDACIÓN
+         ========================================= -->
+
+    <style>
+
+        /* -----------------------------------------
+           MENSAJES DE VALIDACIÓN
+           ----------------------------------------- */
+
+        .charlie-validation {
+            display: block;
+            margin-top: 7px;
+            padding-left: 2px;
+
+            color: #c62828 !important;
+
+            font-size: 13px;
+            font-weight: 500;
+
+            line-height: 1.4;
+
+            animation: validationAppear 0.2s ease-out;
+        }
+
+
+        /* Icono antes del mensaje */
+
+        .charlie-validation.field-validation-error::before {
+            content: "!";
+            
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            width: 15px;
+            height: 15px;
+
+            margin-right: 6px;
+
+            border-radius: 50%;
+
+            background-color: #c62828;
+            color: white;
+
+            font-size: 10px;
+            font-weight: 700;
+
+            vertical-align: -1px;
+        }
+
+
+        /* No mostrar el span cuando no existe error */
+
+        .charlie-validation.field-validation-valid {
+            display: none !important;
+        }
+
+
+        /* -----------------------------------------
+           CAMPOS CON ERROR
+           ----------------------------------------- */
+
+        .input-validation-error {
+            border-color: #c62828 !important;
+
+            box-shadow:
+                0 0 0 3px rgba(198, 40, 40, 0.08) !important;
+        }
+
+
+        .input-validation-error:focus {
+            border-color: #c62828 !important;
+
+            box-shadow:
+                0 0 0 3px rgba(198, 40, 40, 0.13) !important;
+        }
+
+
+        /* -----------------------------------------
+           RESUMEN DE ERRORES
+           ----------------------------------------- */
+
+        .validation-summary {
+            margin-bottom: 20px;
+
+            padding: 13px 16px;
+
+            border: 1px solid #efb5b5;
+
+            border-radius: 9px;
+
+            background-color: #fff7f7;
+
+            color: #c62828 !important;
+
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+
+        .validation-summary:empty {
+            display: none;
+        }
+
+
+        .validation-summary ul {
+            margin: 0;
+
+            padding-left: 20px;
+        }
+
+
+        .validation-summary li {
+            color: #c62828 !important;
+
+            margin-bottom: 3px;
+        }
+
+
+        .validation-summary li:last-child {
+            margin-bottom: 0;
+        }
+
+
+        /* -----------------------------------------
+           ANIMACIÓN
+           ----------------------------------------- */
+
+            @@keyframes validationAppear {
+
+                from {
+                    opacity: 0;
+                    transform: translateY(-3px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <main class="login-page">
+
+        <section class="login-container">
+
+
+            <!-- =========================================
+                 PANEL IZQUIERDO
+                 ========================================= -->
+
+            <div class="login-brand">
+
+                <div class="brand-content">
+
+                    <img src="~/images/charlie_shop_logo.png"
+                         alt="Charlie Shop"
+                         class="brand-logo" />
+
+
+                    <h1>
+                        Charlie Shop
+                    </h1>
+
+
+                    <p>
+                        Sistema Integral de<br />
+                        Gestión Comercial
+                    </p>
+
+                </div>
+
+
+                <div class="brand-footer">
+
+                    © @DateTime.Now.Year Charlie Shop
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =========================================
+                 PANEL DERECHO
+                 ========================================= -->
+
+            <div class="login-form-container">
+
+                <div class="login-form">
+
+
+                    <!-- =================================
+                         ENCABEZADO
+                         ================================= -->
+
+                    <div class="form-header">
+
+                        <span class="welcome-icon">
+
+                            <i class="bi bi-person-plus"></i>
+
+                        </span>
+
+
+                        <h2>
+                            Crear cuenta
+                        </h2>
+
+
+                        <p>
+                            Complete la información para registrarse
+                        </p>
+
+                    </div>
+
+
+
+                    <!-- =================================
+                         FORMULARIO
+                         ================================= -->
+
+                    <form asp-controller="Usuarios"
+                          asp-action="Crear"
+                          method="post"
+                          novalidate>
+
+
+                        @Html.AntiForgeryToken()
+
+
+
+                        <!-- =================================
+                             ERRORES GENERALES
+                             ================================= -->
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="validation-summary">
+                        </div>
+
+
+
+                        <!-- =================================
+                             NOMBRE
+                             ================================= -->
+
+                        <div class="form-group">
+
+                            <label asp-for="Nombre">
+                                Nombre
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-person"></i>
+
+
+                                <input asp-for="Nombre"
+                                       type="text"
+                                       class="form-control"
+                                       placeholder="Ingrese su nombre"
+                                       autocomplete="name" />
+
+                            </div>
+
+
+                            <span asp-validation-for="Nombre"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             USUARIO
+                             ================================= -->
+
+                        <div class="form-group">
+
+                            <label asp-for="Usuario">
+                                Usuario
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-person-badge"></i>
+
+
+                                <input asp-for="Usuario"
+                                       type="text"
+                                       class="form-control"
+                                       placeholder="Ingrese un nombre de usuario"
+                                       autocomplete="username" />
+
+                            </div>
+
+
+                            <span asp-validation-for="Usuario"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             CORREO ELECTRÓNICO
+                             ================================= -->
+
+                        <div class="form-group">
+
+                            <label asp-for="Email">
+                                Correo electrónico
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-envelope"></i>
+
+
+                                <input asp-for="Email"
+                                       type="text"
+                                       class="form-control"
+                                       placeholder="correo@ejemplo.com"
+                                       autocomplete="email" />
+
+                            </div>
+
+
+                            <span asp-validation-for="Email"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             CONTRASEÑA
+                             ================================= -->
+
+                        <div class="form-group">
+
+                            <label asp-for="Contrasena">
+                                Contraseña
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-lock"></i>
+
+
+                                <input asp-for="Contrasena"
+                                       type="password"
+                                       class="form-control"
+                                       placeholder="Ingrese una contraseña"
+                                       autocomplete="new-password"
+                                       id="Contrasena" />
+
+
+                                <button type="button"
+                                        class="password-toggle"
+                                        onclick="togglePassword(
+                                            'Contrasena',
+                                            'passwordIcon'
+                                        )">
+
+                                    <i class="bi bi-eye"
+                                       id="passwordIcon">
+                                    </i>
+
+                                </button>
+
+                            </div>
+
+
+                            <span asp-validation-for="Contrasena"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             CONFIRMAR CONTRASEÑA
+                             ================================= -->
+
+                        <div class="form-group">
+
+                            <label asp-for="ConfirmarContrasena">
+                                Confirmar contraseña
+                            </label>
+
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-lock-fill"></i>
+
+
+                                <input asp-for="ConfirmarContrasena"
+                                       type="password"
+                                       class="form-control"
+                                       placeholder="Repita la contraseña"
+                                       autocomplete="new-password"
+                                       id="ConfirmarContrasena" />
+
+
+                                <button type="button"
+                                        class="password-toggle"
+                                        onclick="togglePassword(
+                                            'ConfirmarContrasena',
+                                            'confirmPasswordIcon'
+                                        )">
+
+                                    <i class="bi bi-eye"
+                                       id="confirmPasswordIcon">
+                                    </i>
+
+                                </button>
+
+                            </div>
+
+
+                            <span asp-validation-for="ConfirmarContrasena"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+
+                        <!-- =================================
+                             BOTÓN CREAR CUENTA
+                             ================================= -->
+
+                        <button type="submit"
+                                class="login-button">
+
+                            <span>
+                                Crear cuenta
+                            </span>
+
+
+                            <i class="bi bi-person-plus"></i>
+
+                        </button>
+
+                    </form>
+
+
+
+                    <!-- =================================
+                         VOLVER AL LOGIN
+                         ================================= -->
+
+                    <div class="register-section">
+
+                        <span>
+                            ¿Ya tiene una cuenta?
+                        </span>
+
+
+                        <a asp-controller="Home"
+                           asp-action="Index">
+
+                            Iniciar sesión
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =========================================
+         MOSTRAR / OCULTAR CONTRASEÑA
+         ========================================= -->
+
+    <script>
+
+        function togglePassword(inputId, iconId) {
+
+            const password =
+                document.getElementById(inputId);
+
+            const icon =
+                document.getElementById(iconId);
+
+
+            if (password.type === "password") {
+
+                password.type = "text";
+
+                icon.classList.remove("bi-eye");
+
+                icon.classList.add("bi-eye-slash");
+
+            }
+            else {
+
+                password.type = "password";
+
+                icon.classList.remove("bi-eye-slash");
+
+                icon.classList.add("bi-eye");
+
+            }
+
+        }
+
+    </script>
+
+
+
+    <!-- =========================================
+         VALIDACIÓN ASP.NET CORE
+         ========================================= -->
+
+    <partial name="_ValidationScriptsPartial" />
+
+</body>
+
+</html>

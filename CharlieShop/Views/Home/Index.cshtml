@@ -1,4 +1,6 @@
-﻿@{
+﻿@model CharlieShop.Models.LoginViewModel
+
+@{
     ViewData["Title"] = "Inicio de sesión";
     Layout = null;
 }
@@ -6,6 +8,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -18,69 +21,412 @@
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <link rel="stylesheet"
-          href="~/css/site.css" />
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <style>
+
+        /* =====================================================
+           LOGIN - VALIDATION
+           ===================================================== */
+
+        .validation-summary {
+            margin-bottom: 20px;
+            padding: 13px 16px;
+
+            border: 1px solid #efb5b5;
+            border-radius: 9px;
+
+            background-color: #fff7f7;
+
+            color: #c62828 !important;
+
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+
+            animation: validationAppear 0.2s ease-out;
+        }
+
+        .validation-summary:empty {
+            display: none;
+        }
+
+        .validation-summary ul {
+            margin: 0;
+            padding-left: 0;
+
+            list-style: none;
+        }
+
+        .validation-summary li {
+            display: flex;
+            align-items: center;
+
+            color: #c62828 !important;
+        }
+
+        .validation-summary li::before {
+            content: "!";
+
+            width: 18px;
+            height: 18px;
+
+            flex-shrink: 0;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            margin-right: 8px;
+
+            border-radius: 50%;
+
+            background-color: #c62828;
+
+            color: white;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           ERRORES INDIVIDUALES DE LOS CAMPOS
+           ===================================================== */
+
+        .charlie-validation {
+            display: block !important;
+
+            margin-top: 7px;
+            padding-left: 2px;
+
+            color: #c62828 !important;
+
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+
+            animation: validationAppear 0.2s ease-out;
+        }
+
+        .charlie-validation.field-validation-error::before {
+            content: "!";
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 15px;
+            height: 15px;
+
+            margin-right: 6px;
+
+            border-radius: 50%;
+
+            background-color: #c62828;
+
+            color: white;
+
+            font-size: 10px;
+            font-weight: 700;
+
+            vertical-align: -1px;
+        }
+
+        .charlie-validation.field-validation-valid {
+            display: none !important;
+        }
+
+
+        /* =====================================================
+           CAMPOS CON ERROR
+           ===================================================== */
+
+        .input-validation-error {
+            border-color: #c62828 !important;
+
+            box-shadow:
+                0 0 0 3px rgba(198, 40, 40, 0.08) !important;
+        }
+
+        .input-validation-error:focus {
+            border-color: #c62828 !important;
+
+            box-shadow:
+                0 0 0 3px rgba(198, 40, 40, 0.13) !important;
+        }
+
+
+        /* =====================================================
+           ANIMACIÓN
+           ===================================================== */
+
+        @@keyframes validationAppear {
+
+            from {
+                opacity: 0;
+                transform: translateY(-3px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+
+    </style>
+
 </head>
 
 <body>
 
-    <div class="login-page">
+    <main class="login-page">
 
-        <div class="login-card">
+        <section class="login-container">
 
-            <div class="text-center mb-4">
+            <!-- ================================================= -->
+            <!-- LADO IZQUIERDO -->
+            <!-- ================================================= -->
 
-                <div class="brand mb-1">
-                    Charlie Shop
+            <div class="login-brand">
+
+                <div class="brand-content">
+
+                    <img src="~/images/charlie_shop_logo.png"
+                         alt="Charlie Shop"
+                         class="brand-logo" />
+
+                    <h1>Charlie Shop</h1>
+
+                    <p>
+                        Sistema Integral de<br />
+                        Gestión Comercial
+                    </p>
+
                 </div>
 
-                <div class="text-secondary small">
-                    Sistema Integral de Gestión Comercial
+                <div class="brand-footer">
+                    © @DateTime.Now.Year Charlie Shop
                 </div>
 
             </div>
 
-            <form asp-controller="Dashboard"
-                  asp-action="Index"
-                  method="get">
 
-                <div class="mb-3">
+            <!-- ================================================= -->
+            <!-- LADO DERECHO -->
+            <!-- ================================================= -->
 
-                    <label class="form-label">
-                        Usuario
-                    </label>
+            <div class="login-form-container">
 
-                    <input type="text"
-                           class="form-control"
-                           placeholder="Ingrese su usuario" />
+                <div class="login-form">
+
+                    <div class="form-header">
+
+                        <span class="welcome-icon">
+                            <i class="bi bi-person"></i>
+                        </span>
+
+                        <h2>Bienvenido/a</h2>
+
+                        <p>
+                            Ingrese sus credenciales para continuar
+                        </p>
+
+                    </div>
+
+
+                    <!-- ================================================= -->
+                    <!-- LOGIN FORM -->
+                    <!-- ================================================= -->
+
+                    <form asp-controller="Account"
+                          asp-action="Login"
+                          method="post"
+                          novalidate>
+
+                        @Html.AntiForgeryToken()
+
+
+                        <!-- VALIDATION SUMMARY -->
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="validation-summary">
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- USUARIO -->
+                        <!-- ================================================= -->
+
+                        <div class="form-group">
+
+                            <label for="Usuario">
+                                Usuario
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-person"></i>
+
+                                <input type="text"
+                                       id="Usuario"
+                                       name="Usuario"
+                                       class="form-control"
+                                       placeholder="Ingrese su usuario"
+                                       autocomplete="username" />
+
+                            </div>
+
+                            <span asp-validation-for="Usuario"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- CONTRASEÑA -->
+                        <!-- ================================================= -->
+
+                        <div class="form-group">
+
+                            <label for="Contrasena">
+                                Contraseña
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <i class="bi bi-lock"></i>
+
+                                <input type="password"
+                                       id="Contrasena"
+                                       name="Contrasena"
+                                       class="form-control"
+                                       placeholder="Ingrese su contraseña"
+                                       autocomplete="current-password" />
+
+                                <button type="button"
+                                        class="password-toggle"
+                                        onclick="togglePassword()">
+
+                                    <i class="bi bi-eye"
+                                       id="passwordIcon"></i>
+
+                                </button>
+
+                            </div>
+
+                            <span asp-validation-for="Contrasena"
+                                  class="charlie-validation">
+                            </span>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- RECUPERAR CONTRASEÑA -->
+                        <!-- ================================================= -->
+
+                        <div class="forgot-password">
+
+                            <a asp-controller="Account"
+                               asp-action="ForgotPassword">
+
+                                ¿Olvidó su contraseña?
+
+                            </a>
+
+                        </div>
+
+
+                        <!-- ================================================= -->
+                        <!-- LOGIN BUTTON -->
+                        <!-- ================================================= -->
+
+                        <button type="submit"
+                                class="login-button">
+
+                            <span>Ingresar</span>
+
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                    </form>
+
+
+                    <!-- ================================================= -->
+                    <!-- REGISTRO -->
+                    <!-- ================================================= -->
+
+                    <div class="register-section">
+
+                        <span>
+                            ¿Es un usuario nuevo?
+                        </span>
+
+                        <a asp-controller="Usuarios"
+                           asp-action="Crear">
+
+                            Crear una cuenta
+
+                        </a>
+
+                    </div>
 
                 </div>
 
-                <div class="mb-3">
+            </div>
 
-                    <label class="form-label">
-                        Contraseña
-                    </label>
+        </section>
 
-                    <input type="password"
-                           class="form-control"
-                           placeholder="Ingrese su contraseña" />
+    </main>
 
-                </div>
 
-                <button type="submit"
-                        class="btn btn-primary w-100 py-2">
+    <!-- ===================================================== -->
+    <!-- VALIDACIÓN DE ASP.NET -->
+    <!-- ===================================================== -->
 
-                    <i class="bi bi-box-arrow-in-right me-2"></i>
+    <partial name="_ValidationScriptsPartial" />
 
-                    Ingresar
 
-                </button>
+    <!-- ===================================================== -->
+    <!-- PASSWORD TOGGLE -->
+    <!-- ===================================================== -->
 
-            </form>
+    <script>
 
-        </div>
+        function togglePassword() {
 
-    </div>
+            const password =
+                document.getElementById("Contrasena");
+
+            const icon =
+                document.getElementById("passwordIcon");
+
+            if (password.type === "password") {
+
+                password.type = "text";
+
+                icon.classList.remove("bi-eye");
+
+                icon.classList.add("bi-eye-slash");
+
+            } else {
+
+                password.type = "password";
+
+                icon.classList.remove("bi-eye-slash");
+
+                icon.classList.add("bi-eye");
+
+            }
+
+        }
+
+    </script>
 
 </body>
 </html>
