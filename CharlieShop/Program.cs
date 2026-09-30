@@ -1,10 +1,16 @@
 using CharlieShop.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Data.Common;
+using CharlieShop.Models;
+using CharlieShop.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<DbConnection>();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddAuthentication(
     CookieAuthenticationDefaults.AuthenticationScheme)

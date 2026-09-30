@@ -1,0 +1,468 @@
+@{
+    ViewData["Title"] = "Mi perfil";
+
+    var nombreUsuario =
+        User.FindFirst("NombreCompleto")?.Value
+        ?? User.Identity?.Name
+        ?? "Usuario";
+
+    var rolUsuario =
+        User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+        ?? "GUEST";
+}
+
+<style>
+
+    /* =========================================================
+       PERFIL
+       ========================================================= */
+
+    .profile-card {
+        background: #ffffff;
+        border: 1px solid #e2e5e9;
+        border-radius: 10px;
+        padding: 28px;
+        margin-bottom: 24px;
+    }
+
+    .profile-card-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 25px;
+    }
+
+    .profile-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #eef4ff;
+        color: #1264e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .profile-card-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #172033;
+    }
+
+    .profile-card-header p {
+        margin: 4px 0 0;
+        color: #7b8494;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       INFORMACIÓN
+       ========================================================= */
+
+    .profile-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .profile-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .profile-info-item span {
+        font-size: 12px;
+        font-weight: 600;
+        color: #7b8494;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .profile-info-item strong {
+        font-size: 15px;
+        color: #172033;
+    }
+
+
+    /* =========================================================
+       ESTADO
+       ========================================================= */
+
+    .profile-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 500;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #20a464;
+    }
+
+
+    /* =========================================================
+       SEGURIDAD
+       ========================================================= */
+
+    .security-card {
+        margin-top: 24px;
+    }
+
+    .security-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-top: 5px;
+    }
+
+    .security-content strong {
+        display: block;
+        font-size: 15px;
+        color: #172033;
+        margin-bottom: 4px;
+    }
+
+    .security-content span {
+        display: block;
+        margin: 0;
+        color: #7b8494;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       BOTÓN
+       ========================================================= */
+
+    .fancy-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 17px;
+        border: none;
+        border-radius: 8px;
+        background: #171717 !important;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .16);
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    .fancy-button span,
+    .fancy-button i {
+        color: #ffffff !important;
+    }
+
+    .fancy-button:hover {
+        background: #303030 !important;
+        transform: translateY(-1px);
+    }
+
+    .fancy-button:hover span,
+    .fancy-button:hover i {
+        color: #ffffff !important;
+    }
+
+
+    /* =========================================================
+       MENSAJE DE ÉXITO
+       ========================================================= */
+
+    .success-message {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 16px;
+        margin-bottom: 24px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        color: #166534;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .success-message i {
+        font-size: 17px;
+        color: #166534;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @@media (max-width: 768px) {
+
+        .profile-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .security-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+    }
+
+</style>
+
+
+<div class="home-content">
+
+    <!-- =================================================
+         MENSAJE DE ÉXITO
+         ================================================== -->
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="success-message">
+
+            <i class="bi bi-check-circle"></i>
+
+            <span>
+                @TempData["Mensaje"]
+            </span>
+
+        </div>
+    }
+
+
+    <!-- =================================================
+         PERFIL
+         ================================================== -->
+
+    <section class="section"
+             style="margin-top: 0;">
+
+        <div class="section-heading"
+             style="margin-bottom: 25px;">
+
+            <div>
+
+                <span>
+                    CUENTA
+                </span>
+
+                <h2>
+                    Mi perfil
+                </h2>
+
+            </div>
+
+            <p>
+                Consulta la información de tu cuenta
+                y administra tu seguridad.
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             INFORMACIÓN PERSONAL
+             ================================================== -->
+
+        <div class="profile-card">
+
+            <div class="profile-card-header">
+
+                <div class="profile-card-icon">
+
+                    <i class="bi bi-person"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Información personal
+                    </h3>
+
+                    <p>
+                        Información asociada a tu cuenta.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="profile-info-grid">
+
+                <!-- NOMBRE -->
+
+                <div class="profile-info-item">
+
+                    <span>
+                        Nombre completo
+                    </span>
+
+                    <strong>
+                        @nombreUsuario
+                    </strong>
+
+                </div>
+
+
+                <!-- USUARIO -->
+
+                <div class="profile-info-item">
+
+                    <span>
+                        Nombre de usuario
+                    </span>
+
+                    <strong>
+                        @User.Identity?.Name
+                    </strong>
+
+                </div>
+
+
+                <!-- CORREO -->
+
+                <div class="profile-info-item">
+
+                    <span>
+                        Correo electrónico
+                    </span>
+
+                    <strong>
+                        @User.FindFirst(
+                            System.Security.Claims.ClaimTypes.Email
+                        )?.Value
+                    </strong>
+
+                </div>
+
+
+                <!-- ROL -->
+
+                <div class="profile-info-item">
+
+                    <span>
+                        Rol
+                    </span>
+
+                    <strong>
+                        @rolUsuario
+                    </strong>
+
+                </div>
+
+
+                <!-- ESTADO -->
+
+                <div class="profile-info-item">
+
+                    <span>
+                        Estado
+                    </span>
+
+                    <strong class="profile-status">
+
+                        <span class="status-dot"></span>
+
+                        Activo
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             SEGURIDAD
+             ================================================== -->
+
+        <div class="profile-card security-card">
+
+            <div class="profile-card-header">
+
+                <div class="profile-card-icon">
+
+                    <i class="bi bi-shield-lock"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Seguridad
+                    </h3>
+
+                    <p>
+                        Mantén protegida tu cuenta.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="security-content">
+
+                <div>
+
+                    <strong>
+                        Contraseña
+                    </strong>
+
+                    <span>
+                        Puedes actualizar la contraseña
+                        de tu cuenta.
+                    </span>
+
+                </div>
+
+
+                <a asp-controller="Usuarios"
+                   asp-action="CambiarContrasena"
+                   class="fancy-button">
+
+                    <span>
+                        Cambiar contraseña
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================
+         FOOTER
+         ================================================== -->
+
+    <footer class="home-footer">
+
+        <span>
+            © @DateTime.Now.Year Charlie Shop
+        </span>
+
+        <span>
+            Sistema Integral de Gestión Comercial
+        </span>
+
+    </footer>
+
+</div>

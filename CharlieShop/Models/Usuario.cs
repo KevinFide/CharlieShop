@@ -14,6 +14,8 @@ namespace CharlieShop.Models
 
         public int RolId { get; set; }
 
+        public string NombreRol { get; set; } = string.Empty;
+
         public bool Estado { get; set; }
 
         public DateTime FechaCreacion { get; set; }

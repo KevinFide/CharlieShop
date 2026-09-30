@@ -1,62 +1,766 @@
+@model CharlieShop.Models.CambiarContrasenaViewModel
+
 @{
     ViewData["Title"] = "Cambiar contraseña";
 }
 
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <div class="page-title">Cambiar contraseña</div>
-        <div class="page-subtitle">Actualice sus credenciales de acceso de forma segura.</div>
-    </div>
-    <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver a usuarios
-    </a>
-</div>
+<style>
 
-<div class="row g-4">
-    <div class="col-lg-7">
-        <div class="card p-4">
-            <h5 class="mb-1">Seguridad de la cuenta</h5>
-            <p class="text-secondary mb-4">La nueva contraseña debe cumplir los requisitos indicados.</p>
+    /* =========================================================
+       PÁGINA
+       ========================================================= */
 
-            <div class="mb-3">
-                <label class="form-label">Contraseña actual</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <input type="password" class="form-control" value="Password123" />
-                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-eye"></i></button>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Nueva contraseña</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                    <input type="password" class="form-control" value="Charlie2026!" />
-                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-eye"></i></button>
-                </div>
-            </div>
-            <div class="mb-4">
-                <label class="form-label">Confirmar nueva contraseña</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
-                    <input type="password" class="form-control" value="Charlie2026!" />
-                </div>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-                <button class="btn btn-outline-secondary">Cancelar</button>
-                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Actualizar contraseña</button>
-            </div>
+    .password-page {
+        padding: 38px 42px;
+    }
+
+
+    /* =========================================================
+       ENCABEZADO
+       ========================================================= */
+
+    .password-page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+
+    .password-page-header .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        color: #1264e8;
+        text-transform: uppercase;
+        margin-bottom: 7px;
+    }
+
+    .password-page-header h1 {
+        margin: 0;
+        font-size: 30px;
+        font-weight: 600;
+        color: #172033;
+    }
+
+    .password-page-header p {
+        margin: 7px 0 0;
+        color: #7b8494;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+       BOTONES
+       ========================================================= */
+
+    .fancy-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 17px;
+        border: none;
+        border-radius: 8px;
+        background: #171717;
+        color: #ffffff !important;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .16);
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    .fancy-button span,
+    .fancy-button i {
+        color: #ffffff !important;
+    }
+
+    .fancy-button:hover {
+        background: #303030;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+    }
+
+    .fancy-button:hover span,
+    .fancy-button:hover i {
+        color: #ffffff !important;
+    }
+
+
+    /* =========================================================
+       BOTÓN SECUNDARIO
+       ========================================================= */
+
+    .fancy-button.secondary {
+        background: #ffffff;
+        color: #171717 !important;
+        border: 1px solid #d9dde3;
+        box-shadow: none;
+    }
+
+    .fancy-button.secondary span,
+    .fancy-button.secondary i {
+        color: #171717 !important;
+    }
+
+    .fancy-button.secondary:hover {
+        background: #f5f6f7;
+        border-color: #cbd0d7;
+        color: #171717 !important;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .fancy-button.secondary:hover span,
+    .fancy-button.secondary:hover i {
+        color: #171717 !important;
+    }
+
+
+    /* =========================================================
+       DISTRIBUCIÓN
+       ========================================================= */
+
+    .password-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+
+    /* =========================================================
+       TARJETAS
+       ========================================================= */
+
+    .password-card {
+        background: #ffffff;
+        border: 1px solid #e2e5e9;
+        border-radius: 10px;
+        padding: 28px;
+    }
+
+
+    /* =========================================================
+       ENCABEZADO TARJETA
+       ========================================================= */
+
+    .password-card-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 26px;
+    }
+
+    .password-card-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #eef4ff;
+        color: #1264e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .password-card-header h2 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 600;
+        color: #172033;
+    }
+
+    .password-card-header p {
+        margin: 4px 0 0;
+        color: #7b8494;
+        font-size: 13px;
+    }
+
+
+    /* =========================================================
+       CAMPOS
+       ========================================================= */
+
+    .password-form-group {
+        margin-bottom: 20px;
+    }
+
+    .password-form-group label {
+        display: block;
+        margin-bottom: 7px;
+        color: #344054;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .password-input-wrapper {
+        display: flex;
+        width: 100%;
+    }
+
+    .password-input-icon {
+        width: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid #d9dee6;
+        border-right: 0;
+        border-radius: 6px 0 0 6px;
+        background: #f8f9fb;
+        color: #667085;
+    }
+
+    .password-input-wrapper input {
+        flex: 1;
+        min-width: 0;
+        height: 40px;
+        padding: 0 12px;
+        border: 1px solid #d9dee6;
+        border-right: 0;
+        outline: none;
+        background: #ffffff;
+        color: #172033;
+        font-size: 14px;
+    }
+
+    .password-input-wrapper input:focus {
+        border-color: #1264e8;
+        box-shadow: 0 0 0 2px rgba(18, 100, 232, .08);
+    }
+
+    .password-toggle {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        padding: 0;
+        border: 1px solid #d9dee6;
+        border-radius: 0 6px 6px 0;
+        background: #ffffff;
+        color: #667085;
+        cursor: pointer;
+    }
+
+    .password-toggle:hover {
+        background: #f8faff;
+        color: #1264e8;
+    }
+
+
+    /* =========================================================
+       VALIDACIONES
+       ========================================================= */
+
+    .field-validation-error {
+        display: block;
+        margin-top: 6px;
+        color: #dc3545;
+        font-size: 12px;
+    }
+
+    .validation-summary-errors {
+        margin-bottom: 20px;
+        padding: 12px 14px;
+        border: 1px solid #f1b0b7;
+        border-radius: 7px;
+        background: #fff5f5;
+        color: #b42318;
+        font-size: 13px;
+    }
+
+
+    /* =========================================================
+       BOTONES DEL FORMULARIO
+       ========================================================= */
+
+    .password-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid #edf0f3;
+    }
+
+
+    /* =========================================================
+       REQUISITOS
+       ========================================================= */
+
+    .requirements-list {
+        margin: 20px 0 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .requirements-list li {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 12px;
+        color: #475467;
+        font-size: 13px;
+    }
+
+    .requirements-list li i {
+        color: #20a464;
+        font-size: 15px;
+    }
+
+    .security-note {
+        margin-top: 22px;
+        padding: 12px 14px;
+        border-radius: 7px;
+        background: #f8faff;
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+
+    @@media (max-width: 900px) {
+
+        .password-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .password-page-header {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+    }
+
+    @@media (max-width: 600px) {
+
+        .password-page {
+            padding: 25px 18px;
+        }
+
+        .password-actions {
+            flex-direction: column-reverse;
+        }
+
+        .fancy-button {
+            width: 100%;
+        }
+
+    }
+
+</style>
+
+
+<div class="password-page">
+
+    <!-- =================================================
+         ENCABEZADO
+         ================================================== -->
+
+    <div class="password-page-header">
+
+        <div>
+
+            <span class="section-label">
+                SEGURIDAD
+            </span>
+
+            <h1>
+                Cambiar contraseña
+            </h1>
+
+            <p>
+                Actualiza tus credenciales de acceso de forma segura.
+            </p>
+
         </div>
+
+
+        <a asp-controller="Usuarios"
+           asp-action="Perfil"
+           class="fancy-button secondary">
+
+            <i class="bi bi-arrow-left"></i>
+
+            <span>
+                Volver a mi perfil
+            </span>
+
+        </a>
+
     </div>
-    <div class="col-lg-5">
-        <div class="card p-4">
-            <div class="icon-box mb-3"><i class="bi bi-shield-check"></i></div>
-            <h5>Requisitos de seguridad</h5>
-            <ul class="security-list mt-3 mb-0">
-                <li><i class="bi bi-check-circle-fill text-success"></i> Al menos 8 caracteres</li>
-                <li><i class="bi bi-check-circle-fill text-success"></i> Una letra mayúscula y una minúscula</li>
-                <li><i class="bi bi-check-circle-fill text-success"></i> Al menos un número</li>
-                <li><i class="bi bi-check-circle-fill text-success"></i> Un carácter especial</li>
+
+
+    <!-- =================================================
+         CONTENIDO
+         ================================================== -->
+
+    <div class="password-layout">
+
+
+        <!-- =================================================
+             FORMULARIO
+             ================================================== -->
+
+        <div class="password-card">
+
+            <div class="password-card-header">
+
+                <div class="password-card-icon">
+
+                    <i class="bi bi-shield-lock"></i>
+
+                </div>
+
+                <div>
+
+                    <h2>
+                        Seguridad de la cuenta
+                    </h2>
+
+                    <p>
+                        La nueva contraseña debe cumplir los requisitos indicados.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form asp-controller="Usuarios"
+                  asp-action="CambiarContrasena"
+                  method="post"
+                  novalidate>
+
+                @Html.AntiForgeryToken()
+
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly"
+                         class="validation-summary-errors">
+                    </div>
+                }
+
+
+                <!-- CONTRASEÑA ACTUAL -->
+
+                <div class="password-form-group">
+
+                    <label asp-for="ContrasenaActual">
+                        Contraseña actual
+                    </label>
+
+                    <div class="password-input-wrapper">
+
+                        <div class="password-input-icon">
+
+                            <i class="bi bi-lock"></i>
+
+                        </div>
+
+                        <input asp-for="ContrasenaActual"
+                               type="password"
+                               autocomplete="current-password"
+                               id="currentPassword" />
+
+                        <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('currentPassword', this)"
+                                aria-label="Mostrar contraseña">
+
+                            <i class="bi bi-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                    <span asp-validation-for="ContrasenaActual"
+                          class="field-validation-error">
+                    </span>
+
+                </div>
+
+
+                <!-- NUEVA CONTRASEÑA -->
+
+                <div class="password-form-group">
+
+                    <label asp-for="NuevaContrasena">
+                        Nueva contraseña
+                    </label>
+
+                    <div class="password-input-wrapper">
+
+                        <div class="password-input-icon">
+
+                            <i class="bi bi-shield-lock"></i>
+
+                        </div>
+
+                        <input asp-for="NuevaContrasena"
+                               type="password"
+                               autocomplete="new-password"
+                               id="newPassword" />
+
+                        <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('newPassword', this)"
+                                aria-label="Mostrar contraseña">
+
+                            <i class="bi bi-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                    <span asp-validation-for="NuevaContrasena"
+                          class="field-validation-error">
+                    </span>
+
+                </div>
+
+
+                <!-- CONFIRMAR CONTRASEÑA -->
+
+                <div class="password-form-group">
+
+                    <label asp-for="ConfirmarContrasena">
+                        Confirmar nueva contraseña
+                    </label>
+
+                    <div class="password-input-wrapper">
+
+                        <div class="password-input-icon">
+
+                            <i class="bi bi-shield-check"></i>
+
+                        </div>
+
+                        <input asp-for="ConfirmarContrasena"
+                               type="password"
+                               autocomplete="new-password"
+                               id="confirmPassword" />
+
+                        <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('confirmPassword', this)"
+                                aria-label="Mostrar contraseña">
+
+                            <i class="bi bi-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                    <span asp-validation-for="ConfirmarContrasena"
+                          class="field-validation-error">
+                    </span>
+
+                </div>
+
+
+                <!-- BOTONES -->
+
+                <div class="password-actions">
+
+                    <a asp-controller="Usuarios"
+                       asp-action="Perfil"
+                       class="fancy-button secondary">
+
+                        <i class="bi bi-arrow-left"></i>
+
+                        <span>
+                            Cancelar
+                        </span>
+
+                    </a>
+
+
+                    <button type="submit"
+                            class="fancy-button">
+
+                        <span>
+                            Actualizar contraseña
+                        </span>
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+        <!-- =================================================
+             REQUISITOS
+             ================================================== -->
+
+        <div class="password-card">
+
+            <div class="password-card-header">
+
+                <div class="password-card-icon">
+
+                    <i class="bi bi-shield-check"></i>
+
+                </div>
+
+                <div>
+
+                    <h2>
+                        Requisitos de seguridad
+                    </h2>
+
+                    <p>
+                        Utiliza una contraseña segura para proteger tu cuenta.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <ul class="requirements-list">
+
+                <li>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <span>
+                        Al menos 8 caracteres
+                    </span>
+
+                </li>
+
+                <li>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <span>
+                        Una letra mayúscula y una minúscula
+                    </span>
+
+                </li>
+
+                <li>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <span>
+                        Al menos un número
+                    </span>
+
+                </li>
+
+                <li>
+
+                    <i class="bi bi-check-circle-fill"></i>
+
+                    <span>
+                        Un carácter especial
+                    </span>
+
+                </li>
+
             </ul>
+
+
+            <div class="security-note">
+
+                <i class="bi bi-info-circle"></i>
+
+                No compartas tu contraseña con otras personas.
+                Charlie Shop nunca solicitará que proporciones tu contraseña.
+
+            </div>
+
         </div>
+
     </div>
+
+
+    <!-- =================================================
+         FOOTER
+         ================================================== -->
+
+    <footer class="home-footer">
+
+        <span>
+            © @DateTime.Now.Year Charlie Shop
+        </span>
+
+        <span>
+            Sistema Integral de Gestión Comercial
+        </span>
+
+    </footer>
+
 </div>
+
+
+<!-- =========================================================
+     PASSWORD VISIBILITY
+     ========================================================= -->
+
+<script>
+
+    function togglePassword(inputId, button) {
+
+        const input =
+            document.getElementById(inputId);
+
+        if (!input) {
+            return;
+        }
+
+        const icon =
+            button.querySelector("i");
+
+
+        if (input.type === "password") {
+
+            input.type = "text";
+
+            icon.classList.remove("bi-eye");
+            icon.classList.add("bi-eye-slash");
+
+            button.setAttribute(
+                "aria-label",
+                "Ocultar contraseña"
+            );
+
+        }
+        else {
+
+            input.type = "password";
+
+            icon.classList.remove("bi-eye-slash");
+            icon.classList.add("bi-eye");
+
+            button.setAttribute(
+                "aria-label",
+                "Mostrar contraseña"
+            );
+
+        }
+
+    }
+
+</script>
+
+
+<partial name="_ValidationScriptsPartial" />
