@@ -1,0 +1,577 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="home-content">
+
+    <!-- ================================================= -->
+    <!-- HERO -->
+    <!-- ================================================= -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <span class="hero-label">
+                SISTEMA DE GESTIÓN COMERCIAL
+            </span>
+
+            <h1>
+                Todo tu negocio,
+                <br />
+                <span>
+                    en un solo lugar.
+                </span>
+            </h1>
+
+            <p>
+                Bienvenido a Charlie Shop. Administra tus ventas,
+                productos, clientes e inventario desde una
+                plataforma centralizada.
+            </p>
+
+            <div class="hero-actions">
+
+                <!-- SOLO ADMINISTRADOR -->
+                @if (User.IsInRole("ADMINISTRADOR"))
+                {
+                    <a asp-controller="Dashboard"
+                       asp-action="Index"
+                       class="primary-button">
+
+                        <i class="bi bi-grid-1x2"></i>
+
+                        Ir al Dashboard
+
+                    </a>
+                }
+
+                <!-- ADMINISTRADOR + VENDEDOR -->
+                @if (User.IsInRole("ADMINISTRADOR") ||
+                     User.IsInRole("VENDEDOR"))
+                {
+                    <a href="#"
+                       class="secondary-button">
+
+                        Explorar sistema
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </a>
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- HERO VISUAL -->
+
+        <div class="hero-visual">
+
+            <div class="hero-circle circle-one"></div>
+
+            <div class="hero-circle circle-two"></div>
+
+            <div class="dashboard-preview">
+
+                <div class="preview-top">
+
+                    <div class="preview-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                    <span>
+                        Charlie Shop
+                    </span>
+
+                </div>
+
+                <div class="preview-content">
+
+                    <div class="preview-title">
+                        Resumen comercial
+                    </div>
+
+                    <div class="preview-number">
+                        ₡1.250.000
+                    </div>
+
+                    <div class="preview-label">
+                        Ventas del mes
+                    </div>
+
+                    <div class="preview-bars">
+
+                        <span style="height: 40%;"></span>
+                        <span style="height: 55%;"></span>
+                        <span style="height: 45%;"></span>
+                        <span style="height: 70%;"></span>
+                        <span style="height: 62%;"></span>
+                        <span style="height: 88%;"></span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- QUICK ACCESS -->
+    <!-- ================================================= -->
+
+    @if (User.IsInRole("ADMINISTRADOR") ||
+         User.IsInRole("VENDEDOR"))
+    {
+        <section class="section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <span>
+                        ACCESO RÁPIDO
+                    </span>
+
+                    <h2>
+                        ¿Qué deseas hacer?
+                    </h2>
+
+                </div>
+
+                <p>
+                    Accede rápidamente a las funciones principales
+                    del sistema.
+                </p>
+
+            </div>
+
+
+            <div class="quick-grid">
+
+                <!-- NUEVA VENTA -->
+
+                <a asp-controller="Ventas"
+                   asp-action="Crear"
+                   class="quick-card">
+
+                    <div class="quick-icon blue">
+                        <i class="bi bi-cart-plus"></i>
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Nueva venta
+                        </strong>
+
+                        <span>
+                            Registrar una nueva venta
+                        </span>
+
+                    </div>
+
+                    <i class="bi bi-arrow-up-right"></i>
+
+                </a>
+
+
+                <!-- NUEVO CLIENTE -->
+
+                <a asp-controller="Clientes"
+                   asp-action="Crear"
+                   class="quick-card">
+
+                    <div class="quick-icon green">
+
+                        <i class="bi bi-person-plus"></i>
+
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Nuevo cliente
+                        </strong>
+
+                        <span>
+                            Agregar un cliente
+                        </span>
+
+                    </div>
+
+                    <i class="bi bi-arrow-up-right"></i>
+
+                </a>
+
+
+                <!-- SOLO ADMINISTRADOR -->
+
+                @if (User.IsInRole("ADMINISTRADOR"))
+                {
+
+                    <!-- NUEVO PRODUCTO -->
+
+                    <a asp-controller="Productos"
+                       asp-action="Crear"
+                       class="quick-card">
+
+                        <div class="quick-icon purple">
+
+                            <i class="bi bi-box-seam"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Nuevo producto
+                            </strong>
+
+                            <span>
+                                Agregar al inventario
+                            </span>
+
+                        </div>
+
+                        <i class="bi bi-arrow-up-right"></i>
+
+                    </a>
+
+
+                    <!-- REPORTE -->
+
+                    <a asp-controller="Reportes"
+                       asp-action="Index"
+                       class="quick-card">
+
+                        <div class="quick-icon orange">
+
+                            <i class="bi bi-file-earmark-bar-graph"></i>
+
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Generar reporte
+                            </strong>
+
+                            <span>
+                                Consultar información
+                            </span>
+
+                        </div>
+
+                        <i class="bi bi-arrow-up-right"></i>
+
+                    </a>
+
+                }
+
+            </div>
+
+        </section>
+    }
+
+
+    <!-- ================================================= -->
+    <!-- MODULES -->
+    <!-- ================================================= -->
+
+    @if (User.IsInRole("ADMINISTRADOR") ||
+         User.IsInRole("VENDEDOR"))
+    {
+
+        <section class="modules-section">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <span>
+                        MÓDULOS
+                    </span>
+
+                    <h2>
+                        Administra tu operación
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="module-grid">
+
+                <!-- DASHBOARD -->
+
+                @if (User.IsInRole("ADMINISTRADOR"))
+                {
+
+                    <a asp-controller="Dashboard"
+                       asp-action="Index"
+                       class="module-card text-decoration-none">
+
+                        <div class="module-icon">
+
+                            <i class="bi bi-bar-chart-line"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Dashboard
+                            </h3>
+
+                            <p>
+                                Visualiza el rendimiento general
+                                de tu negocio.
+                            </p>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right module-arrow"></i>
+
+                    </a>
+
+                }
+
+
+                <!-- INVENTARIO -->
+
+                @if (User.IsInRole("ADMINISTRADOR"))
+                {
+
+                    <a asp-controller="Inventario"
+                       asp-action="Index"
+                       class="module-card text-decoration-none">
+
+                        <div class="module-icon">
+
+                            <i class="bi bi-boxes"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Inventario
+                            </h3>
+
+                            <p>
+                                Controla productos, existencias
+                                y movimientos.
+                            </p>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right module-arrow"></i>
+
+                    </a>
+
+                }
+
+
+                <!-- CLIENTES -->
+
+                <a asp-controller="Clientes"
+                   asp-action="Index"
+                   class="module-card text-decoration-none">
+
+                    <div class="module-icon">
+
+                        <i class="bi bi-people"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Clientes
+                        </h3>
+
+                        <p>
+                            Gestiona la información de tus
+                            clientes.
+                        </p>
+
+                    </div>
+
+                    <i class="bi bi-arrow-right module-arrow"></i>
+
+                </a>
+
+
+                <!-- VENTAS -->
+
+                <a asp-controller="Ventas"
+                   asp-action="Index"
+                   class="module-card text-decoration-none">
+
+                    <div class="module-icon">
+
+                        <i class="bi bi-cart3"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Ventas
+                        </h3>
+
+                        <p>
+                            Registra y administra las ventas
+                            realizadas.
+                        </p>
+
+                    </div>
+
+                    <i class="bi bi-arrow-right module-arrow"></i>
+
+                </a>
+
+
+                <!-- CUENTAS POR COBRAR -->
+
+                <a asp-controller="CuentasPorCobrar"
+                   asp-action="Index"
+                   class="module-card text-decoration-none">
+
+                    <div class="module-icon">
+
+                        <i class="bi bi-wallet2"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Cuentas por cobrar
+                        </h3>
+
+                        <p>
+                            Controla los saldos y cuentas
+                            pendientes de pago.
+                        </p>
+
+                    </div>
+
+                    <i class="bi bi-arrow-right module-arrow"></i>
+
+                </a>
+
+
+                <!-- REPORTES -->
+
+                @if (User.IsInRole("ADMINISTRADOR"))
+                {
+
+                    <a asp-controller="Reportes"
+                       asp-action="Index"
+                       class="module-card text-decoration-none">
+
+                        <div class="module-icon">
+
+                            <i class="bi bi-graph-up-arrow"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h3>
+                                Reportes
+                            </h3>
+
+                            <p>
+                                Obtén información para apoyar
+                                tus decisiones.
+                            </p>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right module-arrow"></i>
+
+                    </a>
+
+                }
+
+            </div>
+
+        </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- INFO BANNER -->
+    <!-- ================================================= -->
+
+    @if (User.IsInRole("ADMINISTRADOR") ||
+         User.IsInRole("VENDEDOR"))
+    {
+
+        <section class="info-banner">
+
+            <div class="info-icon">
+
+                <i class="bi bi-stars"></i>
+
+            </div>
+
+            <div>
+
+                <span>
+                    ASISTENTE CHARLIE
+                </span>
+
+                <h3>
+                    ¿Necesitas ayuda con el sistema?
+                </h3>
+
+                <p>
+                    Charlie puede ayudarte a encontrar información
+                    y navegar por las funciones del sistema.
+                </p>
+
+            </div>
+
+            <button type="button">
+
+                Pregúntale a Charlie
+
+                <i class="bi bi-arrow-right"></i>
+
+            </button>
+
+        </section>
+
+    }
+
+
+    <!-- ================================================= -->
+    <!-- FOOTER -->
+    <!-- ================================================= -->
+
+    <footer class="home-footer">
+
+        <span>
+            © @DateTime.Now.Year Charlie Shop
+        </span>
+
+        <span>
+            Sistema Integral de Gestión Comercial
+        </span>
+
+    </footer>
+
+</div>

@@ -1,4 +1,23 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+
+@{
+    var nombreUsuario =
+        User.FindFirst("NombreCompleto")?.Value
+        ?? User.Identity?.Name
+        ?? "Usuario";
+
+    var rolUsuario =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? "GUEST";
+
+    bool esAdministrador =
+        User.IsInRole("ADMINISTRADOR");
+
+    bool esVendedor =
+        User.IsInRole("VENDEDOR");
+}
+
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -12,198 +31,818 @@
         Charlie Shop - @ViewData["Title"]
     </title>
 
+
+    <!-- Bootstrap -->
+
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+
+    <!-- Bootstrap Icons -->
 
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
+
+    <!-- Estilos principales -->
+
     <link rel="stylesheet"
-          href="~/css/site.css" />
+          href="~/css/homepage.css"
+          asp-append-version="true" />
+
+
+    <!-- =====================================================
+         ESTILOS DEL MENÚ DE USUARIO
+         ===================================================== -->
+
+    <style>
+
+            /* =========================================================
+                       USER MENU
+                       ========================================================= */
+
+            .user-menu {
+                position: relative;
+                display: flex;
+                align-items: center;
+            }
+
+
+                .user-menu .user-profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 6px 8px;
+                    border: none !important;
+                    outline: none !important;
+                    background: transparent !important;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    font-family: inherit;
+                    box-shadow: none !important;
+                    transition: background-color 0.2s ease;
+                }
+
+
+                    .user-menu .user-profile:hover {
+                        background-color: #f5f6f8 !important;
+                    }
+
+
+                .user-menu .user-menu-arrow {
+                    margin-left: 4px;
+                    font-size: 11px;
+                    color: #8b95a5;
+                    transition: transform 0.2s ease;
+                }
+
+
+                .user-menu.open .user-menu-arrow {
+                    transform: rotate(180deg);
+                }
+
+
+                /* =========================================================
+                       DROPDOWN
+                       ========================================================= */
+
+                .user-menu .user-dropdown {
+                    position: absolute;
+                    top: calc(100% + 10px);
+                    right: 0;
+                    width: 260px;
+                    padding: 8px;
+                    background: #ffffff;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+                    z-index: 99999;
+                    opacity: 0;
+                    visibility: hidden;
+                    transform: translateY(-8px);
+                    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+                }
+
+
+                .user-menu.open .user-dropdown {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateY(0);
+                }
+
+
+            /* =========================================================
+                       INFORMACIÓN DEL USUARIO
+                       ========================================================= */
+
+            .user-dropdown-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px;
+            }
+
+
+            .user-dropdown-avatar {
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: #f0f3f7;
+                color: #1d5fa7;
+                font-size: 17px;
+            }
+
+
+            .user-dropdown-header strong {
+                display: block;
+                margin: 0 0 3px 0;
+                color: #20242a;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+
+            .user-dropdown-header span {
+                display: block;
+                color: #8b95a5;
+                font-size: 11px;
+            }
+
+
+            /* =========================================================
+                       DIVISOR
+                       ========================================================= */
+
+            .user-dropdown-divider {
+                height: 1px;
+                margin: 5px 4px;
+                background: #edf0f3;
+            }
+
+
+            /* =========================================================
+                       OPCIONES
+                       ========================================================= */
+
+            .user-dropdown-item {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                padding: 11px 10px;
+                margin: 0;
+                border: none !important;
+                border-radius: 8px;
+                background: transparent !important;
+                color: #30343b;
+                text-decoration: none;
+                font-family: inherit;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 1.4;
+                text-align: left;
+                cursor: pointer;
+                box-shadow: none !important;
+                appearance: none;
+                -webkit-appearance: none;
+                transition: background-color 0.15s ease, color 0.15s ease;
+            }
+
+
+                .user-dropdown-item i {
+                    width: 18px;
+                    flex-shrink: 0;
+                    color: #6f7885;
+                    font-size: 15px;
+                    text-align: center;
+                }
+
+
+                .user-dropdown-item:hover {
+                    background: #f5f7f9 !important;
+                    color: #1d5fa7;
+                }
+
+
+                    .user-dropdown-item:hover i {
+                        color: #1d5fa7;
+                    }
+
+
+            /* =========================================================
+                       LOGOUT
+                       ========================================================= */
+
+            .user-dropdown .logout-item {
+                color: #c62828;
+            }
+
+
+                .user-dropdown .logout-item i {
+                    color: #c62828;
+                }
+
+
+                .user-dropdown .logout-item:hover {
+                    background: #fff5f5 !important;
+                    color: #c62828;
+                }
+
+
+                    .user-dropdown .logout-item:hover i {
+                        color: #c62828;
+                    }
+
+
+            .user-dropdown form {
+                margin: 0;
+                padding: 0;
+            }
+
+    </style>
+
+
+    @await RenderSectionAsync("Styles", required: false)
 
 </head>
 
+
 <body>
 
-    <!-- MENÚ LATERAL -->
-
-    <aside class="sidebar">
-
-        <div class="brand mb-4">
-
-            Charlie Shop
-
-            <small>
-                Sistema Integral de Gestión Comercial
-            </small>
-
-        </div>
-
-        <nav>
-
-            <a class="nav-link"
-               asp-controller="Dashboard"
-               asp-action="Index">
-
-                <i class="bi bi-grid-1x2-fill me-2"></i>
-
-                Dashboard
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Usuarios"
-               asp-action="Index">
-
-                <i class="bi bi-people me-2"></i>
-
-                Usuarios
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Productos"
-               asp-action="Index">
-
-                <i class="bi bi-box-seam me-2"></i>
-
-                Productos
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Inventario"
-               asp-action="Index">
-
-                <i class="bi bi-clipboard-data me-2"></i>
-
-                Inventario
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Ventas"
-               asp-action="Index">
-
-                <i class="bi bi-cart3 me-2"></i>
-
-                Ventas
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Clientes"
-               asp-action="Index">
-
-                <i class="bi bi-person-vcard me-2"></i>
-
-                Clientes
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="CuentasPorCobrar"
-               asp-action="Index">
-
-                <i class="bi bi-cash-stack me-2"></i>
-
-                Cuentas por cobrar
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Reportes"
-               asp-action="Index">
-
-                <i class="bi bi-bar-chart-line me-2"></i>
-
-                Reportes
-
-            </a>
-
-            <a class="nav-link"
-               asp-controller="Asistente"
-               asp-action="Index">
-
-                <i class="bi bi-robot me-2"></i>
-
-                Asistente virtual
-
-                <span class="badge rounded-pill bg-primary ms-auto">IA</span>
-
-            </a>
-
-        </nav>
-
-        <hr />
-
-        <a class="nav-link"
-           asp-controller="Home"
-           asp-action="Index">
-
-            <i class="bi bi-box-arrow-left me-2"></i>
-
-            Cerrar sesión
-
-        </a>
-
-    </aside>
+    <div class="app-shell">
 
 
-    <!-- CONTENIDO PRINCIPAL -->
+        <!-- =====================================================
+             SIDEBAR
+             ===================================================== -->
 
-    <main class="main">
+        <aside class="sidebar">
 
-        <!-- BARRA SUPERIOR -->
 
-        <header class="topbar">
+            <!-- =================================================
+                 BRANDING
+                 ================================================= -->
 
-            <div class="fw-semibold">
+            <div class="sidebar-brand">
 
-                @ViewData["Title"]
+                <div class="brand-logo">
 
-            </div>
+                    <img src="~/images/charlie_shop_logo2.jpg"
+                         alt="Charlie Shop" />
 
-            <div class="d-flex align-items-center gap-3">
+                </div>
 
-                <a asp-controller="Asistente" asp-action="Index" class="topbar-action" title="Abrir asistente virtual">
-                    <i class="bi bi-robot"></i>
-                </a>
 
-                <a asp-controller="Usuarios" asp-action="CambiarContrasena" class="topbar-user">
-                    <span class="text-secondary small">
-                        Administrador
+                <div class="brand-text">
+
+                    <strong>
+                        Charlie Shop
+                    </strong>
+
+                    <span>
+                        Sistema Integral de Gestión Comercial
                     </span>
-                    <i class="bi bi-person-circle fs-4"></i>
-                </a>
+
+                </div>
 
             </div>
 
-        </header>
+
+            <!-- =================================================
+                 MENÚ PRINCIPAL
+                 ================================================= -->
+
+            <div class="sidebar-title">
+
+                MENÚ PRINCIPAL
+
+            </div>
 
 
-        <!-- CONTENIDO DE CADA VISTA -->
-
-        <section class="content">
-
-            @RenderBody()
-
-        </section>
-
-    </main>
+            <nav class="sidebar-menu">
 
 
-    @if (!Equals(ViewData["HideChatbotFab"], true))
-    {
-        <a asp-controller="Asistente" asp-action="Index" class="chatbot-fab" title="Hablar con Charlie">
-            <i class="bi bi-chat-dots-fill"></i>
-            <span>Pregúntale a Charlie</span>
-        </a>
-    }
+                <!-- =================================================
+                     INICIO
+                     ================================================= -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+                <a asp-controller="Home"
+                   asp-action="HomePage"
+                   class="menu-item">
+
+                    <i class="bi bi-house"></i>
+
+                    <span>
+                        Inicio
+                    </span>
+
+                </a>
+
+
+                <!-- =================================================
+                     ADMINISTRADOR
+                     ================================================= -->
+                @if (esAdministrador)
+                {
+
+                    <!-- DASHBOARD -->
+
+                    <a asp-controller="Dashboard"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-grid-1x2"></i>
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    </a>
+
+
+                    <!-- USUARIOS -->
+
+                    <a asp-controller="Usuarios"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-people"></i>
+
+                        <span>
+                            Usuarios
+                        </span>
+
+                    </a>
+
+
+                    <!-- PRODUCTOS -->
+
+                    <a asp-controller="Productos"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-box-seam"></i>
+
+                        <span>
+                            Productos
+                        </span>
+
+                    </a>
+
+
+                    <!-- INVENTARIO -->
+
+                    <a asp-controller="Inventario"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-boxes"></i>
+
+                        <span>
+                            Inventario
+                        </span>
+
+                    </a>
+
+                }
+
+
+                <!-- =================================================
+                     ADMINISTRADOR / VENDEDOR
+                     ================================================= -->
+                @if (esAdministrador || esVendedor)
+                {
+
+                    <!-- VENTAS -->
+
+                    <a asp-controller="Ventas"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-cart3"></i>
+
+                        <span>
+                            Ventas
+                        </span>
+
+                    </a>
+
+
+                    <!-- CLIENTES -->
+
+                    <a asp-controller="Clientes"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-person-vcard"></i>
+
+                        <span>
+                            Clientes
+                        </span>
+
+                    </a>
+
+
+                    <!-- CUENTAS POR COBRAR -->
+
+                    <a asp-controller="CuentasPorCobrar"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-wallet2"></i>
+
+                        <span>
+                            Cuentas por cobrar
+                        </span>
+
+                    </a>
+
+                }
+
+
+                <!-- =================================================
+                     SOLO ADMINISTRADOR
+                     ================================================= -->
+                @if (esAdministrador)
+                {
+
+                    <!-- REPORTES -->
+
+                    <a asp-controller="Reportes"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-bar-chart"></i>
+
+                        <span>
+                            Reportes
+                        </span>
+
+                    </a>
+
+
+                    <!-- ASISTENTE -->
+
+                    <a asp-controller="Asistente"
+                       asp-action="Index"
+                       class="menu-item">
+
+                        <i class="bi bi-stars"></i>
+
+                        <span>
+                            Asistente virtual
+                        </span>
+
+
+                        <span class="ai-badge">
+                            IA
+                        </span>
+
+                    </a>
+
+                }
+
+            </nav>
+
+
+            <!-- =================================================
+                 CERRAR SESIÓN
+                 ================================================= -->
+
+            <div class="sidebar-bottom">
+
+                <div class="sidebar-divider"></div>
+
+
+                <form asp-controller="Account"
+                      asp-action="Logout"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+
+                    <button type="submit"
+                            class="menu-item logout"
+                            style="width: 100%; border: none; background: transparent; text-align: left; cursor: pointer;">
+
+                        <i class="bi bi-box-arrow-left"></i>
+
+                        <span>
+                            Cerrar sesión
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =====================================================
+             CONTENIDO PRINCIPAL
+             ===================================================== -->
+
+        <main class="main-content">
+
+
+            <!-- =================================================
+                 TOPBAR
+                 ================================================= -->
+
+            <header class="topbar">
+
+
+                <!-- =================================================
+                     BREADCRUMB
+                     ================================================= -->
+
+                <div class="breadcrumb">
+
+                    <a asp-controller="Home"
+                       asp-action="HomePage">
+
+                        <span>
+                            Charlie Shop
+                        </span>
+
+                    </a>
+
+
+                    <i class="bi bi-chevron-right"></i>
+
+
+                    <strong>
+                        @ViewData["Title"]
+                    </strong>
+
+                </div>
+
+
+                <!-- =================================================
+                     PARTE DERECHA DEL TOPBAR
+                     ================================================= -->
+
+                <div class="topbar-right">
+
+
+                    <!-- NOTIFICACIONES -->
+
+                    <button class="notification-button"
+                            type="button">
+
+                        <i class="bi bi-bell"></i>
+
+                        <span></span>
+
+                    </button>
+
+
+                    <!-- DIVISOR -->
+
+                    <div class="topbar-line"></div>
+
+
+                    <!-- =================================================
+                         MENÚ DEL USUARIO
+                         ================================================= -->
+
+                    <div class="user-menu">
+
+
+                        <!-- BOTÓN DEL USUARIO -->
+
+                        <button type="button"
+                                class="user-profile"
+                                id="userMenuButton"
+                                aria-expanded="false">
+
+
+                            <!-- AVATAR -->
+
+                            <div class="user-avatar">
+
+                                <i class="bi bi-person-fill"></i>
+
+                            </div>
+
+
+                            <!-- DATOS -->
+
+                            <div class="user-details">
+
+                                <strong>
+                                    @nombreUsuario
+                                </strong>
+
+                                <span>
+                                    @rolUsuario
+                                </span>
+
+                            </div>
+
+
+                            <!-- FLECHA -->
+
+                            <i class="bi bi-chevron-down user-menu-arrow"></i>
+
+                        </button>
+
+
+                        <!-- =================================================
+                             DROPDOWN
+                             ================================================= -->
+
+                        <div class="user-dropdown"
+                             id="userDropdown">
+
+
+                            <!-- INFORMACIÓN -->
+
+                            <div class="user-dropdown-header">
+
+
+                                <div class="user-dropdown-avatar">
+
+                                    <i class="bi bi-person-fill"></i>
+
+                                </div>
+
+
+                                <div>
+
+                                    <strong>
+                                        @nombreUsuario
+                                    </strong>
+
+                                    <span>
+                                        @rolUsuario
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- DIVISOR -->
+
+                            <div class="user-dropdown-divider"></div>
+
+
+                            <!-- =================================================
+                                 PERFIL
+                                 ================================================= -->
+
+                            <a asp-controller="Usuarios"
+                               asp-action="Perfil"
+                               class="user-dropdown-item">
+
+                                <i class="bi bi-person"></i>
+
+                                <span>
+                                    Mi perfil
+                                </span>
+
+                            </a>
+
+
+                            <!-- DIVISOR -->
+
+                            <div class="user-dropdown-divider"></div>
+
+
+                            <!-- =================================================
+                                 CERRAR SESIÓN
+                                 ================================================= -->
+
+                            <form asp-controller="Account"
+                                  asp-action="Logout"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+
+                                <button type="submit"
+                                        class="user-dropdown-item logout-item">
+
+                                    <i class="bi bi-box-arrow-right"></i>
+
+                                    <span>
+                                        Cerrar sesión
+                                    </span>
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- =================================================
+                 CONTENIDO DE LA VISTA
+                 ================================================= -->
+
+            <div class="home-content">
+
+                @RenderBody()
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================================
+         JAVASCRIPT DEL MENÚ DE USUARIO
+         ========================================================= -->
+
+    <script>
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                function () {
+
+                    const userMenu =
+                        document.querySelector(".user-menu");
+
+                    const userMenuButton =
+                        document.getElementById("userMenuButton");
+
+
+                    if (!userMenu || !userMenuButton) {
+
+                        return;
+
+                    }
+
+
+                    userMenuButton.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.stopPropagation();
+
+
+                            const isOpen =
+                                userMenu.classList.toggle("open");
+
+
+                            userMenuButton.setAttribute(
+                                "aria-expanded",
+                                isOpen.toString()
+                            );
+
+                        }
+                    );
+
+
+                    document.addEventListener(
+                        "click",
+                        function (event) {
+
+                            if (!userMenu.contains(event.target)) {
+
+                                userMenu.classList.remove("open");
+
+
+                                userMenuButton.setAttribute(
+                                    "aria-expanded",
+                                    "false"
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
     </script>
 
+
+    <!-- =========================================================
+         BOOTSTRAP
+         ========================================================= -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- =========================================================
+         SCRIPTS ESPECÍFICOS DE CADA VISTA
+         ========================================================= -->
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>
