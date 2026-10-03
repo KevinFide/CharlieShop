@@ -185,9 +185,6 @@ namespace CharlieShop.Controllers
 
             var resultado = command.ExecuteScalar()?.ToString();
 
-            // -----------------------------------------------------
-            // HU-14 - Producto inexistente
-            // -----------------------------------------------------
             if (string.IsNullOrWhiteSpace(resultado) ||
                 resultado == "{}" ||
                 resultado == "null")
@@ -214,6 +211,96 @@ namespace CharlieShop.Controllers
             }
 
             return View(producto);
+        }
+
+        // =========================================================
+        // HU-15
+        // Activar / desactivar producto
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CambiarEstado(int id)
+        {
+            using var connection =
+                (NpgsqlConnection)_dbConnection.CreateConnection();
+
+            connection.Open();
+
+            // -----------------------------------------------------
+            // Consultar estado actual
+            // -----------------------------------------------------
+            using var consulta = new NpgsqlCommand(
+                @"SELECT estado
+                  FROM producto
+                  WHERE id_producto = @id;",
+                connection);
+
+            consulta.Parameters.AddWithValue("id", id);
+
+            var estadoActual = consulta.ExecuteScalar();
+
+            if (estadoActual == null)
+            {
+                TempData["Error"] =
+                    "El producto solicitado no fue encontrado.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            bool estado = Convert.ToBoolean(estadoActual);
+
+            // Invertimos el estado actual.
+            bool nuevoEstado = !estado;
+
+            // -----------------------------------------------------
+            // Cambiar estado mediante procedimiento almacenado
+            // -----------------------------------------------------
+            using var command = new NpgsqlCommand(
+                "CALL sp_cambiar_estado_producto(@p_id_producto, @p_estado, NULL);",
+                connection);
+
+            command.Parameters.AddWithValue(
+                "p_id_producto",
+                id);
+
+            command.Parameters.AddWithValue(
+                "p_estado",
+                nuevoEstado);
+
+            var resultado = command.ExecuteScalar()?.ToString();
+
+            switch (resultado)
+            {
+                case "ACTIVADO":
+
+                    TempData["Success"] =
+                        "El producto fue activado correctamente.";
+
+                    break;
+
+                case "DESACTIVADO":
+
+                    TempData["Success"] =
+                        "El producto fue desactivado correctamente.";
+
+                    break;
+
+                case "PRODUCTO_NO_ENCONTRADO":
+
+                    TempData["Error"] =
+                        "El producto solicitado no fue encontrado.";
+
+                    break;
+
+                default:
+
+                    TempData["Error"] =
+                        "No fue posible cambiar el estado del producto.";
+
+                    break;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }
