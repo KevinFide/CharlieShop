@@ -1,6 +1,93 @@
-﻿@{
+﻿@model List<CharlieShop.Models.Producto>
+
+@{
     ViewData["Title"] = "Productos";
+
+    var busqueda = ViewBag.Busqueda as string;
+    var categoria = ViewBag.Categoria as string;
 }
+
+<style>
+
+    /* =========================================================
+       ESTADO VISUAL DE LOS PRODUCTOS
+       ========================================================= */
+
+    .producto-activo {
+        border-left: 4px solid #198754;
+        background-color: #f4fbf7 !important;
+    }
+
+    .producto-activo:hover {
+        background-color: #eaf7ef !important;
+    }
+
+
+    .producto-inactivo {
+        border-left: 4px solid #adb5bd;
+        background-color: #e9ecef !important;
+        color: #6c757d;
+    }
+
+    .producto-inactivo:hover {
+        background-color: #dee2e6 !important;
+    }
+
+    .producto-inactivo td {
+        opacity: 0.65;
+    }
+
+    /*
+       Las acciones permanecen completamente visibles
+       aunque el producto esté inactivo.
+    */
+    .producto-inactivo td:last-child {
+        opacity: 1;
+    }
+
+    .producto-inactivo .producto-nombre {
+        color: #6c757d !important;
+    }
+
+
+    /* =========================================================
+       BADGES DE ESTADO
+       ========================================================= */
+
+    .estado-activo {
+        background-color: #198754;
+        color: white;
+        font-weight: 600;
+        padding: 0.45rem 0.65rem;
+    }
+
+    .estado-inactivo {
+        background-color: #6c757d;
+        color: white;
+        font-weight: 600;
+        padding: 0.45rem 0.65rem;
+    }
+
+
+    /* =========================================================
+       BOTÓN SWITCH DE ESTADO
+       ========================================================= */
+
+    .estado-switch {
+        width: 38px;
+        height: 32px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0;
+
+        font-size: 1.15rem;
+    }
+
+</style>
+
 
 <div class="d-flex justify-content-between align-items-start mb-3">
 
@@ -16,50 +103,164 @@
 
     </div>
 
+
     <div class="d-flex gap-2">
-        <a asp-action="Detalle" class="btn btn-outline-primary"><i class="bi bi-eye me-1"></i> Ver detalle</a>
+
         <button class="btn btn-primary">
+
             <i class="bi bi-plus-lg me-1"></i>
             Nuevo producto
+
         </button>
+
     </div>
 
 </div>
 
 
-<div class="card p-4">
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger d-flex align-items-center mb-3"
+         role="alert">
 
-    <div class="row g-3 mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>
 
-        <div class="col-md-5">
-
-            <input type="text"
-                   class="form-control"
-                   placeholder="Buscar producto..." />
-
-        </div>
-
-        <div class="col-md-3">
-
-            <select class="form-select">
-
-                <option selected>
-                    Todas las categorías
-                </option>
-
-                <option>
-                    Ropa
-                </option>
-
-                <option>
-                    Accesorios
-                </option>
-
-            </select>
-
+        <div>
+            @TempData["Error"]
         </div>
 
     </div>
+}
+
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success d-flex align-items-center mb-3"
+         role="alert">
+
+        <i class="bi bi-check-circle me-2"></i>
+
+        <div>
+            @TempData["Success"]
+        </div>
+
+    </div>
+}
+
+
+<div class="card p-4">
+
+    <form asp-action="Index"
+          method="get">
+
+        <div class="row g-3 mb-3">
+
+            <div class="col-md-5">
+
+                <div class="input-group">
+
+                    <input type="text"
+                           name="busqueda"
+                           value="@busqueda"
+                           class="form-control"
+                           placeholder="Buscar producto..." />
+
+                    <button type="submit"
+                            class="btn btn-outline-primary">
+
+                        <i class="bi bi-search"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <select name="categoria"
+                        class="form-select"
+                        onchange="this.form.submit()">
+
+                    <option value=""
+                            selected="@(string.IsNullOrEmpty(categoria))">
+
+                        Todas las categorías
+
+                    </option>
+
+
+                    <option value="Camisas"
+                            selected="@(categoria == "Camisas")">
+
+                        Camisas
+
+                    </option>
+
+
+                    <option value="Camisetas"
+                            selected="@(categoria == "Camisetas")">
+
+                        Camisetas
+
+                    </option>
+
+
+                    <option value="Pantalones"
+                            selected="@(categoria == "Pantalones")">
+
+                        Pantalones
+
+                    </option>
+
+
+                    <option value="Jackets"
+                            selected="@(categoria == "Jackets")">
+
+                        Jackets
+
+                    </option>
+
+
+                    <option value="Sudaderas"
+                            selected="@(categoria == "Sudaderas")">
+
+                        Sudaderas
+
+                    </option>
+
+
+                    <option value="Vestidos"
+                            selected="@(categoria == "Vestidos")">
+
+                        Vestidos
+
+                    </option>
+
+
+                    <option value="Accesorios"
+                            selected="@(categoria == "Accesorios")">
+
+                        Accesorios
+
+                    </option>
+
+
+                    <option value="Perfumes"
+                            selected="@(categoria == "Perfumes")">
+
+                        Perfumes
+
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </form>
 
 
     <div class="table-responsive">
@@ -75,147 +276,214 @@
                     <th>Categoría</th>
                     <th>Precio</th>
                     <th>Stock</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
 
                 </tr>
 
             </thead>
 
+
             <tbody>
 
-                <tr>
-
-                    <td>
-                        P-001
-                    </td>
-
-                    <td>
-                        <a asp-action="Detalle" class="fw-semibold text-decoration-none">Camisa básica</a>
-                    </td>
-
-                    <td>
-                        Ropa
-                    </td>
-
-                    <td>
-                        ₡12.000
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-success">
-                            24
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-pencil"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-danger">
-
-                            <i class="bi bi-trash"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var producto in Model)
+                    {
+                        var claseFila = producto.Estado
+                            ? "producto-activo"
+                            : "producto-inactivo";
 
 
-                <tr>
+                        <tr class="@claseFila">
 
-                    <td>
-                        P-002
-                    </td>
+                            <!-- Código -->
 
-                    <td>
-                        Pantalón jeans
-                    </td>
+                            <td>
 
-                    <td>
-                        Ropa
-                    </td>
+                                @producto.Codigo
 
-                    <td>
-                        ₡25.000
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-warning text-dark">
-                            8
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-pencil"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-danger">
-
-                            <i class="bi bi-trash"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
+                            </td>
 
 
-                <tr>
+                            <!-- Producto -->
 
-                    <td>
-                        P-003
-                    </td>
+                            <td>
 
-                    <td>
-                        Gorra
-                    </td>
+                                <a asp-action="Detalle"
+                                   asp-route-id="@producto.IdProducto"
+                                   class="producto-nombre fw-semibold text-decoration-none">
 
-                    <td>
-                        Accesorios
-                    </td>
+                                    @producto.Nombre
 
-                    <td>
-                        ₡8.500
-                    </td>
+                                </a>
 
-                    <td>
+                            </td>
 
-                        <span class="badge bg-danger">
-                            4
-                        </span>
 
-                    </td>
+                            <!-- Categoría -->
 
-                    <td>
+                            <td>
 
-                        <button class="btn btn-sm btn-outline-primary">
+                                @producto.Categoria
 
-                            <i class="bi bi-pencil"></i>
+                            </td>
 
-                        </button>
 
-                        <button class="btn btn-sm btn-outline-danger">
+                            <!-- Precio -->
 
-                            <i class="bi bi-trash"></i>
+                            <td>
 
-                        </button>
+                                ₡@producto.PrecioVenta.ToString("N0")
 
-                    </td>
+                            </td>
 
-                </tr>
+
+                            <!-- Stock -->
+
+                            <td>
+
+                                @{
+                                    var stockClase =
+                                        producto.StockActual <= producto.StockMinimo
+                                            ? "bg-danger"
+                                            : "bg-success";
+                                }
+
+                                <span class="badge @stockClase">
+
+                                    @producto.StockActual.ToString("N0")
+
+                                </span>
+
+                            </td>
+
+
+                            <!-- Estado -->
+
+                            <td>
+
+                                @if (producto.Estado)
+                                {
+                                    <span class="badge estado-activo">
+
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Activo
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge estado-inactivo">
+
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Inactivo
+
+                                    </span>
+                                }
+
+                            </td>
+
+
+                            <!-- Acciones -->
+
+                            <td>
+
+                                <div class="d-flex gap-1 align-items-center">
+
+                                    <!-- Ver detalle -->
+
+                                    <a asp-action="Detalle"
+                                       asp-route-id="@producto.IdProducto"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="Ver detalle">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </a>
+
+
+                                    <!-- Editar precio -->
+
+                                    <a asp-action="EditarPrecio"
+                                       asp-route-id="@producto.IdProducto"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Editar precio">
+
+                                        <i class="bi bi-pencil"></i>
+
+                                    </a>
+
+
+                                    <!-- Activar / Desactivar -->
+
+                                    <form asp-action="CambiarEstado"
+                                          method="post"
+                                          class="d-inline">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@producto.IdProducto" />
+
+
+                                        @if (producto.Estado)
+                                        {
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-success estado-switch"
+                                                    title="Desactivar producto"
+                                                    aria-label="Desactivar producto">
+
+                                                <i class="bi bi-toggle-on"></i>
+
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-secondary estado-switch"
+                                                    title="Activar producto"
+                                                    aria-label="Activar producto">
+
+                                                <i class="bi bi-toggle-off"></i>
+
+                                            </button>
+                                        }
+
+                                    </form>
+
+
+                                    <!-- Eliminar -->
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar producto">
+
+                                        <i class="bi bi-trash"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+
+                        <td colspan="7"
+                            class="text-center text-secondary py-4">
+
+                            No se encontraron productos.
+
+                        </td>
+
+                    </tr>
+                }
 
             </tbody>
 
