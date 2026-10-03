@@ -15,6 +15,10 @@ namespace CharlieShop.Controllers
             _dbConnection = dbConnection;
         }
 
+        // =========================================================
+        // HU-11 / HU-13
+        // Listado, búsqueda y filtro por categoría
+        // =========================================================
         public IActionResult Index(
             string? busqueda,
             string? categoria)
@@ -56,9 +60,160 @@ namespace CharlieShop.Controllers
             return View(productos);
         }
 
-        public IActionResult Detalle()
+        // =========================================================
+        // HU-12
+        // Mostrar formulario para actualizar precio
+        // =========================================================
+        [HttpGet]
+        public IActionResult EditarPrecio(int id)
         {
-            return View();
+            using var connection =
+                (NpgsqlConnection)_dbConnection.CreateConnection();
+
+            connection.Open();
+
+            using var command = new NpgsqlCommand(
+                @"SELECT
+                    id_producto,
+                    codigo,
+                    nombre,
+                    precio_venta
+                  FROM producto
+                  WHERE id_producto = @id;",
+                connection);
+
+            command.Parameters.AddWithValue("id", id);
+
+            using var reader = command.ExecuteReader();
+
+            if (!reader.Read())
+            {
+                return NotFound();
+            }
+
+            var modelo = new EditarPrecioProductoViewModel
+            {
+                IdProducto = reader.GetInt32(0),
+                Codigo = reader.GetString(1),
+                Nombre = reader.GetString(2),
+                PrecioActual = reader.GetDecimal(3),
+                NuevoPrecio = reader.GetDecimal(3)
+            };
+
+            return View(modelo);
+        }
+
+        // =========================================================
+        // HU-12
+        // Guardar nuevo precio
+        // =========================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarPrecio(
+            EditarPrecioProductoViewModel modelo)
+        {
+            if (modelo.NuevoPrecio <= 0)
+            {
+                ModelState.AddModelError(
+                    nameof(modelo.NuevoPrecio),
+                    "El precio debe ser mayor que cero.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(modelo);
+            }
+
+            using var connection =
+                (NpgsqlConnection)_dbConnection.CreateConnection();
+
+            connection.Open();
+
+            using var command = new NpgsqlCommand(
+                "CALL sp_actualizar_precio_producto(@p_id_producto, @p_precio_venta, NULL);",
+                connection);
+
+            command.Parameters.AddWithValue(
+                "p_id_producto",
+                modelo.IdProducto);
+
+            command.Parameters.AddWithValue(
+                "p_precio_venta",
+                modelo.NuevoPrecio);
+
+            var resultado = command.ExecuteScalar()?.ToString();
+
+            switch (resultado)
+            {
+                case "ACTUALIZADO":
+                    TempData["Success"] =
+                        "El precio del producto se actualizó correctamente.";
+
+                    return RedirectToAction(nameof(Index));
+
+                case "PRECIO_INVALIDO":
+                    ModelState.AddModelError(
+                        nameof(modelo.NuevoPrecio),
+                        "Ingrese un precio válido mayor que cero.");
+                    break;
+
+                case "PRODUCTO_NO_ENCONTRADO":
+                    return NotFound();
+            }
+
+            return View(modelo);
+        }
+
+        // =========================================================
+        // HU-14
+        // Consultar detalle de un producto
+        // =========================================================
+        public IActionResult Detalle(int id)
+        {
+            using var connection =
+                (NpgsqlConnection)_dbConnection.CreateConnection();
+
+            connection.Open();
+
+            using var command = new NpgsqlCommand(
+                "CALL sp_obtener_producto(@p_id_producto, NULL);",
+                connection);
+
+            command.Parameters.AddWithValue(
+                "p_id_producto",
+                id);
+
+            var resultado = command.ExecuteScalar()?.ToString();
+
+            // -----------------------------------------------------
+            // HU-14 - Producto inexistente
+            // -----------------------------------------------------
+            if (string.IsNullOrWhiteSpace(resultado) ||
+                resultado == "{}" ||
+                resultado == "null")
+            {
+                TempData["Error"] =
+                    "El producto solicitado no fue encontrado.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            var producto = JsonSerializer.Deserialize<Producto>(
+                resultado,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (producto == null)
+            {
+                TempData["Error"] =
+                    "El producto solicitado no fue encontrado.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(producto);
         }
     }
 }
