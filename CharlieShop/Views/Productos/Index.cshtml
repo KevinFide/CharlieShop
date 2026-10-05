@@ -7,123 +7,562 @@
     var categoria = ViewBag.Categoria as string;
 }
 
-<style>
+@section Styles
+{
+    <style>
+        /* =========================================================
+                   HEADER
+                ========================================================= */
 
-    /* =========================================================
-       ESTADO VISUAL DE LOS PRODUCTOS
-       ========================================================= */
+        .products-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
 
-    .producto-activo {
-        border-left: 4px solid #198754;
-        background-color: #f4fbf7 !important;
-    }
+        .products-page-heading {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
-    .producto-activo:hover {
-        background-color: #eaf7ef !important;
-    }
+        .products-page-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #111827;
+            color: #fff;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.10);
+        }
 
+        .products-page-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 650;
+            color: #111827;
+            letter-spacing: -.3px;
+        }
 
-    .producto-inactivo {
-        border-left: 4px solid #adb5bd;
-        background-color: #e9ecef !important;
-        color: #6c757d;
-    }
+        .products-page-subtitle {
+            margin-top: 4px;
+            font-size: 13px;
+            color: #6b7280;
+        }
 
-    .producto-inactivo:hover {
-        background-color: #dee2e6 !important;
-    }
+        .products-primary-button {
+            height: 42px;
+            padding: 0 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 9px;
+            background: #111827;
+            border: 1px solid #111827;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all .2s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,.08);
+        }
 
-    .producto-inactivo td {
-        opacity: 0.65;
-    }
-
-    /*
-       Las acciones permanecen completamente visibles
-       aunque el producto esté inactivo.
-    */
-    .producto-inactivo td:last-child {
-        opacity: 1;
-    }
-
-    .producto-inactivo .producto-nombre {
-        color: #6c757d !important;
-    }
-
-
-    /* =========================================================
-       BADGES DE ESTADO
-       ========================================================= */
-
-    .estado-activo {
-        background-color: #198754;
-        color: white;
-        font-weight: 600;
-        padding: 0.45rem 0.65rem;
-    }
-
-    .estado-inactivo {
-        background-color: #6c757d;
-        color: white;
-        font-weight: 600;
-        padding: 0.45rem 0.65rem;
-    }
-
-
-    /* =========================================================
-       BOTÓN SWITCH DE ESTADO
-       ========================================================= */
-
-    .estado-switch {
-        width: 38px;
-        height: 32px;
-
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-
-        padding: 0;
-
-        font-size: 1.15rem;
-    }
-
-</style>
+            .products-primary-button:hover {
+                background: #000;
+                border-color: #000;
+                color: #fff;
+                transform: translateY(-1px);
+                box-shadow: 0 5px 14px rgba(0,0,0,.14);
+            }
 
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+        /* =========================================================
+                   ALERTAS
+                ========================================================= */
 
-    <div>
+        .products-alert {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
 
-        <div class="page-title">
-            Productos
+        .products-alert-icon {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .products-alert-success {
+            border: 1px solid #b9e7c8;
+            background: #f1fbf4;
+            color: #176b3a;
+        }
+
+            .products-alert-success .products-alert-icon {
+                background: #20a464;
+                color: #fff;
+            }
+
+        .products-alert-error {
+            border: 1px solid #f0c2c2;
+            background: #fff5f5;
+            color: #a52828;
+        }
+
+            .products-alert-error .products-alert-icon {
+                background: #dc3545;
+                color: #fff;
+            }
+
+
+        /* =========================================================
+                   RESUMEN
+                ========================================================= */
+
+        .product-summary-card {
+            position: relative;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: #fff;
+            padding: 18px !important;
+            transition: all .2s ease;
+            overflow: hidden;
+        }
+
+            .product-summary-card:hover {
+                border-color: #d9dde2;
+                transform: translateY(-2px);
+                box-shadow: 0 7px 20px rgba(0,0,0,.05);
+            }
+
+        .product-summary-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
+            font-size: 18px;
+        }
+
+        .product-summary-label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .product-summary-value {
+            margin-top: 2px;
+            color: #111827;
+            font-size: 23px;
+            font-weight: 650;
+        }
+
+
+        /* =========================================================
+                   FILTROS
+                ========================================================= */
+
+        .products-filter-card {
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.025);
+        }
+
+        .products-filter-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #374151;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .products-filter-card .form-control,
+        .products-filter-card .form-select {
+            height: 42px;
+            border-radius: 8px;
+            font-size: 13px;
+            border-color: #dee2e6;
+            box-shadow: none;
+        }
+
+            .products-filter-card .form-control:focus,
+            .products-filter-card .form-select:focus {
+                border-color: #adb5bd;
+                box-shadow: 0 0 0 .15rem rgba(17,24,39,.07);
+            }
+
+        .products-filter-card .input-group .btn {
+            border-color: #dee2e6;
+            background: #fff;
+            color: #495057;
+        }
+
+            .products-filter-card .input-group .btn:hover {
+                background: #f8f9fa;
+                color: #111827;
+            }
+
+
+        /* =========================================================
+                   LISTA
+                ========================================================= */
+
+        .products-list-card {
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,.025);
+        }
+
+        .products-list-header {
+            padding: 20px 22px;
+            border-bottom: 1px solid #edf0f2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .products-list-title {
+            margin: 0 0 3px;
+            color: #111827;
+            font-size: 16px;
+            font-weight: 650;
+        }
+
+        .products-list-subtitle {
+            color: #8a8f98;
+            font-size: 12px;
+        }
+
+
+        /* =========================================================
+                   TABLA
+                ========================================================= */
+
+        .products-table {
+            margin-bottom: 0;
+        }
+
+            .products-table thead th {
+                padding: 13px 18px;
+                background: #fafbfc;
+                border-bottom: 1px solid #e9ecef;
+                color: #6b7280;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                white-space: nowrap;
+            }
+
+            .products-table tbody td {
+                padding: 15px 18px;
+                border-bottom: 1px solid #f0f2f4;
+                color: #374151;
+                font-size: 13px;
+                vertical-align: middle;
+            }
+
+            .products-table tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+            .products-table tbody tr {
+                transition: background .15s ease;
+            }
+
+                .products-table tbody tr:hover {
+                    background: #fafbfc;
+                }
+
+
+        /* =========================================================
+                   PRODUCTO
+                ========================================================= */
+
+        .producto-info {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            min-width: 210px;
+        }
+
+        .producto-icon {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: #f3f4f6;
+            color: #374151;
+            font-size: 16px;
+        }
+
+        .producto-nombre {
+            color: #212529;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+            .producto-nombre:hover {
+                color: #111827;
+                text-decoration: underline !important;
+            }
+
+        .producto-category {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .producto-code {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 9px;
+            border-radius: 6px;
+            background: #f5f6f8;
+            color: #495057;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .producto-price {
+            color: #111827;
+            font-weight: 650;
+            white-space: nowrap;
+        }
+
+
+        /* =========================================================
+                   STOCK
+                ========================================================= */
+
+        .stock-badge {
+            min-width: 42px;
+            padding: 5px 9px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 650;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .stock-normal {
+            background: #ecfdf3;
+            color: #176b3a;
+        }
+
+        .stock-bajo {
+            background: #fff1f2;
+            color: #b42318;
+        }
+
+        .stock-zero {
+            background: #f1f3f5;
+            color: #495057;
+        }
+
+
+        /* =========================================================
+                   ESTADO
+                ========================================================= */
+
+        .estado-activo,
+        .estado-inactivo {
+            padding: 5px 9px;
+            border-radius: 7px;
+            font-size: 11px;
+            font-weight: 650;
+            white-space: nowrap;
+        }
+
+        .estado-activo {
+            background: #ecfdf3;
+            color: #176b3a;
+        }
+
+        .estado-inactivo {
+            background: #f1f3f5;
+            color: #6c757d;
+        }
+
+
+        /* =========================================================
+                   FILAS INACTIVAS
+                ========================================================= */
+
+        .producto-inactivo {
+            background: #fafafa;
+        }
+
+            .producto-inactivo td {
+                color: #8a8f98;
+            }
+
+            .producto-inactivo .producto-nombre {
+                color: #6c757d !important;
+            }
+
+            .producto-inactivo .producto-icon {
+                background: #f1f1f1;
+                color: #9ca3af;
+            }
+
+
+        /* =========================================================
+                   ACCIONES
+                ========================================================= */
+
+        .product-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .product-action-button,
+        .estado-switch {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: #fff;
+            transition: all .18s ease;
+        }
+
+            .product-action-button:hover,
+            .estado-switch:hover {
+                transform: translateY(-1px);
+            }
+
+
+        /* =========================================================
+                   EMPTY STATE
+                ========================================================= */
+
+        .product-empty {
+            padding: 65px 20px;
+            text-align: center;
+            color: #6c757d;
+        }
+
+            .product-empty i {
+                display: block;
+                margin-bottom: 14px;
+                color: #c7cdd3;
+                font-size: 42px;
+            }
+
+        .product-empty-title {
+            color: #495057;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .product-empty-text {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #8a8f98;
+        }
+
+
+        /* =========================================================
+                   RESPONSIVE
+                ========================================================= */
+
+        @@media (max-width: 768px) {
+
+            .products-page-header {
+                align-items: flex-start;
+                gap: 16px;
+                flex-direction: column;
+            }
+
+            .products-primary-button {
+                width: 100%;
+            }
+
+            .products-list-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .products-table thead th,
+            .products-table tbody td {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+        }
+    </style>
+}
+
+
+<!-- =========================================================
+     ENCABEZADO
+========================================================= -->
+
+<div class="products-page-header">
+
+    <div class="products-page-heading">
+
+        <div class="products-page-icon">
+            <i class="bi bi-box-seam"></i>
         </div>
 
-        <div class="page-subtitle">
-            Gestión de productos, precios y existencias.
+        <div>
+            <h1 class="products-page-title">Productos</h1>
+
+            <div class="products-page-subtitle">
+                Gestión de productos, precios y existencias.
+            </div>
         </div>
 
     </div>
 
-
-    <div class="d-flex gap-2">
-
-        <button class="btn btn-primary">
-
-            <i class="bi bi-plus-lg me-1"></i>
-            Nuevo producto
-
-        </button>
-
-    </div>
+    <a asp-action="Crear" class="products-primary-button">
+        <i class="bi bi-plus-lg"></i>
+        Nuevo producto
+    </a>
 
 </div>
 
 
+<!-- =========================================================
+     ALERTAS
+========================================================= -->
 @if (TempData["Error"] != null)
 {
-    <div class="alert alert-danger d-flex align-items-center mb-3"
-         role="alert">
+    <div class="products-alert products-alert-error" role="alert">
 
-        <i class="bi bi-exclamation-triangle me-2"></i>
+        <div class="products-alert-icon">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
 
         <div>
             @TempData["Error"]
@@ -135,10 +574,11 @@
 
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success d-flex align-items-center mb-3"
-         role="alert">
+    <div class="products-alert products-alert-success" role="alert">
 
-        <i class="bi bi-check-circle me-2"></i>
+        <div class="products-alert-icon">
+            <i class="bi bi-check"></i>
+        </div>
 
         <div>
             @TempData["Success"]
@@ -148,14 +588,125 @@
 }
 
 
-<div class="card p-4">
+<!-- =========================================================
+     RESUMEN
+========================================================= -->
 
-    <form asp-action="Index"
-          method="get">
+<div class="row g-3 mb-4">
 
-        <div class="row g-3 mb-3">
+    <div class="col-md-4">
 
-            <div class="col-md-5">
+        <div class="product-summary-card h-100">
+
+            <div class="d-flex align-items-center">
+
+                <div class="product-summary-icon"
+                     style="background:#f0f4f8;color:#374151;">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+                <div class="ms-3">
+
+                    <div class="product-summary-label">
+                        Total de productos
+                    </div>
+
+                    <div class="product-summary-value">
+                        @(Model?.Count ?? 0)
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        <div class="product-summary-card h-100">
+
+            <div class="d-flex align-items-center">
+
+                <div class="product-summary-icon"
+                     style="background:#ecfdf3;color:#198754;">
+
+                    <i class="bi bi-check-circle"></i>
+
+                </div>
+
+                <div class="ms-3">
+
+                    <div class="product-summary-label">
+                        Productos activos
+                    </div>
+
+                    <div class="product-summary-value">
+                        @(Model?.Count(x => x.Estado) ?? 0)
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        <div class="product-summary-card h-100">
+
+            <div class="d-flex align-items-center">
+
+                <div class="product-summary-icon"
+                     style="background:#fff5f5;color:#dc3545;">
+
+                    <i class="bi bi-exclamation-triangle"></i>
+
+                </div>
+
+                <div class="ms-3">
+
+                    <div class="product-summary-label">
+                        Stock bajo
+                    </div>
+
+                    <div class="product-summary-value">
+                        @(Model?.Count(x => x.StockActual <= x.StockMinimo) ?? 0)
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     FILTROS
+========================================================= -->
+
+<div class="products-filter-card p-4 mb-4">
+
+    <form asp-action="Index" method="get">
+
+        <div class="row g-3 align-items-end">
+
+            <div class="col-md-7">
+
+                <label class="products-filter-label">
+                    Buscar producto
+                </label>
 
                 <div class="input-group">
 
@@ -163,10 +714,10 @@
                            name="busqueda"
                            value="@busqueda"
                            class="form-control"
-                           placeholder="Buscar producto..." />
+                           placeholder="Buscar por nombre o código..." />
 
                     <button type="submit"
-                            class="btn btn-outline-primary">
+                            class="btn btn-outline-secondary">
 
                         <i class="bi bi-search"></i>
 
@@ -177,7 +728,11 @@
             </div>
 
 
-            <div class="col-md-3">
+            <div class="col-md-5">
+
+                <label class="products-filter-label">
+                    Categoría
+                </label>
 
                 <select name="categoria"
                         class="form-select"
@@ -185,73 +740,47 @@
 
                     <option value=""
                             selected="@(string.IsNullOrEmpty(categoria))">
-
                         Todas las categorías
-
                     </option>
-
 
                     <option value="Camisas"
                             selected="@(categoria == "Camisas")">
-
                         Camisas
-
                     </option>
-
 
                     <option value="Camisetas"
                             selected="@(categoria == "Camisetas")">
-
                         Camisetas
-
                     </option>
-
 
                     <option value="Pantalones"
                             selected="@(categoria == "Pantalones")">
-
                         Pantalones
-
                     </option>
-
 
                     <option value="Jackets"
                             selected="@(categoria == "Jackets")">
-
                         Jackets
-
                     </option>
-
 
                     <option value="Sudaderas"
                             selected="@(categoria == "Sudaderas")">
-
                         Sudaderas
-
                     </option>
-
 
                     <option value="Vestidos"
                             selected="@(categoria == "Vestidos")">
-
                         Vestidos
-
                     </option>
-
 
                     <option value="Accesorios"
                             selected="@(categoria == "Accesorios")">
-
                         Accesorios
-
                     </option>
-
 
                     <option value="Perfumes"
                             selected="@(categoria == "Perfumes")">
-
                         Perfumes
-
                     </option>
 
                 </select>
@@ -262,10 +791,39 @@
 
     </form>
 
+</div>
+
+
+<!-- =========================================================
+     LISTA DE PRODUCTOS
+========================================================= -->
+
+<div class="products-list-card">
+
+    <div class="products-list-header">
+
+        <div>
+
+            <h5 class="products-list-title">
+                Lista de productos
+            </h5>
+
+            <span class="products-list-subtitle">
+                Productos registrados en Charlie Shop
+            </span>
+
+        </div>
+
+        <span class="products-list-subtitle">
+            @(Model?.Count ?? 0) registrados
+        </span>
+
+    </div>
+
 
     <div class="table-responsive">
 
-        <table class="table table-hover align-middle">
+        <table class="table products-table align-middle">
 
             <thead>
 
@@ -277,7 +835,7 @@
                     <th>Precio</th>
                     <th>Stock</th>
                     <th>Estado</th>
-                    <th>Acciones</th>
+                    <th class="text-end">Acciones</th>
 
                 </tr>
 
@@ -294,15 +852,14 @@
                             ? "producto-activo"
                             : "producto-inactivo";
 
-
                         <tr class="@claseFila">
 
                             <!-- Código -->
 
                             <td>
-
-                                @producto.Codigo
-
+                                <span class="producto-code">
+                                    @producto.Codigo
+                                </span>
                             </td>
 
 
@@ -310,13 +867,25 @@
 
                             <td>
 
-                                <a asp-action="Detalle"
-                                   asp-route-id="@producto.IdProducto"
-                                   class="producto-nombre fw-semibold text-decoration-none">
+                                <div class="producto-info">
 
-                                    @producto.Nombre
+                                    <div class="producto-icon">
+                                        <i class="bi bi-box"></i>
+                                    </div>
 
-                                </a>
+                                    <div>
+
+                                        <a asp-action="Detalle"
+                                           asp-route-id="@producto.IdProducto"
+                                           class="producto-nombre">
+
+                                            @producto.Nombre
+
+                                        </a>
+
+                                    </div>
+
+                                </div>
 
                             </td>
 
@@ -324,18 +893,18 @@
                             <!-- Categoría -->
 
                             <td>
-
-                                @producto.Categoria
-
+                                <span class="producto-category">
+                                    @producto.Categoria
+                                </span>
                             </td>
 
 
                             <!-- Precio -->
 
                             <td>
-
-                                ₡@producto.PrecioVenta.ToString("N0")
-
+                                <span class="producto-price">
+                                    ₡@producto.PrecioVenta.ToString("N0")
+                                </span>
                             </td>
 
 
@@ -346,14 +915,12 @@
                                 @{
                                     var stockClase =
                                         producto.StockActual <= producto.StockMinimo
-                                            ? "bg-danger"
-                                            : "bg-success";
+                                            ? "stock-bajo"
+                                            : "stock-normal";
                                 }
 
-                                <span class="badge @stockClase">
-
+                                <span class="stock-badge @stockClase">
                                     @producto.StockActual.ToString("N0")
-
                                 </span>
 
                             </td>
@@ -389,13 +956,11 @@
 
                             <td>
 
-                                <div class="d-flex gap-1 align-items-center">
-
-                                    <!-- Ver detalle -->
+                                <div class="product-actions">
 
                                     <a asp-action="Detalle"
                                        asp-route-id="@producto.IdProducto"
-                                       class="btn btn-sm btn-outline-secondary"
+                                       class="btn btn-sm btn-outline-secondary product-action-button"
                                        title="Ver detalle">
 
                                         <i class="bi bi-eye"></i>
@@ -403,19 +968,15 @@
                                     </a>
 
 
-                                    <!-- Editar precio -->
-
                                     <a asp-action="EditarPrecio"
                                        asp-route-id="@producto.IdProducto"
-                                       class="btn btn-sm btn-outline-primary"
+                                       class="btn btn-sm btn-outline-primary product-action-button"
                                        title="Editar precio">
 
                                         <i class="bi bi-pencil"></i>
 
                                     </a>
 
-
-                                    <!-- Activar / Desactivar -->
 
                                     <form asp-action="CambiarEstado"
                                           method="post"
@@ -426,7 +987,6 @@
                                         <input type="hidden"
                                                name="id"
                                                value="@producto.IdProducto" />
-
 
                                         @if (producto.Estado)
                                         {
@@ -454,10 +1014,8 @@
                                     </form>
 
 
-                                    <!-- Eliminar -->
-
                                     <button type="button"
-                                            class="btn btn-sm btn-outline-danger"
+                                            class="btn btn-sm btn-outline-danger product-action-button"
                                             title="Eliminar producto">
 
                                         <i class="bi bi-trash"></i>
@@ -475,10 +1033,21 @@
                 {
                     <tr>
 
-                        <td colspan="7"
-                            class="text-center text-secondary py-4">
+                        <td colspan="7">
 
-                            No se encontraron productos.
+                            <div class="product-empty">
+
+                                <i class="bi bi-box-seam"></i>
+
+                                <div class="product-empty-title">
+                                    No se encontraron productos
+                                </div>
+
+                                <div class="product-empty-text">
+                                    Prueba con otro criterio de búsqueda o crea un nuevo producto.
+                                </div>
+
+                            </div>
 
                         </td>
 
