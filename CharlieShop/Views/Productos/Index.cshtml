@@ -1014,13 +1014,12 @@
                                     </form>
 
 
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger product-action-button"
-                                            title="Eliminar producto">
-
+                                    <a asp-action="Eliminar"
+                                       asp-route-id="@producto.IdProducto"
+                                       class="btn btn-sm btn-outline-danger product-action-button"
+                                       title="Eliminar producto">
                                         <i class="bi bi-trash"></i>
-
-                                    </button>
+                                    </a>
 
                                 </div>
 
