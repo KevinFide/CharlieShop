@@ -563,26 +563,36 @@
                      ================================================= -->
 
                 <div class="breadcrumb">
-
                     <a asp-controller="Home"
-                       asp-action="HomePage">
-
-                        <span>
-                            Charlie Shop
-                        </span>
+                        asp-action="HomePage">
+                            <span>Charlie Shop</span>
 
                     </a>
+                    @{
+                        var breadcrumbs = ViewData["Breadcrumbs"]
+                            as List<(string Texto, string? Controlador, string? Accion)>
+                            ?? new List<(string Texto, string? Controlador, string? Accion)>();
+                    }
 
+                    @foreach (var item in breadcrumbs)
+                    {
+                        <i class="bi bi-chevron-right"></i>
 
-                    <i class="bi bi-chevron-right"></i>
-
-
-                    <strong>
-                        @ViewData["Title"]
-                    </strong>
+                        if (item.Controlador != null && item.Accion != null)
+                        {
+                            <a asp-controller="@item.Controlador"
+                                asp-action="@item.Accion"
+                                asp-route-id="@ViewData["BreadcrumbProductoId"]">
+                                    <span>@item.Texto</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <strong>@item.Texto</strong>
+                        }
+                    }
 
                 </div>
-
 
                 <!-- =================================================
                      PARTE DERECHA DEL TOPBAR

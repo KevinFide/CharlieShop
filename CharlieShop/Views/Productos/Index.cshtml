@@ -3,6 +3,11 @@
 @{
     ViewData["Title"] = "Productos";
 
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Productos", null, null)
+    };
+
     var busqueda = ViewBag.Busqueda as string;
     var categoria = ViewBag.Categoria as string;
 }
@@ -968,10 +973,10 @@
                                     </a>
 
 
-                                    <a asp-action="EditarPrecio"
+                                    <a asp-action="Editar"
                                        asp-route-id="@producto.IdProducto"
                                        class="btn btn-sm btn-outline-primary product-action-button"
-                                       title="Editar precio">
+                                       title="Editar producto">
 
                                         <i class="bi bi-pencil"></i>
 
