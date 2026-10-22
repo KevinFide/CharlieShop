@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿
+using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
 using CharlieShop.Data;
@@ -30,7 +31,142 @@ namespace CharlieShop.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return View();
+            try
+            {
+                using var connection = _dbConnection.CreateConnection();
+
+                var fila = connection.QuerySingle(
+                    @"CALL sp_consultar_historial_ventas(NULL::JSON)",
+                    commandType: CommandType.Text
+                );
+
+                string? json = Convert.ToString(fila.o_ventas);
+
+                var ventas = string.IsNullOrWhiteSpace(json)
+                    ? new List<HistorialVentaViewModel>()
+                    : JsonSerializer.Deserialize<List<HistorialVentaViewModel>>(
+                        json,
+                        _jsonOptions
+                    ) ?? new List<HistorialVentaViewModel>();
+
+                return View(ventas);
+            }
+            catch (PostgresException)
+            {
+                ViewBag.ErrorHistorial =
+                    "No fue posible consultar el historial de ventas. " +
+                    "Verifique el procedimiento almacenado y la conexión " +
+                    "con la base de datos.";
+
+                return View(new List<HistorialVentaViewModel>());
+            }
+            catch (Exception)
+            {
+                ViewBag.ErrorHistorial =
+                    "Ocurrió un error al cargar el historial de ventas.";
+
+                return View(new List<HistorialVentaViewModel>());
+            }
+        }
+
+        // GET: /Ventas/Detalle/1
+        [HttpGet]
+        public IActionResult Detalle(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(
+                    "El identificador de la venta no es válido."
+                );
+            }
+
+            try
+            {
+                using var connection = _dbConnection.CreateConnection();
+
+                // Consultar la información general de la venta.
+                var venta = connection.QuerySingleOrDefault<
+                    ConsultaDetalleVentaViewModel>(
+                    @"
+                    SELECT
+                        v.id_venta AS IdVenta,
+                        v.fecha AS Fecha,
+                        NULLIF(
+                            BTRIM(
+                                CONCAT_WS(
+                                    ' ',
+                                    c.nombre,
+                                    c.apellido
+                                )
+                            ),
+                            ''
+                        ) AS NombreCliente,
+                        u.nombre AS NombreVendedor,
+                        v.total AS Total,
+                        v.descuento AS Descuento,
+                        v.impuesto AS Impuesto,
+                        v.total_neto AS TotalNeto,
+                        v.forma_pago AS FormaPago,
+                        v.estado AS Estado
+                    FROM venta v
+                    LEFT JOIN cliente c
+                        ON c.id_cliente = v.cliente_id
+                    LEFT JOIN usuario u
+                        ON u.id_usuario = v.usuario_id
+                    WHERE v.id_venta = @IdVenta;
+                    ",
+                    new { IdVenta = id }
+                );
+
+                // Si la venta no existe, informar al usuario.
+                if (venta == null)
+                {
+                    return NotFound(
+                        $"La venta #{id} no fue encontrada."
+                    );
+                }
+
+                // Consultar los productos asociados a la venta.
+                var productos = connection.Query<
+                    ProductoConsultaDetalleVentaViewModel>(
+                    @"
+                    SELECT
+                        dv.id_detalle_venta AS IdDetalleVenta,
+                        dv.producto_id AS IdProducto,
+                        p.codigo AS CodigoProducto,
+                        p.nombre AS NombreProducto,
+                        dv.cantidad AS Cantidad,
+                        dv.precio_unitario AS PrecioUnitario,
+                        dv.descuento AS Descuento,
+                        dv.impuesto AS Impuesto,
+                        dv.subtotal AS Subtotal
+                    FROM detalle_venta dv
+                    LEFT JOIN producto p
+                        ON p.id_producto = dv.producto_id
+                    WHERE dv.venta_id = @IdVenta
+                    ORDER BY dv.id_detalle_venta;
+                    ",
+                    new { IdVenta = id }
+                ).ToList();
+
+                venta.Productos = productos;
+
+                return View(venta);
+            }
+            catch (PostgresException)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "Ocurrió un error al consultar el detalle de la venta."
+                );
+            }
+            catch (Exception)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "No fue posible cargar el detalle de la venta."
+                );
+            }
         }
 
         // GET: /Ventas/Crear
@@ -61,8 +197,6 @@ namespace CharlieShop.Controllers
             {
                 using var connection = _dbConnection.CreateConnection();
 
-                // Los parámetros OUT se indican con NULL tipado.
-                // PostgreSQL devuelve su valor como una fila de resultados.
                 var fila = connection.QuerySingle(
                     @"CALL sp_buscar_productos_venta(
                         CAST(@p_busqueda AS VARCHAR),
@@ -92,13 +226,12 @@ namespace CharlieShop.Controllers
             }
             catch (PostgresException ex)
             {
-                // Diagnóstico temporal para desarrollo. No dejar detalles SQL
-                // visibles a usuarios finales en producción.
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new
                     {
-                        mensaje = $"Error PostgreSQL al buscar productos: {ex.MessageText}"
+                        mensaje =
+                            $"Error PostgreSQL al buscar productos: {ex.MessageText}"
                     }
                 );
             }
@@ -174,7 +307,8 @@ namespace CharlieShop.Controllers
                     StatusCodes.Status500InternalServerError,
                     new
                     {
-                        mensaje = $"Error PostgreSQL al consultar el producto: {ex.MessageText}"
+                        mensaje =
+                            $"Error PostgreSQL al consultar el producto: {ex.MessageText}"
                     }
                 );
             }
@@ -279,7 +413,6 @@ namespace CharlieShop.Controllers
                 using var connection =
                     _dbConnection.CreateConnection();
 
-                // Solo se envían IDs y cantidades.
                 // PostgreSQL consulta los precios y valida las existencias.
                 var productosJson = JsonSerializer.Serialize(
                     productos.Select(p => new
@@ -321,18 +454,16 @@ namespace CharlieShop.Controllers
                     DbType.String
                 );
 
-                // La firma nueva incluye el porcentaje de descuento.
-                // Los parámetros OUT se recuperan de la fila devuelta por CALL.
                 var fila = connection.QuerySingle(
                     @"CALL sp_registrar_venta(
-                @p_cliente_id,
-                @p_forma_pago,
-                @p_usuario_id,
-                @p_descuento_porcentaje,
-                CAST(@p_productos AS JSON),
-                NULL::VARCHAR,
-                NULL::INTEGER
-            )",
+                        @p_cliente_id,
+                        @p_forma_pago,
+                        @p_usuario_id,
+                        @p_descuento_porcentaje,
+                        CAST(@p_productos AS JSON),
+                        NULL::VARCHAR,
+                        NULL::INTEGER
+                    )",
                     parametros,
                     commandType: CommandType.Text
                 );
@@ -361,7 +492,6 @@ namespace CharlieShop.Controllers
             }
             catch (PostgresException ex)
             {
-                // Errores de validación provenientes de PostgreSQL.
                 TempData["ErrorVenta"] = ex.MessageText;
 
                 return RedirectToAction(nameof(Crear));
@@ -369,7 +499,8 @@ namespace CharlieShop.Controllers
             catch (Exception)
             {
                 TempData["ErrorVenta"] =
-                    "Ocurrió un error al registrar la venta. Verifique la conexión y los procedimientos almacenados.";
+                    "Ocurrió un error al registrar la venta. " +
+                    "Verifique la conexión y los procedimientos almacenados.";
 
                 return RedirectToAction(nameof(Crear));
             }

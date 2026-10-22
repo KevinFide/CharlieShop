@@ -1,4 +1,7 @@
-﻿@{
+﻿
+@model IEnumerable<CharlieShop.Models.HistorialVentaViewModel>
+
+@{
     ViewData["Title"] = "Ventas";
 }
 
@@ -24,7 +27,9 @@
         <div class="sales-summary-card">
             <div class="sales-summary-top">
                 <span>Nueva transacción</span>
-                <div class="sales-summary-icon"><i class="bi bi-cart-plus"></i></div>
+                <div class="sales-summary-icon">
+                    <i class="bi bi-cart-plus"></i>
+                </div>
             </div>
             <div class="sales-summary-value">Registrar venta</div>
             <p>Buscá productos, agregalos al carrito y confirmá la compra.</p>
@@ -36,7 +41,9 @@
         <div class="sales-summary-card">
             <div class="sales-summary-top">
                 <span>Control de inventario</span>
-                <div class="sales-summary-icon"><i class="bi bi-box-seam"></i></div>
+                <div class="sales-summary-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
             </div>
             <div class="sales-summary-value">Validación de stock</div>
             <p>Las existencias se verificarán antes de completar la transacción.</p>
@@ -48,7 +55,9 @@
         <div class="sales-summary-card">
             <div class="sales-summary-top">
                 <span>Registro de transacciones</span>
-                <div class="sales-summary-icon"><i class="bi bi-receipt"></i></div>
+                <div class="sales-summary-icon">
+                    <i class="bi bi-receipt"></i>
+                </div>
             </div>
             <div class="sales-summary-value">Ventas registradas</div>
             <p>Las transacciones confirmadas se conservarán en la base de datos.</p>
@@ -73,7 +82,10 @@
                 </div>
                 <div>
                     <h3>Registrar una venta</h3>
-                    <p>Agregá uno o más productos, verificá las cantidades y revisá el total antes de finalizar.</p>
+                    <p>
+                        Agregá uno o más productos, verificá las cantidades
+                        y revisá el total antes de finalizar.
+                    </p>
                 </div>
             </div>
             <a asp-action="Crear" class="btn btn-dark sales-action-button">
@@ -85,38 +97,61 @@
     <div class="sales-content-card sales-history-card">
         <div class="sales-content-header sales-history-header">
             <div class="sales-history-title">
-                <div class="sales-history-icon"><i class="bi bi-clock-history"></i></div>
+                <div class="sales-history-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
                 <div>
                     <h2>Historial de ventas</h2>
-                    <p>Las ventas confirmadas podrán consultarse aquí cuando se habilite el historial.</p>
+                    <p>Consultá las transacciones registradas en Charlie Shop.</p>
                 </div>
             </div>
-            <span class="sales-coming-soon">
-                <i class="bi bi-hourglass-split me-1"></i> Próxima etapa
-            </span>
+
+            <a asp-action="Index" class="btn btn-outline-dark btn-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+            </a>
         </div>
 
         <div class="sales-history-tools">
             <div class="sales-search-box">
-                <label for="searchSale" class="visually-hidden">Buscar venta</label>
+                <label for="searchSale" class="visually-hidden">
+                    Buscar venta
+                </label>
                 <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input id="searchSale" type="search" class="form-control"
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input id="searchSale"
+                           type="search"
+                           class="form-control"
                            placeholder="Buscar por número de venta o vendedor..."
                            autocomplete="off" />
-                    <button type="button" class="btn btn-dark" id="searchSaleButton">Buscar</button>
+                    <button type="button"
+                            class="btn btn-dark"
+                            id="searchSaleButton">
+                        Buscar
+                    </button>
                 </div>
             </div>
+
             <div class="sales-history-filter">
-                <label for="saleStatusFilter" class="visually-hidden">Filtrar por estado</label>
+                <label for="saleStatusFilter" class="visually-hidden">
+                    Filtrar por estado
+                </label>
                 <select id="saleStatusFilter" class="form-select">
                     <option value="">Todos los estados</option>
-                    <option value="Finalizada">Finalizada</option>
-                    <option value="En proceso">En proceso</option>
-                    <option value="Cancelada">Cancelada</option>
+                    <option value="FINALIZADA">Finalizada</option>
+                    <option value="EN PROCESO">En proceso</option>
+                    <option value="CANCELADA">Cancelada</option>
                 </select>
             </div>
         </div>
+
+        @if (ViewBag.ErrorHistorial != null)
+        {
+            <div class="alert alert-danger m-3" role="alert">
+                @ViewBag.ErrorHistorial
+            </div>
+        }
 
         <div class="table-responsive sales-history-table-wrap">
             <table class="table sales-history-table mb-0">
@@ -125,45 +160,292 @@
                         <th>N.º de venta</th>
                         <th>Fecha</th>
                         <th>Vendedor</th>
-                        <th>Total</th>
+                        <th>Total neto</th>
                         <th>Estado</th>
-                        <th class="text-end">Acción</th>
+                        <th class="text-end">Forma de pago</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="6">
-                            <div class="sales-history-placeholder">
-                                <div class="sales-history-empty-icon">
-                                    <i class="bi bi-receipt"></i>
+
+                <tbody id="salesHistoryBody">
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr class="sales-empty-row">
+                            <td colspan="6">
+                                <div class="sales-history-placeholder">
+                                    <div class="sales-history-empty-icon">
+                                        <i class="bi bi-receipt"></i>
+                                    </div>
+                                    <strong>No hay ventas registradas</strong>
+                                    <span>
+                                        Cuando se registre una venta,
+                                        aparecerá aquí.
+                                    </span>
                                 </div>
-                                <strong>Consulta de ventas</strong>
-                                <span>Las ventas registradas aparecerán aquí cuando conectemos el historial con la base de datos.</span>
-                            </div>
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var venta in Model)
+                        {
+                            <tr class="sales-history-row"
+                                data-sale-id="@venta.IdVenta"
+                                data-seller="@venta.NombreVendedor"
+                                data-status="@venta.Estado"
+                                data-detail-url="@Url.Action("Detalle", "Ventas", new { id = venta.IdVenta })"
+                                tabindex="0"
+                                role="link"
+                                aria-label="Consultar el detalle de la venta número @venta.IdVenta"
+                                title="Seleccionar para consultar el detalle de la venta">
+
+                                <td>
+                                    <strong>#@venta.IdVenta</strong>
+                                </td>
+                                <td>
+                                    @venta.Fecha.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(venta.NombreVendedor)
+                                        ? "No disponible"
+                                        : venta.NombreVendedor)
+                                </td>
+                                <td>
+                                    @venta.TotalNeto.ToString(
+                                        "C2",
+                                        System.Globalization.CultureInfo.GetCultureInfo("es-CR"))
+                                </td>
+                                <td>
+                                    <span class="sales-status-badge">
+                                        @venta.Estado
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    @venta.FormaPago
+                                </td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
         </div>
 
         <div class="sales-pagination">
-            <span class="sales-pagination-info">Mostrando 0–0 de 0 ventas</span>
-            <nav aria-label="Paginación del historial de ventas">
+            <span class="sales-pagination-info" id="salesPaginationInfo">
+                Mostrando 0–0 de 0 ventas
+            </span>
+            <nav aria-label="Resumen del historial de ventas">
                 <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i> Anterior</span></li>
-                    <li class="page-item active"><span class="page-link">1</span></li>
-                    <li class="page-item disabled"><span class="page-link">Siguiente <i class="bi bi-chevron-right"></i></span></li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Historial completo</span>
+                    </li>
                 </ul>
             </nav>
         </div>
     </div>
 </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("searchSale");
+        const searchButton = document.getElementById("searchSaleButton");
+        const statusFilter = document.getElementById("saleStatusFilter");
+        const paginationInfo = document.getElementById("salesPaginationInfo");
+
+        const rows = Array.from(
+            document.querySelectorAll(".sales-history-row")
+        );
+
+        const emptyRow = document.querySelector(".sales-empty-row");
+
+        // Abre el detalle de la venta seleccionada.
+        function openSaleDetail(row) {
+            const detailUrl = row.dataset.detailUrl;
+
+            if (!detailUrl) {
+                return;
+            }
+
+            // Muestra visualmente la selección antes de navegar.
+            row.classList.add("sales-history-row-selected");
+
+            window.setTimeout(function () {
+                window.location.href = detailUrl;
+            }, 160);
+        }
+
+        // Toda la fila funciona como superficie seleccionable.
+        rows.forEach(function (row) {
+            row.addEventListener("click", function () {
+                openSaleDetail(row);
+            });
+
+            // Permite seleccionar filas con Enter o barra espaciadora.
+            row.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openSaleDetail(row);
+                }
+            });
+        });
+
+        function filterSales() {
+            const searchTerm = (searchInput?.value || "")
+                .trim()
+                .toLocaleLowerCase();
+
+            const selectedStatus = (statusFilter?.value || "")
+                .trim()
+                .toLocaleLowerCase();
+
+            let visibleCount = 0;
+
+            rows.forEach(function (row) {
+                const saleId = (row.dataset.saleId || "")
+                    .toLocaleLowerCase();
+
+                const seller = (row.dataset.seller || "")
+                    .toLocaleLowerCase();
+
+                const status = (row.dataset.status || "")
+                    .toLocaleLowerCase();
+
+                const matchesSearch = !searchTerm ||
+                    saleId.includes(searchTerm) ||
+                    seller.includes(searchTerm) ||
+                    ("#" + saleId).includes(searchTerm);
+
+                const matchesStatus = !selectedStatus ||
+                    status === selectedStatus;
+
+                const visible = matchesSearch && matchesStatus;
+
+                row.hidden = !visible;
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            if (emptyRow) {
+                const hasAnySales = rows.length > 0;
+                emptyRow.hidden = hasAnySales;
+
+                let filteredEmptyRow =
+                    document.getElementById("salesFilteredEmptyRow");
+
+                if (hasAnySales && visibleCount === 0) {
+                    if (!filteredEmptyRow) {
+                        filteredEmptyRow = document.createElement("tr");
+                        filteredEmptyRow.id = "salesFilteredEmptyRow";
+                        filteredEmptyRow.innerHTML = `
+                            <td colspan="6">
+                                <div class="sales-history-placeholder">
+                                    <div class="sales-history-empty-icon">
+                                        <i class="bi bi-search"></i>
+                                    </div>
+                                    <strong>No se encontraron ventas</strong>
+                                    <span>
+                                        Probá con otro número, vendedor o estado.
+                                    </span>
+                                </div>
+                            </td>
+                        `;
+
+                        document.getElementById("salesHistoryBody")
+                            .appendChild(filteredEmptyRow);
+                    }
+
+                    filteredEmptyRow.hidden = false;
+                } else if (filteredEmptyRow) {
+                    filteredEmptyRow.hidden = true;
+                }
+            } else if (rows.length > 0 && visibleCount === 0) {
+                let filteredEmptyRow =
+                    document.getElementById("salesFilteredEmptyRow");
+
+                if (!filteredEmptyRow) {
+                    filteredEmptyRow = document.createElement("tr");
+                    filteredEmptyRow.id = "salesFilteredEmptyRow";
+                    filteredEmptyRow.innerHTML = `
+                        <td colspan="6">
+                            <div class="sales-history-placeholder">
+                                <div class="sales-history-empty-icon">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <strong>No se encontraron ventas</strong>
+                                <span>
+                                    Probá con otro número, vendedor o estado.
+                                </span>
+                            </div>
+                        </td>
+                    `;
+
+                    document.getElementById("salesHistoryBody")
+                        .appendChild(filteredEmptyRow);
+                }
+
+                filteredEmptyRow.hidden = false;
+            } else {
+                const filteredEmptyRow =
+                    document.getElementById("salesFilteredEmptyRow");
+
+                if (filteredEmptyRow) {
+                    filteredEmptyRow.hidden = true;
+                }
+            }
+
+            if (paginationInfo) {
+                if (rows.length === 0) {
+                    paginationInfo.textContent =
+                        "Mostrando 0–0 de 0 ventas";
+                } else {
+                    paginationInfo.textContent =
+                        `Mostrando ${visibleCount} de ${rows.length} ventas`;
+                }
+            }
+        }
+
+        if (searchButton) {
+            searchButton.addEventListener("click", filterSales);
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    filterSales();
+                }
+            });
+
+            searchInput.addEventListener("input", filterSales);
+        }
+
+        if (statusFilter) {
+            statusFilter.addEventListener("change", filterSales);
+        }
+
+        filterSales();
+    });
+</script>
+
 <style>
     .sales-page {
         max-width: 1320px;
         margin: 0 auto;
         padding-bottom: 28px;
+        animation: salesPageEnter .3s ease-out;
+    }
+
+    @@keyframes salesPageEnter {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .sales-page-header {
@@ -187,17 +469,20 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        border-radius: 12px;
+        border-radius: 13px;
         background: #111;
         color: #fff;
         font-size: 21px;
+        box-shadow: 0 5px 12px rgba(0, 0, 0, .12);
+        transition: transform .22s ease, box-shadow .22s ease;
     }
 
     .sales-page-heading h1 {
         margin: 0;
         color: #111;
         font-size: 27px;
-        font-weight: 700;
+        font-weight: 750;
+        letter-spacing: -.5px;
     }
 
     .sales-page-heading p {
@@ -208,18 +493,31 @@
 
     .sales-primary-button {
         padding: 11px 16px;
-        border-radius: 9px;
+        border-radius: 10px;
         font-size: 13px;
         font-weight: 600;
         background: #111;
         border-color: #111;
         white-space: nowrap;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
     }
 
     .sales-primary-button:hover,
     .sales-action-button:hover {
         background: #303030;
         border-color: #303030;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0, 0, 0, .12);
+    }
+
+    .sales-primary-button:active,
+    .sales-action-button:active {
+        transform: translateY(0);
+        box-shadow: none;
     }
 
     .sales-summary-grid {
@@ -233,12 +531,24 @@
     .sales-content-card {
         background: #fff;
         border: 1px solid #e7e7e7;
-        border-radius: 15px;
+        border-radius: 16px;
         box-shadow: 0 3px 14px rgba(0, 0, 0, .025);
     }
 
     .sales-summary-card {
+        position: relative;
         padding: 21px;
+        transition:
+            transform .22s ease,
+            box-shadow .22s ease,
+            border-color .22s ease;
+    }
+
+    /* Elevación discreta de las tarjetas al pasar el cursor. */
+    .sales-summary-card:hover {
+        transform: translateY(-4px);
+        border-color: #d9dce0;
+        box-shadow: 0 12px 28px rgba(20, 25, 35, .075);
     }
 
     .sales-summary-top {
@@ -251,15 +561,25 @@
     }
 
     .sales-summary-icon {
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 9px;
-        background: #f3f3f3;
+        border-radius: 10px;
+        background: #f3f4f5;
         color: #333;
         font-size: 15px;
+        transition:
+            background-color .22s ease,
+            color .22s ease,
+            transform .22s ease;
+    }
+
+    .sales-summary-card:hover .sales-summary-icon {
+        background: #171717;
+        color: #fff;
+        transform: scale(1.05);
     }
 
     .sales-summary-value {
@@ -267,13 +587,14 @@
         color: #171717;
         font-size: 19px;
         font-weight: 700;
+        letter-spacing: -.25px;
     }
 
     .sales-summary-card p {
         margin: 7px 0 0;
         color: #818181;
         font-size: 12px;
-        line-height: 1.6;
+        line-height: 1.7;
     }
 
     .sales-card-link {
@@ -287,8 +608,16 @@
         font-weight: 700;
     }
 
+    .sales-card-link i {
+        transition: transform .2s ease;
+    }
+
     .sales-card-link:hover {
         color: #555;
+    }
+
+    .sales-card-link:hover i {
+        transform: translateX(4px);
     }
 
     .sales-card-note {
@@ -301,6 +630,14 @@
     .sales-content-card {
         overflow: hidden;
         margin-bottom: 22px;
+        transition:
+            border-color .22s ease,
+            box-shadow .22s ease;
+    }
+
+    .sales-content-card:hover {
+        border-color: #dedfe2;
+        box-shadow: 0 7px 22px rgba(20, 25, 35, .035);
     }
 
     .sales-content-header {
@@ -313,12 +650,14 @@
         color: #171717;
         font-size: 17px;
         font-weight: 700;
+        letter-spacing: -.2px;
     }
 
     .sales-content-header p {
         margin: 5px 0 0;
         color: #858585;
         font-size: 13px;
+        line-height: 1.6;
     }
 
     .sales-action-row {
@@ -327,6 +666,11 @@
         align-items: center;
         gap: 20px;
         padding: 23px 25px;
+        transition: background-color .2s ease;
+    }
+
+    .sales-action-row:hover {
+        background-color: #fcfcfc;
     }
 
     .sales-action-info {
@@ -341,11 +685,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 11px;
+        border-radius: 12px;
         background: #f3f3f3;
         color: #222;
         font-size: 19px;
         flex-shrink: 0;
+        transition:
+            background-color .22s ease,
+            color .22s ease,
+            transform .22s ease;
+    }
+
+    .sales-action-row:hover .sales-action-icon {
+        background: #171717;
+        color: #fff;
+        transform: translateY(-2px);
     }
 
     .sales-action-info h3 {
@@ -359,66 +713,204 @@
         margin: 5px 0 0;
         color: #818181;
         font-size: 12px;
-        line-height: 1.5;
+        line-height: 1.6;
     }
 
     .sales-action-button {
         white-space: nowrap;
-        border-radius: 9px;
+        border-radius: 10px;
         padding: 10px 14px;
         font-size: 12px;
         font-weight: 600;
         background: #111;
         border-color: #111;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
     }
 
+    /* =========================================
+       BUSCADOR MEJORADO - HISTORIAL DE VENTAS
+       ========================================= */
 
     .sales-history-tools {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 14px;
-        padding: 20px 25px;
-        border-bottom: 1px solid #eee;
+        padding: 22px 25px;
+        border-bottom: 1px solid #ededed;
+        background: #fff;
     }
 
-    .sales-search-box { flex: 1; min-width: 220px; }
-    .sales-history-filter { width: 190px; flex-shrink: 0; }
-    .sales-history-tools .form-control,
-    .sales-history-tools .form-select,
-    .sales-history-tools .input-group-text {
-        min-height: 42px;
-        border-color: #dedede;
-        font-size: 12px;
-        box-shadow: none;
+    .sales-search-box {
+        flex: 1;
+        min-width: 240px;
     }
+
+    .sales-history-filter {
+        width: 200px;
+        flex-shrink: 0;
+    }
+
+    /* El grupo completo se comporta como un único campo. */
+    .sales-history-tools .input-group {
+        min-height: 46px;
+        overflow: hidden;
+        border: 1px solid #dedfe3;
+        border-radius: 12px;
+        background: #f9fafb;
+        transition:
+            border-color .22s ease,
+            background-color .22s ease,
+            box-shadow .22s ease,
+            transform .22s ease;
+    }
+
     .sales-history-tools .input-group-text {
         display: flex;
         align-items: center;
-        padding: 0 13px;
-        border-radius: 9px 0 0 9px;
-        background: #f8f8f8;
-        color: #777;
+        justify-content: center;
+        min-width: 48px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #777e87;
+        font-size: 14px;
+        transition: color .22s ease;
     }
-    .sales-history-tools .form-control { border-radius: 0; }
-    .sales-history-tools .btn {
-        border-radius: 0 9px 9px 0;
-        padding: 0 16px;
+
+    .sales-history-tools .form-control {
+        min-height: 44px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #202124;
+        font-size: 13px;
+        box-shadow: none;
+    }
+
+    .sales-history-tools .form-control::placeholder {
+        color: #9a9da4;
+        opacity: 1;
+    }
+
+    /* Realce sutil al entrar al campo o enfocarlo con teclado. */
+    .sales-history-tools .input-group:focus-within {
+        border-color: #858b95;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(40, 45, 55, .07);
+        transform: translateY(-1px);
+    }
+
+    .sales-history-tools .input-group:focus-within .input-group-text {
+        color: #171717;
+    }
+
+    .sales-history-tools .form-control:focus {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Botón integrado visualmente con el campo de búsqueda. */
+    .sales-history-tools .input-group .btn {
+        min-height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 0;
+        background: #17191c;
+        color: #fff;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 650;
+        white-space: nowrap;
+        transition:
+            background-color .2s ease,
+            box-shadow .2s ease;
     }
-    .sales-history-tools .form-select { border-radius: 9px; }
-    .sales-history-table { font-size: 12px; }
+
+    .sales-history-tools .input-group .btn:hover {
+        background: #34373c;
+    }
+
+    .sales-history-tools .input-group .btn:active {
+        background: #090a0b;
+    }
+
+    /* Filtro de estado: misma altura y lenguaje visual del buscador. */
+    .sales-history-tools .form-select {
+        min-height: 46px;
+        padding: 0 40px 0 15px;
+        border: 1px solid #dedfe3;
+        border-radius: 12px;
+        background-color: #f9fafb;
+        color: #34373c;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: none;
+        transition:
+            border-color .22s ease,
+            background-color .22s ease,
+            box-shadow .22s ease;
+    }
+
+    .sales-history-tools .form-select:hover {
+        border-color: #bfc2c8;
+        background-color: #fff;
+    }
+
+    .sales-history-tools .form-select:focus {
+        border-color: #858b95;
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(40, 45, 55, .07);
+    }
+
+    /* Botón Actualizar del encabezado. */
+    .sales-history-header > .btn {
+        min-height: 40px;
+        padding: 8px 13px;
+        border-radius: 10px;
+        font-size: 12px;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease;
+    }
+
+    .sales-history-header > .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .sales-history-table {
+        font-size: 12px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
     .sales-history-table thead th {
-        padding: 14px 16px;
+        padding: 15px 16px;
         background: #fafafa;
         border-bottom: 1px solid #eee;
         color: #777;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         white-space: nowrap;
     }
-    .sales-history-table tbody td { padding: 0; vertical-align: middle; }
-    .sales-history-table .sales-history-placeholder { min-height: 175px; }
+
+    .sales-history-table tbody td {
+        padding: 0;
+        vertical-align: middle;
+    }
+
+    .sales-history-table .sales-history-placeholder {
+        min-height: 175px;
+    }
+
     .sales-pagination {
         display: flex;
         justify-content: space-between;
@@ -426,20 +918,36 @@
         gap: 15px;
         padding: 16px 25px;
         border-top: 1px solid #eee;
+        background: #fff;
     }
-    .sales-pagination-info { color: #888; font-size: 11px; }
+
+    .sales-pagination-info {
+        color: #888;
+        font-size: 11px;
+    }
+
     .sales-pagination .page-link {
         color: #444;
         border-color: #e5e5e5;
         padding: 7px 10px;
         font-size: 11px;
+        border-radius: 8px;
+        transition:
+            background-color .18s ease,
+            border-color .18s ease,
+            color .18s ease;
     }
+
     .sales-pagination .page-item.active .page-link {
         background: #111;
         border-color: #111;
         color: #fff;
     }
-    .sales-pagination .page-item.disabled .page-link { color: #aaa; background: #fafafa; }
+
+    .sales-pagination .page-item.disabled .page-link {
+        color: #aaa;
+        background: #fafafa;
+    }
 
     .sales-history-header {
         display: flex;
@@ -455,25 +963,24 @@
     }
 
     .sales-history-icon {
-        width: 38px;
-        height: 38px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
-        background: #f3f3f3;
+        border-radius: 11px;
+        background: #f3f4f5;
         color: #333;
-        font-size: 16px;
+        font-size: 17px;
         flex-shrink: 0;
+        transition:
+            background-color .2s ease,
+            color .2s ease;
     }
 
-    .sales-coming-soon {
-        padding: 7px 10px;
-        border-radius: 7px;
-        background: #f3f3f3;
-        color: #666;
-        font-size: 11px;
-        white-space: nowrap;
+    .sales-history-card:hover .sales-history-icon {
+        background: #ededee;
+        color: #111;
     }
 
     .sales-history-placeholder {
@@ -488,16 +995,16 @@
     }
 
     .sales-history-empty-icon {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 3px;
-        border-radius: 12px;
+        border-radius: 14px;
         background: #f4f4f4;
         color: #777;
-        font-size: 19px;
+        font-size: 20px;
     }
 
     .sales-history-placeholder strong {
@@ -509,7 +1016,99 @@
         max-width: 520px;
         color: #888;
         font-size: 11px;
-        line-height: 1.6;
+        line-height: 1.7;
+    }
+
+    .sales-status-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #e8f5e9;
+        color: #256029;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    /* Toda la fila funciona como una superficie seleccionable. */
+    .sales-history-row {
+        cursor: pointer;
+        outline: none;
+        transition:
+            background-color .18s ease,
+            opacity .18s ease,
+            box-shadow .18s ease;
+    }
+
+    .sales-history-row td {
+        padding: 15px 16px !important;
+        border-bottom: 1px solid #eee;
+        color: #444;
+        vertical-align: middle;
+        transition:
+            background-color .18s ease,
+            color .18s ease;
+    }
+
+    /* Hover suave en toda la fila, sin botones adicionales. */
+    .sales-history-row:hover td {
+        background-color: #f3f4f5;
+    }
+
+    .sales-history-row:hover {
+        box-shadow: inset 3px 0 0 #b9bec5;
+    }
+
+    /* Selección visual antes de abrir el detalle. */
+    .sales-history-row-selected td {
+        background-color: #e9ecef !important;
+        color: #111;
+    }
+
+    .sales-history-row-selected {
+        box-shadow:
+            inset 4px 0 0 #171717,
+            inset 0 0 0 1px #d5d8dc;
+        opacity: .9;
+    }
+
+    .sales-history-row:focus-visible {
+        box-shadow: inset 0 0 0 2px #777;
+    }
+
+    .sales-history-row strong {
+        color: #171717;
+    }
+
+    .sales-empty-row td {
+        padding: 0 !important;
+    }
+
+    .sales-history-row[hidden],
+    .sales-empty-row[hidden],
+    #salesFilteredEmptyRow[hidden] {
+        display: none !important;
+    }
+
+    /* Evita animaciones si el usuario así lo prefiere en su sistema. */
+    @@media (prefers-reduced-motion: reduce) {
+        .sales-page,
+        .sales-summary-card,
+        .sales-summary-icon,
+        .sales-content-card,
+        .sales-action-row,
+        .sales-action-icon,
+        .sales-primary-button,
+        .sales-action-button,
+        .sales-history-tools .form-control,
+        .sales-history-tools .form-select,
+        .sales-history-tools .input-group,
+        .sales-history-row,
+        .sales-history-row td {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+        }
     }
 
     @@media (max-width: 900px) {
@@ -546,78 +1145,37 @@
             padding: 20px;
         }
 
-    
-    .sales-history-tools {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 20px 25px;
-        border-bottom: 1px solid #eee;
-    }
+        .sales-history-tools {
+            align-items: stretch;
+            flex-direction: column;
+            padding: 18px;
+            gap: 12px;
+        }
 
-    .sales-search-box { flex: 1; min-width: 220px; }
-    .sales-history-filter { width: 190px; flex-shrink: 0; }
-    .sales-history-tools .form-control,
-    .sales-history-tools .form-select,
-    .sales-history-tools .input-group-text {
-        min-height: 42px;
-        border-color: #dedede;
-        font-size: 12px;
-        box-shadow: none;
-    }
-    .sales-history-tools .input-group-text {
-        display: flex;
-        align-items: center;
-        padding: 0 13px;
-        border-radius: 9px 0 0 9px;
-        background: #f8f8f8;
-        color: #777;
-    }
-    .sales-history-tools .form-control { border-radius: 0; }
-    .sales-history-tools .btn {
-        border-radius: 0 9px 9px 0;
-        padding: 0 16px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .sales-history-tools .form-select { border-radius: 9px; }
-    .sales-history-table { font-size: 12px; }
-    .sales-history-table thead th {
-        padding: 14px 16px;
-        background: #fafafa;
-        border-bottom: 1px solid #eee;
-        color: #777;
-        font-size: 10px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-    .sales-history-table tbody td { padding: 0; vertical-align: middle; }
-    .sales-history-table .sales-history-placeholder { min-height: 175px; }
-    .sales-pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        padding: 16px 25px;
-        border-top: 1px solid #eee;
-    }
-    .sales-pagination-info { color: #888; font-size: 11px; }
-    .sales-pagination .page-link {
-        color: #444;
-        border-color: #e5e5e5;
-        padding: 7px 10px;
-        font-size: 11px;
-    }
-    .sales-pagination .page-item.active .page-link {
-        background: #111;
-        border-color: #111;
-        color: #fff;
-    }
-    .sales-pagination .page-item.disabled .page-link { color: #aaa; background: #fafafa; }
+        .sales-search-box,
+        .sales-history-filter {
+            width: 100%;
+            min-width: 100%;
+        }
 
-    .sales-history-header {
+        .sales-history-tools .input-group,
+        .sales-history-tools .form-select {
+            min-height: 44px;
+        }
+
+        .sales-history-header {
             align-items: flex-start;
             flex-direction: column;
+        }
+
+        .sales-pagination {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 16px 20px;
+        }
+
+        .sales-history-table {
+            min-width: 720px;
         }
     }
 </style>
