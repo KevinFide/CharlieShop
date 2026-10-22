@@ -1,319 +1,790 @@
-﻿@{
+﻿
+@model CharlieShop.Models.InventarioIndexViewModel
+
+@{
     ViewData["Title"] = "Inventario";
+    var estadoActual = string.IsNullOrWhiteSpace(Model.Estado)
+        ? "TODOS"
+        : Model.Estado;
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
-
-    <div>
-
-        <div class="page-title">
-            Inventario
+<div class="inventory-page">
+    <div class="inventory-header">
+        <div class="inventory-header-info">
+            <div class="inventory-page-icon">
+                <i class="bi bi-boxes"></i>
+            </div>
+            <div>
+                <h1>Inventario</h1>
+                <p>Control de existencias y movimientos de productos.</p>
+            </div>
         </div>
 
-        <div class="page-subtitle">
-            Control de existencias y movimientos de productos.
+        <div class="inventory-header-actions">
+            <a asp-action="Historial" class="btn btn-outline-dark">
+                <i class="bi bi-clock-history me-1"></i> Historial
+            </a>
+            <a asp-action="AjustarInventario" class="btn btn-outline-dark">
+                <i class="bi bi-sliders me-1"></i> Ajustar stock
+            </a>
+            <a asp-action="RegistrarMovimiento" class="btn btn-dark">
+                <i class="bi bi-arrow-left-right me-1"></i> Registrar movimiento
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Exito"]
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning">
+            @foreach (var error in ViewData.ModelState.Values
+                .SelectMany(v => v.Errors))
+            {
+                <div>@error.ErrorMessage</div>
+            }
+        </div>
+    }
+
+    <!-- RESUMEN -->
+    <div class="row g-3 inventory-summary">
+        <div class="col-xl-4 col-md-4">
+            <div class="inventory-metric-card">
+                <div>
+                    <span class="metric-label">Productos registrados</span>
+                    <h2 class="metric-value">@Model.TotalProductos</h2>
+                    <span class="metric-description">
+                        Productos activos en el catálogo
+                    </span>
+                </div>
+                <div class="metric-icon metric-icon-dark">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+            </div>
         </div>
 
+        <div class="col-xl-4 col-md-4">
+            <div class="inventory-metric-card">
+                <div>
+                    <span class="metric-label">Stock bajo</span>
+                    <h2 class="metric-value metric-warning">
+                        @Model.TotalStockBajo
+                    </h2>
+                    <span class="metric-description">Requieren revisión</span>
+                </div>
+                <div class="metric-icon metric-icon-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-4">
+            <div class="inventory-metric-card">
+                <div>
+                    <span class="metric-label">Sin existencias</span>
+                    <h2 class="metric-value metric-danger">
+                        @Model.TotalAgotados
+                    </h2>
+                    <span class="metric-description">Stock en cero</span>
+                </div>
+                <div class="metric-icon metric-icon-danger">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="d-flex gap-2">
+    <!-- LISTADO -->
+    <div class="inventory-content-card">
+        <div class="inventory-card-header">
+            <div>
+                <h2>Existencias de productos</h2>
+                <p>Consulta el stock disponible y detecta necesidades de reposición.</p>
+            </div>
+            <span class="inventory-record-count">
+                @(Model.Productos?.Count ?? 0) producto(s) en esta consulta
+            </span>
+        </div>
 
-        <a asp-action="Historial" class="btn btn-outline-secondary">
-            <i class="bi bi-clock-history me-1"></i>
-            Historial y ajustes
-        </a>
+        <!-- BÚSQUEDA Y FILTROS -->
+        <div class="inventory-filters">
+            <form asp-action="Index" method="get">
+                <div class="row g-3">
+                    <div class="col-lg-5 col-md-6">
+                        <label for="searchProduct" class="filter-label">
+                            Buscar producto
+                        </label>
+                        <div class="inventory-search">
+                            <i class="bi bi-search"></i>
+                            <input id="searchProduct"
+                                   name="busqueda"
+                                   type="search"
+                                   class="form-control"
+                                   value="@Model.Busqueda"
+                                   placeholder="Buscar por nombre o código..." />
+                        </div>
+                    </div>
 
-        <button class="btn btn-outline-primary">
-            <i class="bi bi-box-arrow-in-down me-1"></i>
-            Entrada
-        </button>
+                    <div class="col-lg-3 col-md-6">
+                        <label for="filterStatus" class="filter-label">
+                            Estado del inventario
+                        </label>
+                        <select id="filterStatus" name="estado"
+                                class="form-select">
+                            <option value="TODOS"
+                                    selected="@(estadoActual == "TODOS")">
+                                Todos los estados
+                            </option>
+                            <option value="NORMAL"
+                                    selected="@(estadoActual == "NORMAL")">
+                                Disponible
+                            </option>
+                            <option value="BAJO"
+                                    selected="@(estadoActual == "BAJO")">
+                                Stock bajo
+                            </option>
+                            <option value="AGOTADO"
+                                    selected="@(estadoActual == "AGOTADO")">
+                                Sin existencias
+                            </option>
+                        </select>
+                    </div>
 
-        <button class="btn btn-primary">
-            <i class="bi bi-box-arrow-up me-1"></i>
-            Salida
-        </button>
+                    <div class="col-lg-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-dark"
+                                style="min-height:43px;border-radius:9px;">
+                            <i class="bi bi-search me-1"></i> Buscar
+                        </button>
+                        <a asp-action="Index" class="btn btn-filter-reset">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            Limpiar filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
 
+        <!-- TABLA -->
+        <div class="table-responsive">
+            <table class="table inventory-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Stock actual</th>
+                        <th>Stock mínimo</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model.Productos != null && Model.Productos.Any())
+                    {
+                        foreach (var producto in Model.Productos)
+                        {
+                            var agotado = producto.StockActual <= 0;
+                            var bajo = !agotado &&
+                                producto.StockActual <= producto.StockMinimo;
+
+                            var claseStock = agotado
+                                ? "stock-number-danger"
+                                : bajo ? "stock-number-warning" : "";
+
+                            var claseEstado = agotado
+                                ? "status-out"
+                                : bajo ? "status-low" : "status-available";
+
+                            var textoEstado = agotado
+                                ? "Sin existencias"
+                                : bajo ? "Stock bajo" : "Disponible";
+
+                            <tr>
+                                <td>
+                                    <div class="inventory-product">
+                                        <div class="product-icon">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+                                        <div>
+                                            <div class="product-name">
+                                                @producto.Nombre
+                                            </div>
+                                            <div class="product-code">
+                                                @producto.Codigo
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(producto.Categoria)
+                                        ? "Sin categoría"
+                                        : producto.Categoria)
+                                </td>
+
+                                <td>
+                                    <span class="stock-number @claseStock">
+                                        @producto.StockActual.ToString("0.##")
+                                    </span>
+                                    <span class="stock-unit">unidades</span>
+                                </td>
+
+                                <td>
+                                    @producto.StockMinimo.ToString("0.##")
+                                </td>
+
+                                <td>
+                                    <span class="inventory-status @claseEstado">
+                                        <span class="status-dot"></span>
+                                        @textoEstado
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="inventory-actions">
+                                        <a asp-action="RegistrarMovimiento"
+                                           asp-route-idProducto="@producto.IdProducto"
+                                           class="action-button"
+                                           title="Registrar movimiento"
+                                           aria-label="Registrar movimiento">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                        </a>
+
+                                        <a asp-action="AjustarInventario"
+                                           asp-route-idProducto="@producto.IdProducto"
+                                           class="action-button"
+                                           title="Ajustar stock"
+                                           aria-label="Ajustar stock">
+                                            <i class="bi bi-sliders"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="inventory-empty">
+                                    <div class="empty-state-icon">
+                                        <i class="bi bi-search"></i>
+                                    </div>
+                                    <h3>No se encontraron productos</h3>
+                                    <p>
+                                        Probá con otro nombre, código o estado
+                                        del inventario.
+                                    </p>
+                                    <a asp-action="Index"
+                                       class="btn btn-outline-dark mt-3">
+                                        Limpiar filtros
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="inventory-pagination">
+            <div class="pagination-info">
+                Mostrando @(Model.Productos?.Count ?? 0) producto(s)
+            </div>
+        </div>
     </div>
-
 </div>
 
-
-<!-- RESUMEN -->
-
-<div class="row g-3 mb-4">
-
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Productos registrados
-            </div>
-
-            <div class="value">
-                128
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Stock bajo
-            </div>
-
-            <div class="value text-warning">
-                5
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Sin existencias
-            </div>
-
-            <div class="value text-danger">
-                2
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- TABLA -->
-
-<div class="card p-4">
-
-    <div class="row mb-3">
-
-        <div class="col-md-5">
-
-            <input type="text"
-                   class="form-control"
-                   placeholder="Buscar producto..." />
-
-        </div>
-
-        <div class="col-md-3">
-
-            <select class="form-select">
-
-                <option selected>
-                    Todos los estados
-                </option>
-
-                <option>
-                    Disponible
-                </option>
-
-                <option>
-                    Stock bajo
-                </option>
-
-                <option>
-                    Sin existencias
-                </option>
-
-            </select>
-
-        </div>
-
-    </div>
-
-
-    <div class="table-responsive">
-
-        <table class="table table-hover align-middle">
-
-            <thead>
-
-                <tr>
-
-                    <th>Código</th>
-                    <th>Producto</th>
-                    <th>Stock actual</th>
-                    <th>Stock mínimo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <tr>
-
-                    <td>
-                        P-001
-                    </td>
-
-                    <td>
-                        Camisa básica
-                    </td>
-
-                    <td>
-                        24
-                    </td>
-
-                    <td>
-                        10
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-success">
-                            Disponible
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        P-002
-                    </td>
-
-                    <td>
-                        Pantalón jeans
-                    </td>
-
-                    <td>
-                        8
-                    </td>
-
-                    <td>
-                        10
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-warning text-dark">
-                            Stock bajo
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        P-003
-                    </td>
-
-                    <td>
-                        Gorra
-                    </td>
-
-                    <td>
-                        4
-                    </td>
-
-                    <td>
-                        8
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-warning text-dark">
-                            Stock bajo
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        P-004
-                    </td>
-
-                    <td>
-                        Zapatos deportivos
-                    </td>
-
-                    <td>
-                        0
-                    </td>
-
-                    <td>
-                        5
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-danger">
-                            Sin existencias
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-</div>
+<style>
+    .inventory-page {
+        max-width: 1450px;
+        margin: 0 auto;
+    }
+
+    .inventory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    .inventory-header-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .inventory-page-icon {
+        width: 49px;
+        height: 49px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #111;
+        color: #fff;
+        font-size: 22px;
+    }
+
+    .inventory-header h1 {
+        margin: 0;
+        color: #111;
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+    .inventory-header p {
+        margin: 5px 0 0;
+        color: #777;
+        font-size: 14px;
+    }
+
+    .inventory-header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .inventory-header-actions .btn {
+        padding: 10px 14px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .inventory-header-actions .btn-dark {
+        background: #111;
+        border-color: #111;
+    }
+
+    .inventory-header-actions .btn-dark:hover {
+        background: #303030;
+        border-color: #303030;
+    }
+
+    .inventory-summary {
+        margin-bottom: 25px;
+    }
+
+    .inventory-metric-card {
+        height: 100%;
+        min-height: 132px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 22px;
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-radius: 14px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, .025);
+    }
+
+    .metric-label {
+        color: #686868;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .metric-value {
+        margin: 8px 0 4px;
+        color: #111;
+        font-size: 29px;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .metric-description {
+        color: #999;
+        font-size: 12px;
+    }
+
+    .metric-warning {
+        color: #b7791f;
+    }
+
+    .metric-danger {
+        color: #c83c43;
+    }
+
+    .metric-icon {
+        width: 47px;
+        height: 47px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 21px;
+    }
+
+    .metric-icon-dark {
+        background: #f0f0f0;
+        color: #222;
+    }
+
+    .metric-icon-warning {
+        background: #fff5df;
+        color: #b7791f;
+    }
+
+    .metric-icon-danger {
+        background: #fff0f0;
+        color: #c83c43;
+    }
+
+    .inventory-content-card {
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-radius: 15px;
+        box-shadow: 0 3px 14px rgba(0, 0, 0, .025);
+    }
+
+    .inventory-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 24px 25px 20px;
+    }
+
+    .inventory-card-header h2 {
+        margin: 0;
+        color: #171717;
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    .inventory-card-header p {
+        margin: 5px 0 0;
+        color: #858585;
+        font-size: 13px;
+    }
+
+    .inventory-record-count {
+        padding: 7px 10px;
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        color: #666;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .inventory-filters {
+        padding: 0 25px 23px;
+    }
+
+    .filter-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #444;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .inventory-search {
+        position: relative;
+    }
+
+    .inventory-search > i {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        z-index: 2;
+        transform: translateY(-50%);
+        color: #858585;
+        pointer-events: none;
+    }
+
+    .inventory-search .form-control {
+        padding-left: 39px;
+    }
+
+    .inventory-filters .form-control,
+    .inventory-filters .form-select {
+        min-height: 43px;
+        border-color: #dedede;
+        border-radius: 9px;
+        font-size: 13px;
+        box-shadow: none;
+    }
+
+    .inventory-filters .form-control:focus,
+    .inventory-filters .form-select:focus {
+        border-color: #777;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, .05);
+    }
+
+    .btn-filter-reset {
+        min-height: 43px;
+        padding: 9px 14px;
+        border: 1px solid #ddd;
+        border-radius: 9px;
+        background: #fff;
+        color: #444;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-filter-reset:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+        color: #111;
+    }
+
+    .inventory-table {
+        min-width: 850px;
+    }
+
+    .inventory-table thead th {
+        padding: 14px 17px;
+        background: #f8f8f8;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #e8e8e8;
+        color: #666;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+        white-space: nowrap;
+    }
+
+    .inventory-table tbody td {
+        padding: 16px 17px;
+        border-bottom: 1px solid #f0f0f0;
+        color: #444;
+        font-size: 13px;
+    }
+
+    .inventory-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .inventory-table tbody tr:hover {
+        background: #fafafa;
+    }
+
+    .inventory-product {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-width: 175px;
+    }
+
+    .product-icon {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #f1f1f1;
+        color: #333;
+        font-size: 18px;
+    }
+
+    .product-name {
+        color: #222;
+        font-weight: 600;
+    }
+
+    .product-code {
+        margin-top: 4px;
+        color: #888;
+        font-size: 11px;
+    }
+
+    .stock-number {
+        color: #222;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .stock-number-warning {
+        color: #b7791f;
+    }
+
+    .stock-number-danger {
+        color: #c83c43;
+    }
+
+    .stock-unit {
+        display: block;
+        margin-top: 3px;
+        color: #999;
+        font-size: 11px;
+    }
+
+    .inventory-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .status-available {
+        background: #eaf7ef;
+        color: #267a48;
+    }
+
+    .status-low {
+        background: #fff5df;
+        color: #9b6918;
+    }
+
+    .status-out {
+        background: #fff0f0;
+        color: #b52e37;
+    }
+
+    .inventory-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .action-button {
+        width: 33px;
+        height: 33px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dedede;
+        border-radius: 8px;
+        background: #fff;
+        color: #555;
+        font-size: 14px;
+        text-decoration: none;
+        transition: background .15s ease, border-color .15s ease;
+    }
+
+    .action-button:hover {
+        border-color: #aaa;
+        background: #f2f2f2;
+        color: #111;
+    }
+
+    .inventory-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 17px 22px;
+        border-top: 1px solid #eee;
+        background: #fcfcfc;
+    }
+
+    .pagination-info {
+        color: #777;
+        font-size: 12px;
+    }
+
+    .inventory-empty {
+        padding: 48px 20px;
+        text-align: center;
+    }
+
+    .empty-state-icon {
+        width: 55px;
+        height: 55px;
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        background: #f3f3f3;
+        color: #777;
+        font-size: 24px;
+    }
+
+    .inventory-empty h3 {
+        color: #222;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .inventory-empty p {
+        margin: 7px 0 0;
+        color: #888;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 991px) {
+        .inventory-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .inventory-header-actions {
+            justify-content: flex-start;
+        }
+    }
+
+    @@media (max-width: 767px) {
+        .inventory-header h1 {
+            font-size: 23px;
+        }
+
+        .inventory-header-actions {
+            width: 100%;
+        }
+
+        .inventory-header-actions .btn {
+            flex: 1 1 auto;
+        }
+
+        .inventory-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 21px;
+        }
+
+        .inventory-filters {
+            padding: 0 21px 20px;
+        }
+
+        .inventory-pagination {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 16px;
+        }
+    }
+</style>

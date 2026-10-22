@@ -1,5 +1,7 @@
 ﻿using CharlieShop.Data;
 using CharlieShop.Models;
+using Dapper;
+using System.Data;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Text.Json;
@@ -492,7 +494,40 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(producto);
+            // Consultar los cinco movimientos más recientes de este producto.
+            var parametrosMovimientos = new DynamicParameters();
+            parametrosMovimientos.Add("p_id_producto", id, DbType.Int32);
+            parametrosMovimientos.Add("p_tipo_movimiento", "TODOS", DbType.String);
+            parametrosMovimientos.Add("p_fecha_desde", dbType: DbType.Date, value: null);
+            parametrosMovimientos.Add("p_fecha_hasta", dbType: DbType.Date, value: null);
+            parametrosMovimientos.Add("p_pagina", 1, DbType.Int32);
+            parametrosMovimientos.Add("p_tamano_pagina", 5, DbType.Int32);
+            parametrosMovimientos.Add(
+                "o_movimientos",
+                dbType: DbType.String,
+                direction: ParameterDirection.Output);
+
+            connection.Execute(
+                "sp_listar_movimientos_inventario",
+                parametrosMovimientos,
+                commandType: CommandType.StoredProcedure);
+
+            var movimientosJson = parametrosMovimientos.Get<string?>("o_movimientos");
+
+            var movimientos = string.IsNullOrWhiteSpace(movimientosJson)
+                ? new List<MovimientoInventarioViewModel>()
+                : JsonSerializer.Deserialize<List<MovimientoInventarioViewModel>>(
+                    movimientosJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                  ?? new List<MovimientoInventarioViewModel>();
+
+            var modeloDetalle = new ProductoDetalleViewModel
+            {
+                Producto = producto,
+                UltimosMovimientos = movimientos
+            };
+
+            return View(modeloDetalle);
         }
 
         // =========================================================
