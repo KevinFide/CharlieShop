@@ -255,9 +255,32 @@
             </div>
         </div>
 
-        <button type="button" class="btn sale-live-summary-button" id="goToSaleSummary">
-            Ver resumen <i class="bi bi-arrow-up-right ms-1"></i>
-        </button>
+        <div class="sale-live-actions">
+            <button type="button" class="btn sale-live-summary-button" id="goToSaleSummary">
+                Ver resumen <i class="bi bi-arrow-up-right ms-1"></i>
+            </button>
+            <button type="button" class="btn sale-live-cancel-button" id="cancelSaleFromBanner">
+                <i class="bi bi-x-circle me-1"></i> Cancelar venta
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirmación para descartar una venta en proceso -->
+    <div class="sale-modal-backdrop d-none" id="cancelSaleModal" role="presentation">
+        <div class="sale-confirm-modal" role="dialog" aria-modal="true"
+             aria-labelledby="cancelSaleTitle" aria-describedby="cancelSaleDescription">
+            <div class="sale-confirm-icon sale-cancel-confirm-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <h2 id="cancelSaleTitle">¿Cancelar esta venta?</h2>
+            <p id="cancelSaleDescription">Se descartarán los productos, las cantidades y el descuento de esta venta. Esta acción no guardará la venta ni modificará el inventario.</p>
+            <div class="sale-confirm-actions">
+                <button type="button" class="btn btn-light" id="keepSaleButton">
+                    Seguir con la venta
+                </button>
+                <button type="button" class="btn sale-confirm-cancel-button" id="acceptCancelSale">
+                    <i class="bi bi-trash3 me-1"></i> Sí, cancelar venta
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal de confirmación propio del sistema -->
@@ -395,6 +418,14 @@
         font-size: 10px;
     }
 
+    .sale-live-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
     .sale-live-summary-button {
         flex-shrink: 0;
         min-height: 38px;
@@ -414,6 +445,50 @@
         background: #bae6fd;
         color: #123047;
         transform: translateY(-1px);
+    }
+
+    .sale-live-cancel-button {
+        flex-shrink: 0;
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid rgba(254, 202, 202, .65);
+        border-radius: 9px;
+        background: #b42318;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 750;
+        white-space: nowrap;
+        box-shadow: 0 3px 10px rgba(180, 35, 24, .2);
+        transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+    }
+
+    .sale-live-cancel-button:hover {
+        border-color: #fecaca;
+        background: #8f1d14;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(180, 35, 24, .3);
+    }
+
+    .sale-cancel-confirm-icon {
+        background: #fff1f0;
+        color: #b42318;
+    }
+
+    .sale-confirm-cancel-button {
+        padding: 10px 13px;
+        border: 1px solid #b42318;
+        border-radius: 9px;
+        background: #b42318;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .sale-confirm-cancel-button:hover {
+        border-color: #8f1d14;
+        background: #8f1d14;
+        color: #fff;
     }
 
     .sale-page-header {
@@ -1363,9 +1438,14 @@
             font-size: 10px;
         }
 
-        .sale-live-summary-button {
+        .sale-live-actions {
+            gap: 6px;
+        }
+
+        .sale-live-summary-button,
+        .sale-live-cancel-button {
             min-height: 36px;
-            padding: 0 10px;
+            padding: 0 9px;
             font-size: 10px;
         }
     }
@@ -1398,10 +1478,18 @@
             font-size: 9px;
         }
 
-        .sale-live-summary-button {
-            min-height: 35px;
-            padding: 0 9px;
-            font-size: 10px;
+        .sale-live-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 5px;
+        }
+
+        .sale-live-summary-button,
+        .sale-live-cancel-button {
+            width: 100%;
+            min-height: 31px;
+            padding: 0 7px;
+            font-size: 9px;
         }
     }
 </style>
@@ -1437,7 +1525,12 @@
             const liveSummaryTotal = document.getElementById("liveSummaryTotal");
             const liveSummaryItems = document.getElementById("liveSummaryItems");
             const goToSaleSummary = document.getElementById("goToSaleSummary");
+            const cancelSaleFromBanner = document.getElementById("cancelSaleFromBanner");
+            const cancelSaleModal = document.getElementById("cancelSaleModal");
+            const keepSaleButton = document.getElementById("keepSaleButton");
+            const acceptCancelSale = document.getElementById("acceptCancelSale");
             const saleSummaryPanel = document.querySelector(".sale-summary-panel");
+            const mainMenuUrl = '@Url.Action("Index", "Ventas")';
             const discountPercentage = document.getElementById("discountPercentage");
             const discountPercentageHidden = document.getElementById("DescuentoPorcentaje");
             const productsJson = document.getElementById("ProductosJson");
@@ -1929,6 +2022,36 @@
                 syncProductsJson();
             }
 
+            // Cancelar la venta desde el banner superior.
+            // Si hay productos, solicitar confirmación antes de descartarlos.
+            cancelSaleFromBanner.addEventListener("click", function () {
+                if (cart.length === 0) {
+                    window.location.href = mainMenuUrl;
+                    return;
+                }
+
+                cancelSaleModal.classList.remove("d-none");
+                acceptCancelSale.focus();
+            });
+
+            function closeCancelSaleModal() {
+                cancelSaleModal.classList.add("d-none");
+                cancelSaleFromBanner.focus();
+            }
+
+            keepSaleButton.addEventListener("click", closeCancelSaleModal);
+
+            cancelSaleModal.addEventListener("click", function (event) {
+                if (event.target === cancelSaleModal) {
+                    closeCancelSaleModal();
+                }
+            });
+
+            acceptCancelSale.addEventListener("click", function () {
+                // La venta todavía no se ha enviado al servidor; salir descarta el carrito local.
+                window.location.href = mainMenuUrl;
+            });
+
             // Ir al resumen financiero sin desplazarse manualmente.
             goToSaleSummary.addEventListener("click", function () {
                 saleSummaryPanel.scrollIntoView({
@@ -2103,11 +2226,16 @@
             });
 
             document.addEventListener("keydown", function (event) {
-                if (
-                    event.key === "Escape" &&
-                    !confirmSaleModal.classList.contains("d-none")
-                ) {
+                if (event.key !== "Escape") {
+                    return;
+                }
+
+                if (!confirmSaleModal.classList.contains("d-none")) {
                     closeConfirmSaleModal();
+                }
+
+                if (!cancelSaleModal.classList.contains("d-none")) {
+                    closeCancelSaleModal();
                 }
             });
 
