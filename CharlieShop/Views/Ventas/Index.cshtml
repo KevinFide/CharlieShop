@@ -191,7 +191,13 @@
                             <tr class="sales-history-row"
                                 data-sale-id="@venta.IdVenta"
                                 data-seller="@venta.NombreVendedor"
-                                data-status="@venta.Estado">
+                                data-status="@venta.Estado"
+                                data-detail-url="@Url.Action("Detalle", "Ventas", new { id = venta.IdVenta })"
+                                tabindex="0"
+                                role="link"
+                                aria-label="Consultar el detalle de la venta número @venta.IdVenta"
+                                title="Seleccionar para consultar el detalle de la venta">
+
                                 <td>
                                     <strong>#@venta.IdVenta</strong>
                                 </td>
@@ -250,6 +256,37 @@
         );
 
         const emptyRow = document.querySelector(".sales-empty-row");
+
+        // Abre el detalle de la venta seleccionada.
+        function openSaleDetail(row) {
+            const detailUrl = row.dataset.detailUrl;
+
+            if (!detailUrl) {
+                return;
+            }
+
+            // Muestra visualmente la selección antes de navegar.
+            row.classList.add("sales-history-row-selected");
+
+            window.setTimeout(function () {
+                window.location.href = detailUrl;
+            }, 120);
+        }
+
+        // Toda la fila es seleccionable, sin agregar botones.
+        rows.forEach(function (row) {
+            row.addEventListener("click", function () {
+                openSaleDetail(row);
+            });
+
+            // Permite seleccionar filas con Enter o barra espaciadora.
+            row.addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openSaleDetail(row);
+                }
+            });
+        });
 
         function filterSales() {
             const searchTerm = (searchInput?.value || "")
@@ -320,6 +357,39 @@
 
                     filteredEmptyRow.hidden = false;
                 } else if (filteredEmptyRow) {
+                    filteredEmptyRow.hidden = true;
+                }
+            } else if (rows.length > 0 && visibleCount === 0) {
+                let filteredEmptyRow =
+                    document.getElementById("salesFilteredEmptyRow");
+
+                if (!filteredEmptyRow) {
+                    filteredEmptyRow = document.createElement("tr");
+                    filteredEmptyRow.id = "salesFilteredEmptyRow";
+                    filteredEmptyRow.innerHTML = `
+                        <td colspan="6">
+                            <div class="sales-history-placeholder">
+                                <div class="sales-history-empty-icon">
+                                    <i class="bi bi-search"></i>
+                                </div>
+                                <strong>No se encontraron ventas</strong>
+                                <span>
+                                    Probá con otro número, vendedor o estado.
+                                </span>
+                            </div>
+                        </td>
+                    `;
+
+                    document.getElementById("salesHistoryBody")
+                        .appendChild(filteredEmptyRow);
+                }
+
+                filteredEmptyRow.hidden = false;
+            } else {
+                const filteredEmptyRow =
+                    document.getElementById("salesFilteredEmptyRow");
+
+                if (filteredEmptyRow) {
                     filteredEmptyRow.hidden = true;
                 }
             }
@@ -751,11 +821,50 @@
         white-space: nowrap;
     }
 
+    /* Toda la fila funciona como una superficie seleccionable. */
+    .sales-history-row {
+        cursor: pointer;
+        outline: none;
+        transition:
+            background-color .16s ease,
+            opacity .16s ease,
+            box-shadow .16s ease;
+    }
+
     .sales-history-row td {
         padding: 14px 16px !important;
         border-bottom: 1px solid #eee;
         color: #444;
         vertical-align: middle;
+        transition:
+            background-color .16s ease,
+            color .16s ease;
+    }
+
+    /* Efecto breve y sutil al pasar el cursor sobre la fila completa. */
+    .sales-history-row:hover td {
+        background-color: #f3f4f5;
+    }
+
+    .sales-history-row:hover {
+        box-shadow: inset 3px 0 0 #b9bec5;
+    }
+
+    /* Selección visual antes de abrir el detalle de la venta. */
+    .sales-history-row-selected td {
+        background-color: #e9ecef !important;
+        color: #111;
+    }
+
+    .sales-history-row-selected {
+        box-shadow:
+            inset 4px 0 0 #171717,
+            inset 0 0 0 1px #d5d8dc;
+        opacity: .88;
+    }
+
+    .sales-history-row:focus-visible {
+        box-shadow: inset 0 0 0 2px #777;
     }
 
     .sales-history-row strong {
@@ -770,6 +879,13 @@
     .sales-empty-row[hidden],
     #salesFilteredEmptyRow[hidden] {
         display: none !important;
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .sales-history-row,
+        .sales-history-row td {
+            transition: none;
+        }
     }
 
     @@media (max-width: 900px) {
@@ -828,3 +944,4 @@
         }
     }
 </style>
+

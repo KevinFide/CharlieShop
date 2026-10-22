@@ -69,6 +69,106 @@ namespace CharlieShop.Controllers
             }
         }
 
+        // GET: /Ventas/Detalle/1
+        [HttpGet]
+        public IActionResult Detalle(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(
+                    "El identificador de la venta no es válido."
+                );
+            }
+
+            try
+            {
+                using var connection = _dbConnection.CreateConnection();
+
+                // Consultar la información general de la venta.
+                var venta = connection.QuerySingleOrDefault<
+                    ConsultaDetalleVentaViewModel>(
+                    @"
+                    SELECT
+                        v.id_venta AS IdVenta,
+                        v.fecha AS Fecha,
+                        NULLIF(
+                            BTRIM(
+                                CONCAT_WS(
+                                    ' ',
+                                    c.nombre,
+                                    c.apellido
+                                )
+                            ),
+                            ''
+                        ) AS NombreCliente,
+                        u.nombre AS NombreVendedor,
+                        v.total AS Total,
+                        v.descuento AS Descuento,
+                        v.impuesto AS Impuesto,
+                        v.total_neto AS TotalNeto,
+                        v.forma_pago AS FormaPago,
+                        v.estado AS Estado
+                    FROM venta v
+                    LEFT JOIN cliente c
+                        ON c.id_cliente = v.cliente_id
+                    LEFT JOIN usuario u
+                        ON u.id_usuario = v.usuario_id
+                    WHERE v.id_venta = @IdVenta;
+                    ",
+                    new { IdVenta = id }
+                );
+
+                // Si la venta no existe, informar al usuario.
+                if (venta == null)
+                {
+                    return NotFound(
+                        $"La venta #{id} no fue encontrada."
+                    );
+                }
+
+                // Consultar los productos asociados a la venta.
+                var productos = connection.Query<
+                    ProductoConsultaDetalleVentaViewModel>(
+                    @"
+                    SELECT
+                        dv.id_detalle_venta AS IdDetalleVenta,
+                        dv.producto_id AS IdProducto,
+                        p.codigo AS CodigoProducto,
+                        p.nombre AS NombreProducto,
+                        dv.cantidad AS Cantidad,
+                        dv.precio_unitario AS PrecioUnitario,
+                        dv.descuento AS Descuento,
+                        dv.impuesto AS Impuesto,
+                        dv.subtotal AS Subtotal
+                    FROM detalle_venta dv
+                    LEFT JOIN producto p
+                        ON p.id_producto = dv.producto_id
+                    WHERE dv.venta_id = @IdVenta
+                    ORDER BY dv.id_detalle_venta;
+                    ",
+                    new { IdVenta = id }
+                ).ToList();
+
+                venta.Productos = productos;
+
+                return View(venta);
+            }
+            catch (PostgresException)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "Ocurrió un error al consultar el detalle de la venta."
+                );
+            }
+            catch (Exception)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    "No fue posible cargar el detalle de la venta."
+                );
+            }
+        }
+
         // GET: /Ventas/Crear
         [HttpGet]
         public IActionResult Crear()
