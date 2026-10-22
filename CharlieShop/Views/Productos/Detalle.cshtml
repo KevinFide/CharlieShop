@@ -3,17 +3,13 @@
 @{
     ViewData["Title"] = "Detalle de producto";
 
-<<<<<<< HEAD
     ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
     {
         ("Productos", "Productos", "Index"),
         ("Detalle de producto", null, null)
     };
 
-    var stockBajo = Model.StockActual <= Model.StockMinimo;
-=======
     var stockBajo = Model.Producto.StockActual <= Model.Producto.StockMinimo;
->>>>>>> origin/develop
 
     var estadoTexto = Model.Producto.Estado
         ? "Activo"

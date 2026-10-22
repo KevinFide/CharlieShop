@@ -1,11 +1,16 @@
-﻿@{
+﻿@model List<CharlieShop.Models.Cliente>
+
+@{
     ViewData["Title"] = "Clientes";
+
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Clientes", null, null)
+    };
 }
 
 <div class="d-flex justify-content-between align-items-start mb-3">
-
     <div>
-
         <div class="page-title">
             Clientes
         </div>
@@ -13,187 +18,172 @@
         <div class="page-subtitle">
             Gestión de información y seguimiento de clientes.
         </div>
-
     </div>
 
     <div class="d-flex gap-2">
-        <a asp-action="Detalle" class="btn btn-outline-primary"><i class="bi bi-person-lines-fill me-1"></i> Ver detalle</a>
-        <button class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo cliente</button>
+        <a asp-action="Crear" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nuevo cliente
+        </a>
     </div>
-
 </div>
-
 
 <div class="card p-4">
 
-    <div class="row mb-3">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show"
+             role="alert">
+            @TempData["Success"]
 
-        <div class="col-md-5">
-
-            <input type="text"
-                   class="form-control"
-                   placeholder="Buscar cliente..." />
-
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Cerrar">
+            </button>
         </div>
+    }
 
+    <div class="row mb-3">
+        <div class="col-md-7">
+            <form asp-action="Buscar" method="get">
+                <div class="input-group">
+                    <input type="text"
+                           name="termino"
+                           value="@ViewBag.Termino"
+                           class="form-control"
+                           placeholder="Buscar por nombre, apellido, identificación o teléfono..." />
+
+                    <button type="submit"
+                            class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i>
+                        Buscar
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn btn-outline-secondary">
+                        Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 
-
     <div class="table-responsive">
-
         <table class="table table-hover align-middle">
-
             <thead>
-
                 <tr>
-
                     <th>ID</th>
                     <th>Cliente</th>
                     <th>Teléfono</th>
                     <th>Correo</th>
                     <th>Saldo pendiente</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
-
                 </tr>
-
             </thead>
 
             <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var cliente in Model)
+                    {
+                        <tr>
+                            <td>@cliente.IdCliente</td>
 
-                <tr>
+                            <td>
+                                <span class="fw-semibold">
+                                    @cliente.Nombre @cliente.Apellido
+                                </span>
+                            </td>
 
-                    <td>
-                        C-001
-                    </td>
+                            <td>
+                                @(cliente.Telefono ?? "—")
+                            </td>
 
-                    <td><a asp-action="Detalle" class="fw-semibold text-decoration-none">María López</a></td>
+                            <td>
+                                @(cliente.Email ?? "—")
+                            </td>
 
-                    <td>
-                        8888-1111
-                    </td>
+                            <td>
+                                <span class="text-muted">—</span>
+                            </td>
 
-                    <td>
-                        maria@email.com
-                    </td>
+                            <td>
+                                @if (cliente.Estado)
+                                {
+                                    <span class="badge bg-success">
+                                        Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        Inactivo
+                                    </span>
+                                }
+                            </td>
 
-                    <td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Detalle"
+                                       asp-route-id="@cliente.IdCliente"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Ver detalle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
 
-                        <span class="badge bg-success">
-                            ₡0
-                        </span>
+                                    <a asp-action="Editar"
+                                       asp-route-id="@cliente.IdCliente"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="Editar cliente">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
 
-                    </td>
+                                    <form asp-action="CambiarEstado"
+                                          method="post"
+                                          class="d-inline"
+                                          onsubmit="return confirm('¿Desea cambiar el estado de este cliente?');">
 
-                    <td>
+                                        @Html.AntiForgeryToken()
 
-                        <button class="btn btn-sm btn-outline-primary me-1">
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@cliente.IdCliente" />
 
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-pencil"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        C-002
-                    </td>
-
-                    <td><a asp-action="Detalle" class="fw-semibold text-decoration-none">Carlos Mora</a></td>
-
-                    <td>
-                        8888-2222
-                    </td>
-
-                    <td>
-                        carlos@email.com
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-warning text-dark">
-                            ₡72.500
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary me-1">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-pencil"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        C-003
-                    </td>
-
-                    <td>
-                        Andrea Solís
-                    </td>
-
-                    <td>
-                        8888-3333
-                    </td>
-
-                    <td>
-                        andrea@email.com
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-success">
-                            ₡0
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary me-1">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-pencil"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
+                                        @if (cliente.Estado)
+                                        {
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Desactivar cliente">
+                                                <i class="bi bi-person-x"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    title="Activar cliente">
+                                                <i class="bi bi-person-check"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7"
+                            class="text-center text-muted py-4">
+                            <i class="bi bi-people fs-3 d-block mb-2"></i>
+                            No hay clientes registrados.
+                        </td>
+                    </tr>
+                }
             </tbody>
-
         </table>
-
     </div>
-
 </div>
