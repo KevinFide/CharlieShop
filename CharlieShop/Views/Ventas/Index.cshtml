@@ -270,10 +270,10 @@
 
             window.setTimeout(function () {
                 window.location.href = detailUrl;
-            }, 120);
+            }, 160);
         }
 
-        // Toda la fila es seleccionable, sin agregar botones.
+        // Toda la fila funciona como superficie seleccionable.
         rows.forEach(function (row) {
             row.addEventListener("click", function () {
                 openSaleDetail(row);
@@ -433,6 +433,19 @@
         max-width: 1320px;
         margin: 0 auto;
         padding-bottom: 28px;
+        animation: salesPageEnter .3s ease-out;
+    }
+
+    @@keyframes salesPageEnter {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .sales-page-header {
@@ -456,17 +469,20 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        border-radius: 12px;
+        border-radius: 13px;
         background: #111;
         color: #fff;
         font-size: 21px;
+        box-shadow: 0 5px 12px rgba(0, 0, 0, .12);
+        transition: transform .22s ease, box-shadow .22s ease;
     }
 
     .sales-page-heading h1 {
         margin: 0;
         color: #111;
         font-size: 27px;
-        font-weight: 700;
+        font-weight: 750;
+        letter-spacing: -.5px;
     }
 
     .sales-page-heading p {
@@ -477,18 +493,31 @@
 
     .sales-primary-button {
         padding: 11px 16px;
-        border-radius: 9px;
+        border-radius: 10px;
         font-size: 13px;
         font-weight: 600;
         background: #111;
         border-color: #111;
         white-space: nowrap;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
     }
 
     .sales-primary-button:hover,
     .sales-action-button:hover {
         background: #303030;
         border-color: #303030;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0, 0, 0, .12);
+    }
+
+    .sales-primary-button:active,
+    .sales-action-button:active {
+        transform: translateY(0);
+        box-shadow: none;
     }
 
     .sales-summary-grid {
@@ -502,12 +531,24 @@
     .sales-content-card {
         background: #fff;
         border: 1px solid #e7e7e7;
-        border-radius: 15px;
+        border-radius: 16px;
         box-shadow: 0 3px 14px rgba(0, 0, 0, .025);
     }
 
     .sales-summary-card {
+        position: relative;
         padding: 21px;
+        transition:
+            transform .22s ease,
+            box-shadow .22s ease,
+            border-color .22s ease;
+    }
+
+    /* Elevación discreta de las tarjetas al pasar el cursor. */
+    .sales-summary-card:hover {
+        transform: translateY(-4px);
+        border-color: #d9dce0;
+        box-shadow: 0 12px 28px rgba(20, 25, 35, .075);
     }
 
     .sales-summary-top {
@@ -520,15 +561,25 @@
     }
 
     .sales-summary-icon {
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 9px;
-        background: #f3f3f3;
+        border-radius: 10px;
+        background: #f3f4f5;
         color: #333;
         font-size: 15px;
+        transition:
+            background-color .22s ease,
+            color .22s ease,
+            transform .22s ease;
+    }
+
+    .sales-summary-card:hover .sales-summary-icon {
+        background: #171717;
+        color: #fff;
+        transform: scale(1.05);
     }
 
     .sales-summary-value {
@@ -536,13 +587,14 @@
         color: #171717;
         font-size: 19px;
         font-weight: 700;
+        letter-spacing: -.25px;
     }
 
     .sales-summary-card p {
         margin: 7px 0 0;
         color: #818181;
         font-size: 12px;
-        line-height: 1.6;
+        line-height: 1.7;
     }
 
     .sales-card-link {
@@ -556,8 +608,16 @@
         font-weight: 700;
     }
 
+    .sales-card-link i {
+        transition: transform .2s ease;
+    }
+
     .sales-card-link:hover {
         color: #555;
+    }
+
+    .sales-card-link:hover i {
+        transform: translateX(4px);
     }
 
     .sales-card-note {
@@ -570,6 +630,14 @@
     .sales-content-card {
         overflow: hidden;
         margin-bottom: 22px;
+        transition:
+            border-color .22s ease,
+            box-shadow .22s ease;
+    }
+
+    .sales-content-card:hover {
+        border-color: #dedfe2;
+        box-shadow: 0 7px 22px rgba(20, 25, 35, .035);
     }
 
     .sales-content-header {
@@ -582,12 +650,14 @@
         color: #171717;
         font-size: 17px;
         font-weight: 700;
+        letter-spacing: -.2px;
     }
 
     .sales-content-header p {
         margin: 5px 0 0;
         color: #858585;
         font-size: 13px;
+        line-height: 1.6;
     }
 
     .sales-action-row {
@@ -596,6 +666,11 @@
         align-items: center;
         gap: 20px;
         padding: 23px 25px;
+        transition: background-color .2s ease;
+    }
+
+    .sales-action-row:hover {
+        background-color: #fcfcfc;
     }
 
     .sales-action-info {
@@ -610,11 +685,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 11px;
+        border-radius: 12px;
         background: #f3f3f3;
         color: #222;
         font-size: 19px;
         flex-shrink: 0;
+        transition:
+            background-color .22s ease,
+            color .22s ease,
+            transform .22s ease;
+    }
+
+    .sales-action-row:hover .sales-action-icon {
+        background: #171717;
+        color: #fff;
+        transform: translateY(-2px);
     }
 
     .sales-action-info h3 {
@@ -628,81 +713,191 @@
         margin: 5px 0 0;
         color: #818181;
         font-size: 12px;
-        line-height: 1.5;
+        line-height: 1.6;
     }
 
     .sales-action-button {
         white-space: nowrap;
-        border-radius: 9px;
+        border-radius: 10px;
         padding: 10px 14px;
         font-size: 12px;
         font-weight: 600;
         background: #111;
         border-color: #111;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease,
+            box-shadow .2s ease;
     }
+
+    /* =========================================
+       BUSCADOR MEJORADO - HISTORIAL DE VENTAS
+       ========================================= */
 
     .sales-history-tools {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 14px;
-        padding: 20px 25px;
-        border-bottom: 1px solid #eee;
+        padding: 22px 25px;
+        border-bottom: 1px solid #ededed;
+        background: #fff;
     }
 
     .sales-search-box {
         flex: 1;
-        min-width: 220px;
+        min-width: 240px;
     }
 
     .sales-history-filter {
-        width: 190px;
+        width: 200px;
         flex-shrink: 0;
     }
 
-    .sales-history-tools .form-control,
-    .sales-history-tools .form-select,
-    .sales-history-tools .input-group-text {
-        min-height: 42px;
-        border-color: #dedede;
-        font-size: 12px;
-        box-shadow: none;
+    /* El grupo completo se comporta como un único campo. */
+    .sales-history-tools .input-group {
+        min-height: 46px;
+        overflow: hidden;
+        border: 1px solid #dedfe3;
+        border-radius: 12px;
+        background: #f9fafb;
+        transition:
+            border-color .22s ease,
+            background-color .22s ease,
+            box-shadow .22s ease,
+            transform .22s ease;
     }
 
     .sales-history-tools .input-group-text {
         display: flex;
         align-items: center;
-        padding: 0 13px;
-        border-radius: 9px 0 0 9px;
-        background: #f8f8f8;
-        color: #777;
+        justify-content: center;
+        min-width: 48px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #777e87;
+        font-size: 14px;
+        transition: color .22s ease;
     }
 
     .sales-history-tools .form-control {
+        min-height: 44px;
+        padding: 0 12px;
+        border: 0;
         border-radius: 0;
+        background: transparent;
+        color: #202124;
+        font-size: 13px;
+        box-shadow: none;
     }
 
-    .sales-history-tools .btn {
-        border-radius: 0 9px 9px 0;
-        padding: 0 16px;
+    .sales-history-tools .form-control::placeholder {
+        color: #9a9da4;
+        opacity: 1;
+    }
+
+    /* Realce sutil al entrar al campo o enfocarlo con teclado. */
+    .sales-history-tools .input-group:focus-within {
+        border-color: #858b95;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(40, 45, 55, .07);
+        transform: translateY(-1px);
+    }
+
+    .sales-history-tools .input-group:focus-within .input-group-text {
+        color: #171717;
+    }
+
+    .sales-history-tools .form-control:focus {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Botón integrado visualmente con el campo de búsqueda. */
+    .sales-history-tools .input-group .btn {
+        min-height: 44px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 0;
+        background: #17191c;
+        color: #fff;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 650;
+        white-space: nowrap;
+        transition:
+            background-color .2s ease,
+            box-shadow .2s ease;
     }
 
+    .sales-history-tools .input-group .btn:hover {
+        background: #34373c;
+    }
+
+    .sales-history-tools .input-group .btn:active {
+        background: #090a0b;
+    }
+
+    /* Filtro de estado: misma altura y lenguaje visual del buscador. */
     .sales-history-tools .form-select {
-        border-radius: 9px;
+        min-height: 46px;
+        padding: 0 40px 0 15px;
+        border: 1px solid #dedfe3;
+        border-radius: 12px;
+        background-color: #f9fafb;
+        color: #34373c;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: none;
+        transition:
+            border-color .22s ease,
+            background-color .22s ease,
+            box-shadow .22s ease;
+    }
+
+    .sales-history-tools .form-select:hover {
+        border-color: #bfc2c8;
+        background-color: #fff;
+    }
+
+    .sales-history-tools .form-select:focus {
+        border-color: #858b95;
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(40, 45, 55, .07);
+    }
+
+    /* Botón Actualizar del encabezado. */
+    .sales-history-header > .btn {
+        min-height: 40px;
+        padding: 8px 13px;
+        border-radius: 10px;
+        font-size: 12px;
+        transition:
+            background-color .2s ease,
+            border-color .2s ease,
+            transform .2s ease;
+    }
+
+    .sales-history-header > .btn:hover {
+        transform: translateY(-1px);
     }
 
     .sales-history-table {
         font-size: 12px;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     .sales-history-table thead th {
-        padding: 14px 16px;
+        padding: 15px 16px;
         background: #fafafa;
         border-bottom: 1px solid #eee;
         color: #777;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         white-space: nowrap;
     }
@@ -723,6 +918,7 @@
         gap: 15px;
         padding: 16px 25px;
         border-top: 1px solid #eee;
+        background: #fff;
     }
 
     .sales-pagination-info {
@@ -735,6 +931,11 @@
         border-color: #e5e5e5;
         padding: 7px 10px;
         font-size: 11px;
+        border-radius: 8px;
+        transition:
+            background-color .18s ease,
+            border-color .18s ease,
+            color .18s ease;
     }
 
     .sales-pagination .page-item.active .page-link {
@@ -762,16 +963,24 @@
     }
 
     .sales-history-icon {
-        width: 38px;
-        height: 38px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
-        background: #f3f3f3;
+        border-radius: 11px;
+        background: #f3f4f5;
         color: #333;
-        font-size: 16px;
+        font-size: 17px;
         flex-shrink: 0;
+        transition:
+            background-color .2s ease,
+            color .2s ease;
+    }
+
+    .sales-history-card:hover .sales-history-icon {
+        background: #ededee;
+        color: #111;
     }
 
     .sales-history-placeholder {
@@ -786,16 +995,16 @@
     }
 
     .sales-history-empty-icon {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 3px;
-        border-radius: 12px;
+        border-radius: 14px;
         background: #f4f4f4;
         color: #777;
-        font-size: 19px;
+        font-size: 20px;
     }
 
     .sales-history-placeholder strong {
@@ -807,13 +1016,13 @@
         max-width: 520px;
         color: #888;
         font-size: 11px;
-        line-height: 1.6;
+        line-height: 1.7;
     }
 
     .sales-status-badge {
         display: inline-block;
-        padding: 6px 9px;
-        border-radius: 7px;
+        padding: 6px 10px;
+        border-radius: 8px;
         background: #e8f5e9;
         color: #256029;
         font-size: 10px;
@@ -826,22 +1035,22 @@
         cursor: pointer;
         outline: none;
         transition:
-            background-color .16s ease,
-            opacity .16s ease,
-            box-shadow .16s ease;
+            background-color .18s ease,
+            opacity .18s ease,
+            box-shadow .18s ease;
     }
 
     .sales-history-row td {
-        padding: 14px 16px !important;
+        padding: 15px 16px !important;
         border-bottom: 1px solid #eee;
         color: #444;
         vertical-align: middle;
         transition:
-            background-color .16s ease,
-            color .16s ease;
+            background-color .18s ease,
+            color .18s ease;
     }
 
-    /* Efecto breve y sutil al pasar el cursor sobre la fila completa. */
+    /* Hover suave en toda la fila, sin botones adicionales. */
     .sales-history-row:hover td {
         background-color: #f3f4f5;
     }
@@ -850,7 +1059,7 @@
         box-shadow: inset 3px 0 0 #b9bec5;
     }
 
-    /* Selección visual antes de abrir el detalle de la venta. */
+    /* Selección visual antes de abrir el detalle. */
     .sales-history-row-selected td {
         background-color: #e9ecef !important;
         color: #111;
@@ -860,7 +1069,7 @@
         box-shadow:
             inset 4px 0 0 #171717,
             inset 0 0 0 1px #d5d8dc;
-        opacity: .88;
+        opacity: .9;
     }
 
     .sales-history-row:focus-visible {
@@ -881,10 +1090,24 @@
         display: none !important;
     }
 
+    /* Evita animaciones si el usuario así lo prefiere en su sistema. */
     @@media (prefers-reduced-motion: reduce) {
+        .sales-page,
+        .sales-summary-card,
+        .sales-summary-icon,
+        .sales-content-card,
+        .sales-action-row,
+        .sales-action-icon,
+        .sales-primary-button,
+        .sales-action-button,
+        .sales-history-tools .form-control,
+        .sales-history-tools .form-select,
+        .sales-history-tools .input-group,
         .sales-history-row,
         .sales-history-row td {
-            transition: none;
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
         }
     }
 
@@ -923,13 +1146,21 @@
         }
 
         .sales-history-tools {
-            padding: 20px;
+            align-items: stretch;
+            flex-direction: column;
+            padding: 18px;
+            gap: 12px;
         }
 
         .sales-search-box,
         .sales-history-filter {
             width: 100%;
             min-width: 100%;
+        }
+
+        .sales-history-tools .input-group,
+        .sales-history-tools .form-select {
+            min-height: 44px;
         }
 
         .sales-history-header {
@@ -942,6 +1173,9 @@
             flex-direction: column;
             padding: 16px 20px;
         }
+
+        .sales-history-table {
+            min-width: 720px;
+        }
     }
 </style>
-
