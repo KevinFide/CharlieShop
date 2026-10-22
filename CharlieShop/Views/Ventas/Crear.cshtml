@@ -70,7 +70,7 @@
                     </div>
 
                     <div class="sale-quantity-row">
-                        <div class="sale-quantity-field"><label for="quantityInput" class="form-label">Cantidad</label><input id="quantityInput" type="number" class="form-control" min="0.01" step="0.01" value="1" /></div>
+                        <div class="sale-quantity-field"><label for="quantityInput" class="form-label">Cantidad</label><input id="quantityInput" type="number" class="form-control" min="1" step="1" value="1" inputmode="numeric" /></div>
                         <div class="sale-stock-placeholder"><span>Stock disponible</span><strong id="selectedProductStock">—</strong></div>
                         <button type="button" class="btn btn-dark sale-add-button" id="addProductButton"><i class="bi bi-plus-lg me-1"></i> Agregar al carrito</button>
                     </div>
@@ -577,26 +577,72 @@
                     const quantityCell = document.createElement("td");
                     const quantity = document.createElement("input");
                     quantity.type = "number";
-                    quantity.min = "0.01";
-                    quantity.step = "0.01";
+                    quantity.min = "1";
+                    quantity.step = "1";
+                    quantity.inputMode = "numeric";
                     quantity.max = String(item.stockActual);
                     quantity.className = "sale-cart-quantity";
                     quantity.value = String(item.cantidad);
                     quantity.setAttribute("aria-label", `Cantidad de ${item.nombre}`);
                     quantity.addEventListener("change", () => {
-                        const next = Number(quantity.value);
+                        const rawQuantity = quantity.value.trim();
+                        const next = Number(rawQuantity);
                         const otherQuantity = cart
                             .filter((_, i) => i !== index)
                             .filter(p => p.idProducto === item.idProducto)
                             .reduce((sum, p) => sum + p.cantidad, 0);
 
-                        if (!Number.isFinite(next) || next <= 0 || next + otherQuantity > item.stockActual) {
-                            showCartActionMessage(`La cantidad debe ser mayor que cero y no superar el stock disponible (${item.stockActual}).`, true);
+                        // Si ingresa cero, confirmar si desea eliminar el producto.
+                        if (rawQuantity !== "" && next === 0) {
+                            const confirmar = window.confirm(
+                                `¿Deseás eliminar "${item.nombre}" del detalle de la venta?`
+                            );
+
+                            if (confirmar) {
+                                cart = cart.filter(
+                                    producto => producto.idProducto !== item.idProducto
+                                );
+
+                                clearCartActionMessage();
+                                renderCart();
+
+                                showCartActionMessage(
+                                    `Se eliminó "${item.nombre}" del detalle de la venta.`
+                                );
+                            } else {
+                                // Al cancelar, renderizar restaura la cantidad anterior.
+                                renderCart();
+                            }
+
+                            return;
+                        }
+
+                        // Las unidades vendidas deben ser enteros positivos.
+                        if (
+                            rawQuantity === "" ||
+                            !Number.isFinite(next) ||
+                            !Number.isInteger(next) ||
+                            next < 0
+                        ) {
+                            showCartActionMessage(
+                                "La cantidad debe ser un número entero mayor que cero. No se permiten decimales ni fracciones.",
+                                true
+                            );
                             renderCart();
                             return;
                         }
 
-                        item.cantidad = Math.round(next * 100) / 100;
+                        if (next + otherQuantity > item.stockActual) {
+                            showCartActionMessage(
+                                `La cantidad no puede superar el stock disponible (${item.stockActual}).`,
+                                true
+                            );
+                            renderCart();
+                            return;
+                        }
+
+                        item.cantidad = next;
+                        clearCartActionMessage();
                         renderCart();
                     });
                     quantityCell.appendChild(quantity);
@@ -697,10 +743,20 @@
                     return;
                 }
 
-                const quantity = Number(quantityInput.value);
+                const rawQuantity = quantityInput.value.trim();
+                const quantity = Number(rawQuantity);
 
-                if (!Number.isFinite(quantity) || quantity <= 0) {
-                    showCartActionMessage("La cantidad debe ser mayor que cero.", true);
+                if (
+                    rawQuantity === "" ||
+                    !Number.isFinite(quantity) ||
+                    !Number.isInteger(quantity) ||
+                    quantity <= 0
+                ) {
+                    showCartActionMessage(
+                        "La cantidad debe ser un número entero mayor que cero. No se permiten decimales ni fracciones.",
+                        true
+                    );
+                    quantityInput.focus();
                     return;
                 }
 
@@ -718,13 +774,13 @@
                 }
 
                 if (existing) {
-                    existing.cantidad = Math.round(nextQuantity * 100) / 100;
+                    existing.cantidad = nextQuantity;
                 } else {
                     cart.push({
                         idProducto: selectedProduct.idProducto,
                         codigo: selectedProduct.codigo,
                         nombre: selectedProduct.nombre,
-                        cantidad: Math.round(quantity * 100) / 100,
+                        cantidad: quantity,
                         precioUnitario: Number(selectedProduct.precioVenta),
                         stockActual: Number(selectedProduct.stockActual)
                     });
@@ -748,6 +804,22 @@
 
                 if (cart.length === 0) {
                     showCartActionMessage("Debe agregar al menos un producto antes de finalizar la venta.", true);
+                    return;
+                }
+
+                // Validación final antes de mostrar la confirmación.
+                const invalidQuantity = cart.find(item =>
+                    !Number.isInteger(item.cantidad) ||
+                    item.cantidad <= 0 ||
+                    item.cantidad > item.stockActual
+                );
+
+                if (invalidQuantity) {
+                    showCartActionMessage(
+                        `La cantidad de "${invalidQuantity.nombre}" debe ser un entero positivo y no puede superar el stock disponible (${invalidQuantity.stockActual}).`,
+                        true
+                    );
+                    renderCart();
                     return;
                 }
 
