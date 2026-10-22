@@ -1,5 +1,8 @@
+
+using System.Globalization;
 using CharlieShop.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using CharlieShop.Models;
 using CharlieShop.Services;
 
@@ -20,7 +23,6 @@ builder.Services.AddAuthentication(
         options.AccessDeniedPath = "/Account/AccessDenied";
 
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
-
         options.SlidingExpiration = true;
     });
 
@@ -29,6 +31,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Configuración regional de Costa Rica.
+var cultura = new CultureInfo("es-CR");
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(cultura),
+    SupportedCultures = new[] { cultura },
+    SupportedUICultures = new[] { cultura }
+});
 
 if (!app.Environment.IsDevelopment())
 {
