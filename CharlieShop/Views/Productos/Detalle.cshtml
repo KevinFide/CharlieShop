@@ -3,6 +3,12 @@
 @{
     ViewData["Title"] = "Detalle de producto";
 
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Productos", "Productos", "Index"),
+        ("Detalle de producto", null, null)
+    };
+
     var stockBajo = Model.Producto.StockActual <= Model.Producto.StockMinimo;
 
     var estadoTexto = Model.Producto.Estado

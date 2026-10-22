@@ -3,6 +3,12 @@
 
 @{
     ViewData["Title"] = "Registrar producto";
+
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Productos", "Productos", "Index"),
+        ("Registrar producto", null, null)
+    };
 }
 
 <div class="product-form-page">

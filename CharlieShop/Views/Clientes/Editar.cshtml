@@ -1,0 +1,113 @@
+@model CharlieShop.Models.Cliente
+
+@{
+    ViewData["Title"] = "Editar cliente";
+
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Clientes", "Clientes", "Index"),
+        ("Editar cliente", null, null)
+    };
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <div class="page-title">Editar cliente</div>
+        <div class="page-subtitle">
+            Actualización de la información personal del cliente.
+        </div>
+    </div>
+
+    <a asp-action="Detalle"
+       asp-route-id="@Model.IdCliente" 
+       class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver al detalle
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <form asp-action="Editar" method="post">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="IdCliente" />
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Nombre" class="form-label"></label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Apellido" class="form-label"></label>
+                <input asp-for="Apellido" class="form-control" />
+                <span asp-validation-for="Apellido"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Identificacion"
+                       class="form-label"></label>
+                <input asp-for="Identificacion"
+                       class="form-control" />
+                <span asp-validation-for="Identificacion"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Telefono" class="form-label"></label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Email"
+                       class="form-label">Correo electrónico</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Direccion" class="form-label"></label>
+                <input asp-for="Direccion" class="form-control" />
+                <span asp-validation-for="Direccion"
+                      class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Estado" class="form-label">
+                    Estado del cliente
+                </label>
+
+                <select asp-for="Estado" class="form-select">
+                    <option value="true">Activo</option>
+                    <option value="false">Inactivo</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a asp-action="Index"
+               class="btn btn-outline-secondary">
+                Cancelar
+            </a>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>
+                Guardar cambios
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+```
