@@ -613,9 +613,44 @@
                     removeButton.setAttribute("aria-label", `Quitar ${item.nombre}`);
                     removeButton.innerHTML = '<i class="bi bi-trash"></i>';
                     removeButton.addEventListener("click", () => {
-                        cart = cart.filter((_, i) => i !== index);
+                        // Verificar que el producto siga en el carrito.
+                        const productoExiste = cart.some(
+                            producto => producto.idProducto === item.idProducto
+                        );
+
+                        if (!productoExiste) {
+                            showCartActionMessage(
+                                `El producto "${item.nombre}" ya no se encuentra en el detalle de la venta.`,
+                                true
+                            );
+
+                            renderCart();
+                            return;
+                        }
+
+                        // Solicitar confirmación antes de eliminar.
+                        const confirmar = window.confirm(
+                            `¿Deseás eliminar "${item.nombre}" del detalle de la venta?`
+                        );
+
+                        // Si cancela, conservar el carrito sin cambios.
+                        if (!confirmar) {
+                            return;
+                        }
+
+                        // Eliminar el producto y actualizar el detalle.
+                        cart = cart.filter(
+                            producto => producto.idProducto !== item.idProducto
+                        );
+
                         renderCart();
+
+                        showCartActionMessage(
+                            `Se eliminó "${item.nombre}" del detalle de la venta.`
+                        );
                     });
+
+
                     actionCell.appendChild(removeButton);
 
                     row.append(productCell, priceCell, quantityCell, subtotalCell, actionCell);
