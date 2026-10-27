@@ -321,6 +321,18 @@
             background: #f3f4f6;
             color: #374151;
             font-size: 16px;
+            overflow: hidden;
+        }
+
+        .producto-thumbnail {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            display: block;
+            object-fit: contain;
+            border: 1px solid #eceff2;
+            border-radius: 10px;
+            background: #fff;
         }
 
         .producto-nombre {
@@ -524,6 +536,83 @@
                 padding-right: 12px;
             }
         }
+
+        /* =========================================================
+           PAGINACIÓN DE PRODUCTOS
+        ========================================================= */
+        .products-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 16px 22px;
+            border-top: 1px solid #edf0f2;
+            flex-wrap: wrap;
+        }
+
+        .products-pagination-info {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .products-pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .products-page-size {
+            min-width: 76px;
+            height: 34px;
+            border: 1px solid #dfe3e8;
+            border-radius: 8px;
+            padding: 0 9px;
+            background: #fff;
+            color: #374151;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        .products-page-button {
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid #e1e5ea;
+            border-radius: 8px;
+            background: #fff;
+            color: #374151;
+            font-size: 12px;
+            transition: all .15s ease;
+        }
+
+        .products-page-button:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #cbd2da;
+        }
+
+        .products-page-button.active {
+            background: #111827;
+            border-color: #111827;
+            color: #fff;
+        }
+
+        .products-page-button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        @@media (max-width: 640px) {
+            .products-pagination {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .products-pagination-controls {
+                width: 100%;
+            }
+        }
+
     </style>
 }
 
@@ -819,7 +908,7 @@
 
         </div>
 
-        <span class="products-list-subtitle">
+        <span class="products-list-subtitle" id="productTotalCount">
             @(Model?.Count ?? 0) registrados
         </span>
 
@@ -874,9 +963,23 @@
 
                                 <div class="producto-info">
 
-                                    <div class="producto-icon">
-                                        <i class="bi bi-box"></i>
-                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(producto.ImagenUrl))
+                                    {
+                                        <img src="@producto.ImagenUrl"
+                                             alt="Imagen de @producto.Nombre"
+                                             class="producto-thumbnail"
+                                             loading="lazy"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                        <div class="producto-icon" style="display:none;">
+                                            <i class="bi bi-box"></i>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="producto-icon">
+                                            <i class="bi bi-box"></i>
+                                        </div>
+                                    }
 
                                     <div>
 
@@ -1019,12 +1122,6 @@
                                     </form>
 
 
-                                    <a asp-action="Eliminar"
-                                       asp-route-id="@producto.IdProducto"
-                                       class="btn btn-sm btn-outline-danger product-action-button"
-                                       title="Eliminar producto">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
 
                                 </div>
 
@@ -1064,4 +1161,142 @@
 
     </div>
 
+    <div class="products-pagination" id="productsPagination">
+        <div class="products-pagination-info" id="productsPaginationInfo">
+            Mostrando productos...
+        </div>
+
+        <div class="products-pagination-controls">
+            <label for="productsPageSize" class="products-pagination-info">Mostrar</label>
+            <select id="productsPageSize" class="products-page-size" aria-label="Cantidad de productos por página">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+
+            <button type="button" class="products-page-button" id="productsPrevPage" aria-label="Página anterior">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+
+            <div id="productsPageNumbers" class="products-pagination-controls"></div>
+
+            <button type="button" class="products-page-button" id="productsNextPage" aria-label="Página siguiente">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
 </div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tableBody = document.querySelector(".products-table tbody");
+            const pagination = document.getElementById("productsPagination");
+            const info = document.getElementById("productsPaginationInfo");
+            const pageSizeSelect = document.getElementById("productsPageSize");
+            const prevButton = document.getElementById("productsPrevPage");
+            const nextButton = document.getElementById("productsNextPage");
+            const pageNumbers = document.getElementById("productsPageNumbers");
+            const totalCount = document.getElementById("productTotalCount");
+
+            if (!tableBody || !pagination || !pageSizeSelect) return;
+
+            const rows = Array.from(tableBody.querySelectorAll("tr"))
+                .filter(row => !row.querySelector(".product-empty"));
+
+            let currentPage = 1;
+            let pageSize = Number(pageSizeSelect.value) || 10;
+
+            if (rows.length === 0) {
+                pagination.style.display = "none";
+                return;
+            }
+
+            function addPageButton(page) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "products-page-button" + (page === currentPage ? " active" : "");
+                button.textContent = page;
+                button.setAttribute("aria-label", `Ir a la página ${page}`);
+                if (page === currentPage) button.setAttribute("aria-current", "page");
+                button.addEventListener("click", function () {
+                    currentPage = page;
+                    renderPagination();
+                });
+                pageNumbers.appendChild(button);
+            }
+
+            function addEllipsis() {
+                const span = document.createElement("span");
+                span.className = "products-pagination-info";
+                span.textContent = "…";
+                span.style.padding = "0 3px";
+                pageNumbers.appendChild(span);
+            }
+
+            function renderPagination() {
+                pageSize = Number(pageSizeSelect.value) || 10;
+                const totalRows = rows.length;
+                const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+
+                currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, totalRows);
+
+                rows.forEach((row, index) => {
+                    row.style.display = index >= startIndex && index < endIndex ? "" : "none";
+                });
+
+                info.textContent = `Mostrando ${startIndex + 1}–${endIndex} de ${totalRows} productos`;
+                if (totalCount) totalCount.textContent = `${totalRows} registrados`;
+
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage === totalPages;
+                pageNumbers.innerHTML = "";
+
+                let firstPage = Math.max(1, currentPage - 2);
+                let lastPage = Math.min(totalPages, currentPage + 2);
+                if (currentPage <= 3) lastPage = Math.min(totalPages, 5);
+                if (currentPage >= totalPages - 2) firstPage = Math.max(1, totalPages - 4);
+
+                if (firstPage > 1) {
+                    addPageButton(1);
+                    if (firstPage > 2) addEllipsis();
+                }
+
+                for (let page = firstPage; page <= lastPage; page++) {
+                    addPageButton(page);
+                }
+
+                if (lastPage < totalPages) {
+                    if (lastPage < totalPages - 1) addEllipsis();
+                    addPageButton(totalPages);
+                }
+
+                pagination.style.display = "flex";
+            }
+
+            prevButton.addEventListener("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPagination();
+                }
+            });
+
+            nextButton.addEventListener("click", function () {
+                currentPage++;
+                renderPagination();
+            });
+
+            pageSizeSelect.addEventListener("change", function () {
+                currentPage = 1;
+                renderPagination();
+            });
+
+            renderPagination();
+        });
+    </script>
+}

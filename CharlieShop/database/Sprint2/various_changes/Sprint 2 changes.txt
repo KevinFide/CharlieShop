@@ -1,0 +1,637 @@
+--Alter de productos para imagenes:
+
+ALTER TABLE producto
+ADD COLUMN imagen_url VARCHAR(500);
+
+--Alter de sp_cread producto:
+
+
+DROP PROCEDURE IF EXISTS public.sp_crear_producto(
+    character varying,
+    character varying,
+    text,
+    character varying,
+    numeric,
+    numeric,
+    character varying,
+    text
+);
+
+CREATE OR REPLACE PROCEDURE public.sp_crear_producto(
+    IN p_codigo VARCHAR,
+    IN p_nombre VARCHAR,
+    IN p_descripcion TEXT,
+    IN p_categoria VARCHAR,
+    IN p_precio_venta NUMERIC,
+    IN p_costo NUMERIC,
+    IN p_unidad_medida VARCHAR,
+    IN p_imagen_url VARCHAR,
+    INOUT o_resultado TEXT
+)
+LANGUAGE plpgsql
+AS $procedure$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM producto
+        WHERE codigo = TRIM(p_codigo)
+    ) THEN
+        o_resultado := 'CODIGO_EXISTENTE';
+        RETURN;
+    END IF;
+
+    INSERT INTO producto (
+        codigo,
+        nombre,
+        descripcion,
+        categoria,
+        precio_venta,
+        costo,
+        unidad_medida,
+        imagen_url
+    )
+    VALUES (
+        TRIM(p_codigo),
+        TRIM(p_nombre),
+        p_descripcion,
+        p_categoria,
+        p_precio_venta,
+        p_costo,
+        p_unidad_medida,
+        p_imagen_url
+    );
+
+    o_resultado := 'CREADO';
+END;
+$procedure$;
+
+--Alter obtener producto:
+
+
+CREATE OR REPLACE PROCEDURE public.sp_obtener_producto(
+    IN p_id_producto integer,
+    INOUT o_producto text
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    SELECT COALESCE(
+        (
+            SELECT json_build_object(
+                'IdProducto', p.id_producto,
+                'Codigo', p.codigo,
+                'Nombre', p.nombre,
+                'Descripcion', p.descripcion,
+                'Categoria', p.categoria,
+                'PrecioVenta', p.precio_venta,
+                'Costo', p.costo,
+                'UnidadMedida', p.unidad_medida,
+                'ImagenUrl', p.imagen_url,
+                'Estado', p.estado,
+                'FechaCreacion', p.fecha_creacion,
+                'StockActual', COALESCE(i.stock_actual, 0),
+                'StockMinimo', COALESCE(i.stock_minimo, 0)
+            )::TEXT
+            FROM producto p
+            LEFT JOIN inventario i
+                ON i.producto_id = p.id_producto
+            WHERE p.id_producto = p_id_producto
+        ),
+        '{}'
+    )
+    INTO o_producto;
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_obtener_producto(integer, text)
+    OWNER TO postgres;
+
+--Alter obtener productos
+
+
+CREATE OR REPLACE PROCEDURE public.sp_obtener_productos(
+    IN p_busqueda character varying,
+    IN p_categoria character varying,
+    INOUT o_productos text
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    SELECT COALESCE(
+        json_agg(
+            json_build_object(
+                'IdProducto', p.id_producto,
+                'Codigo', p.codigo,
+                'Nombre', p.nombre,
+                'Descripcion', p.descripcion,
+                'Categoria', p.categoria,
+                'PrecioVenta', p.precio_venta,
+                'Costo', p.costo,
+                'UnidadMedida', p.unidad_medida,
+                'ImagenUrl', p.imagen_url,
+                'Estado', p.estado,
+                'FechaCreacion', p.fecha_creacion,
+                'StockActual', COALESCE(i.stock_actual, 0),
+                'StockMinimo', COALESCE(i.stock_minimo, 0)
+            )
+            ORDER BY p.id_producto
+        ),
+        '[]'
+    )::TEXT
+    INTO o_productos
+    FROM producto p
+    LEFT JOIN inventario i
+        ON i.producto_id = p.id_producto
+    WHERE
+        (
+            p_busqueda IS NULL
+            OR TRIM(p_busqueda) = ''
+            OR p.nombre ILIKE '%' || TRIM(p_busqueda) || '%'
+        )
+        AND
+        (
+            p_categoria IS NULL
+            OR TRIM(p_categoria) = ''
+            OR p.categoria = TRIM(p_categoria)
+        );
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_obtener_productos(
+    character varying,
+    character varying,
+    text
+) OWNER TO postgres;
+
+--Alter obtener productos para inventario:
+
+
+
+-- PROCEDURE: public.sp_listar_inventario(character varying, character varying)
+
+CREATE OR REPLACE PROCEDURE public.sp_listar_inventario(
+    IN p_busqueda character varying,
+    IN p_estado character varying,
+    OUT o_productos json
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    SELECT COALESCE(
+        json_agg(
+            json_build_object(
+                'IdProducto', p.id_producto,
+                'IdInventario', i.id_inventario,
+                'Codigo', p.codigo,
+                'Nombre', p.nombre,
+                'ImagenUrl', p.imagen_url,
+                'Categoria', p.categoria,
+                'PrecioVenta', p.precio_venta,
+                'StockActual', COALESCE(i.stock_actual, 0),
+                'StockMinimo', COALESCE(i.stock_minimo, 0),
+                'StockMaximo', i.stock_maximo,
+                'Ubicacion', i.ubicacion,
+                'FechaActualizacion', i.fecha_actualizacion
+            )
+            ORDER BY p.nombre
+        ),
+        '[]'::JSON
+    )
+    INTO o_productos
+    FROM producto p
+    LEFT JOIN inventario i
+        ON i.producto_id = p.id_producto
+    WHERE p.estado = TRUE
+      AND (
+          NULLIF(TRIM(p_busqueda), '') IS NULL
+          OR p.codigo ILIKE '%' || TRIM(p_busqueda) || '%'
+          OR p.nombre ILIKE '%' || TRIM(p_busqueda) || '%'
+      )
+      AND (
+          NULLIF(TRIM(p_estado), '') IS NULL
+          OR UPPER(TRIM(p_estado)) = 'TODOS'
+          OR (
+              UPPER(TRIM(p_estado)) = 'BAJO'
+              AND COALESCE(i.stock_actual, 0)
+                  <= COALESCE(i.stock_minimo, 0)
+              AND COALESCE(i.stock_actual, 0) > 0
+          )
+          OR (
+              UPPER(TRIM(p_estado)) = 'AGOTADO'
+              AND COALESCE(i.stock_actual, 0) = 0
+          )
+          OR (
+              UPPER(TRIM(p_estado)) = 'NORMAL'
+              AND COALESCE(i.stock_actual, 0)
+                  > COALESCE(i.stock_minimo, 0)
+          )
+      );
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_listar_inventario(
+    character varying,
+    character varying
+)
+OWNER TO postgres;
+
+----- Alter buscar producto venta:
+
+
+CREATE OR REPLACE PROCEDURE public.sp_buscar_productos_venta(
+    IN p_busqueda character varying,
+    OUT o_productos json
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    SELECT COALESCE(
+        JSON_AGG(
+            JSON_BUILD_OBJECT(
+                'IdProducto', p.id_producto,
+                'Codigo', p.codigo,
+                'Nombre', p.nombre,
+                'Descripcion', p.descripcion,
+                'Categoria', p.categoria,
+                'PrecioVenta', p.precio_venta,
+                'StockActual', COALESCE(i.stock_actual, 0),
+                'UnidadMedida', p.unidad_medida,
+                'ImagenUrl', p.imagen_url
+            )
+            ORDER BY p.nombre
+        ),
+        '[]'::JSON
+    )
+    INTO o_productos
+    FROM producto p
+    LEFT JOIN inventario i
+        ON i.producto_id = p.id_producto
+    WHERE p.estado = TRUE
+      AND (
+          NULLIF(BTRIM(p_busqueda), '') IS NULL
+          OR p.codigo ILIKE '%' || BTRIM(p_busqueda) || '%'
+          OR p.nombre ILIKE '%' || BTRIM(p_busqueda) || '%'
+      );
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_buscar_productos_venta(character varying)
+    OWNER TO postgres;
+
+-----Alter obtener producto venta:
+
+
+CREATE OR REPLACE PROCEDURE public.sp_obtener_producto_venta(
+    IN p_id_producto integer,
+    OUT o_producto json
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+BEGIN
+    SELECT JSON_BUILD_OBJECT(
+        'IdProducto', p.id_producto,
+        'Codigo', p.codigo,
+        'Nombre', p.nombre,
+        'PrecioVenta', p.precio_venta,
+        'StockActual', COALESCE(i.stock_actual, 0),
+        'UnidadMedida', p.unidad_medida,
+        'ImagenUrl', p.imagen_url
+    )
+    INTO o_producto
+    FROM producto p
+    LEFT JOIN inventario i
+        ON i.producto_id = p.id_producto
+    WHERE p.id_producto = p_id_producto
+      AND p.estado = TRUE;
+
+    IF NOT FOUND THEN
+        o_producto := NULL;
+    END IF;
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_obtener_producto_venta(integer)
+    OWNER TO postgres;
+
+----Alter registrar venta:
+
+
+CREATE OR REPLACE PROCEDURE public.sp_registrar_venta(
+    IN p_cliente_id integer,
+    IN p_forma_pago character varying,
+    IN p_usuario_id integer,
+    IN p_descuento_porcentaje numeric,
+    IN p_productos json,
+    OUT o_resultado character varying,
+    OUT o_id_venta integer
+)
+LANGUAGE 'plpgsql'
+AS $BODY$
+
+DECLARE
+    v_item JSON;
+    v_id_producto INTEGER;
+    v_cantidad NUMERIC(12,2);
+    v_precio NUMERIC(12,2);
+    v_stock NUMERIC(12,2);
+    v_id_inventario INTEGER;
+    v_subtotal NUMERIC(12,2);
+    v_total NUMERIC(12,2) := 0;
+    v_descuento NUMERIC(12,2) := 0;
+    v_base_imponible NUMERIC(12,2) := 0;
+    v_impuesto NUMERIC(12,2) := 0;
+    v_total_neto NUMERIC(12,2) := 0;
+    v_id_venta INTEGER;
+    v_estado_venta VARCHAR(20);
+BEGIN
+    o_resultado := NULL;
+    o_id_venta := NULL;
+
+    -- 1. Validar el carrito.
+    IF p_productos IS NULL
+       OR JSON_TYPEOF(p_productos) IS DISTINCT FROM 'array'
+       OR JSON_ARRAY_LENGTH(p_productos) = 0 THEN
+        RAISE EXCEPTION
+            'Debe agregar al menos un producto a la venta.';
+    END IF;
+
+    -- 2. Validar la forma de pago.
+    IF p_forma_pago IS NULL
+       OR p_forma_pago NOT IN ('CONTADO', 'CREDITO') THEN
+        RAISE EXCEPTION
+            'La forma de pago debe ser CONTADO o CREDITO.';
+    END IF;
+
+    -- 3. Validar el porcentaje de descuento.
+    IF p_descuento_porcentaje IS NULL
+       OR p_descuento_porcentaje < 0
+       OR p_descuento_porcentaje > 100 THEN
+        RAISE EXCEPTION
+            'El descuento debe estar entre 0 y 100 por ciento.';
+    END IF;
+
+    -- 4. Validar el usuario.
+    IF NOT EXISTS (
+        SELECT 1
+        FROM usuario u
+        WHERE u.id_usuario = p_usuario_id
+          AND u.estado = TRUE
+    ) THEN
+        RAISE EXCEPTION
+            'El usuario no existe o está inactivo.';
+    END IF;
+
+    -- 5. Validar cliente, si se proporcionó.
+    IF p_cliente_id IS NOT NULL
+       AND NOT EXISTS (
+           SELECT 1
+           FROM cliente c
+           WHERE c.id_cliente = p_cliente_id
+             AND c.estado = TRUE
+       ) THEN
+        RAISE EXCEPTION
+            'El cliente no existe o está inactivo.';
+    END IF;
+
+    -- 6. Validar estructura, cantidades e identificadores.
+    FOR v_item IN
+        SELECT value
+        FROM JSON_ARRAY_ELEMENTS(p_productos)
+    LOOP
+        BEGIN
+            v_id_producto :=
+                NULLIF(v_item ->> 'IdProducto', '')::INTEGER;
+
+            v_cantidad :=
+                NULLIF(v_item ->> 'Cantidad', '')::NUMERIC;
+        EXCEPTION
+            WHEN OTHERS THEN
+                RAISE EXCEPTION
+                    'El detalle contiene un producto o una cantidad inválidos.';
+        END;
+
+        IF v_id_producto IS NULL
+           OR v_id_producto <= 0
+           OR v_cantidad IS NULL
+           OR v_cantidad <= 0
+           OR v_cantidad = 'NaN'::NUMERIC
+           OR v_cantidad IN (
+               'Infinity'::NUMERIC,
+               '-Infinity'::NUMERIC
+           ) THEN
+            RAISE EXCEPTION
+                'Cada producto debe tener un ID válido y una cantidad finita mayor que cero.';
+        END IF;
+    END LOOP;
+
+    -- 7. Evitar productos repetidos en el JSON.
+    IF EXISTS (
+        SELECT 1
+        FROM JSON_TO_RECORDSET(p_productos)
+            AS x("IdProducto" INTEGER, "Cantidad" NUMERIC)
+        GROUP BY x."IdProducto"
+        HAVING COUNT(*) > 1
+    ) THEN
+        RAISE EXCEPTION
+            'Hay productos repetidos en el detalle de la venta.';
+    END IF;
+
+    -- 8. Bloquear inventarios en orden de ID y validar existencias.
+    FOR v_id_producto IN
+        SELECT x."IdProducto"
+        FROM JSON_TO_RECORDSET(p_productos)
+            AS x("IdProducto" INTEGER, "Cantidad" NUMERIC)
+        ORDER BY x."IdProducto"
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1
+            FROM producto p
+            WHERE p.id_producto = v_id_producto
+              AND p.estado = TRUE
+        ) THEN
+            RAISE EXCEPTION
+                'El producto con ID % no existe o está inactivo.',
+                v_id_producto;
+        END IF;
+
+        SELECT i.id_inventario, i.stock_actual
+        INTO v_id_inventario, v_stock
+        FROM inventario i
+        WHERE i.producto_id = v_id_producto
+        FOR UPDATE;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION
+                'El producto con ID % no tiene registro de inventario.',
+                v_id_producto;
+        END IF;
+
+        SELECT (x.value ->> 'Cantidad')::NUMERIC
+        INTO v_cantidad
+        FROM JSON_ARRAY_ELEMENTS(p_productos) AS x(value)
+        WHERE (x.value ->> 'IdProducto')::INTEGER = v_id_producto;
+
+        IF v_stock < v_cantidad THEN
+            RAISE EXCEPTION
+                'Stock insuficiente para el producto ID %. Disponible: %, solicitado: %.',
+                v_id_producto, v_stock, v_cantidad;
+        END IF;
+    END LOOP;
+
+    -- 9. Calcular subtotal con precios vigentes de PostgreSQL.
+    FOR v_item IN
+        SELECT value
+        FROM JSON_ARRAY_ELEMENTS(p_productos)
+    LOOP
+        v_id_producto :=
+            (v_item ->> 'IdProducto')::INTEGER;
+
+        v_cantidad :=
+            (v_item ->> 'Cantidad')::NUMERIC;
+
+        SELECT p.precio_venta
+        INTO v_precio
+        FROM producto p
+        WHERE p.id_producto = v_id_producto
+          AND p.estado = TRUE;
+
+        v_subtotal := ROUND(v_cantidad * v_precio, 2);
+        v_total := v_total + v_subtotal;
+    END LOOP;
+
+    v_total := ROUND(v_total, 2);
+
+    -- 10. Calcular descuento, IVA del 13 % y total final.
+    v_descuento := ROUND(
+        v_total * p_descuento_porcentaje / 100,
+        2
+    );
+
+    v_base_imponible := GREATEST(
+        0,
+        v_total - v_descuento
+    );
+
+    v_impuesto := ROUND(
+        v_base_imponible * 0.13,
+        2
+    );
+
+    v_total_neto := ROUND(
+        v_base_imponible + v_impuesto,
+        2
+    );
+
+    -- 11. Determinar estado según la forma de pago.
+    IF p_forma_pago = 'CONTADO' THEN
+        v_estado_venta := 'FINALIZADA';
+    ELSE
+        v_estado_venta := 'EN_PROCESO';
+    END IF;
+
+    -- 12. Registrar cabecera con el estado correspondiente.
+    INSERT INTO venta (
+        cliente_id,
+        total,
+        descuento,
+        impuesto,
+        total_neto,
+        forma_pago,
+        estado,
+        usuario_id
+    )
+    VALUES (
+        p_cliente_id,
+        v_total,
+        v_descuento,
+        v_impuesto,
+        v_total_neto,
+        p_forma_pago,
+        v_estado_venta,
+        p_usuario_id
+    )
+    RETURNING id_venta INTO v_id_venta;
+
+    -- 13. Registrar detalles, descontar stock y guardar movimientos.
+    FOR v_item IN
+        SELECT value
+        FROM JSON_ARRAY_ELEMENTS(p_productos)
+    LOOP
+        v_id_producto :=
+            (v_item ->> 'IdProducto')::INTEGER;
+
+        v_cantidad :=
+            (v_item ->> 'Cantidad')::NUMERIC;
+
+        SELECT p.precio_venta
+        INTO v_precio
+        FROM producto p
+        WHERE p.id_producto = v_id_producto
+          AND p.estado = TRUE;
+
+        v_subtotal := ROUND(v_cantidad * v_precio, 2);
+
+        INSERT INTO detalle_venta (
+            venta_id,
+            producto_id,
+            cantidad,
+            precio_unitario,
+            descuento,
+            impuesto,
+            subtotal
+        )
+        VALUES (
+            v_id_venta,
+            v_id_producto,
+            v_cantidad,
+            v_precio,
+            0,
+            0,
+            v_subtotal
+        );
+
+        UPDATE inventario
+        SET stock_actual = stock_actual - v_cantidad,
+            fecha_actualizacion = CURRENT_TIMESTAMP
+        WHERE producto_id = v_id_producto
+          AND stock_actual >= v_cantidad
+        RETURNING id_inventario INTO v_id_inventario;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION
+                'El stock cambió durante la venta del producto ID %.',
+                v_id_producto;
+        END IF;
+
+        INSERT INTO movimiento_inventario (
+            inventario_id,
+            tipo_movimiento,
+            cantidad,
+            referencia,
+            observaciones,
+            usuario_id
+        )
+        VALUES (
+            v_id_inventario,
+            'SALIDA',
+            v_cantidad,
+            'Venta #' || v_id_venta::VARCHAR,
+            'Salida de inventario por venta registrada.',
+            p_usuario_id
+        );
+    END LOOP;
+
+    o_resultado := 'OK';
+    o_id_venta := v_id_venta;
+END;
+$BODY$;
+
+ALTER PROCEDURE public.sp_registrar_venta(
+    integer,
+    character varying,
+    integer,
+    numeric,
+    json
+)
+OWNER TO postgres;
+

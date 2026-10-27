@@ -189,6 +189,48 @@ namespace CharlieShop.Controllers
             return View(model);
         }
 
+        // GET: /Ventas/BuscarClientes?busqueda=...
+        [HttpGet]
+        public IActionResult BuscarClientes(string? busqueda)
+        {
+            try
+            {
+                using var connection = _dbConnection.CreateConnection();
+                const string sql = @"
+                    SELECT
+                        id_cliente AS ""IdCliente"",
+                        nombre AS ""Nombre"",
+                        apellido AS ""Apellido"",
+                        identificacion AS ""Identificacion""
+                    FROM cliente
+                    WHERE estado = TRUE
+                      AND (
+                          NULLIF(BTRIM(@Busqueda), '') IS NULL
+                          OR nombre ILIKE '%' || BTRIM(@Busqueda) || '%'
+                          OR apellido ILIKE '%' || BTRIM(@Busqueda) || '%'
+                          OR identificacion ILIKE '%' || BTRIM(@Busqueda) || '%'
+                      )
+                    ORDER BY nombre, apellido
+                    LIMIT 25;";
+
+                var clientes = connection.Query(sql, new { Busqueda = busqueda?.Trim() ?? string.Empty })
+                    .Select(c => new
+                    {
+                        idCliente = (int)c.IdCliente,
+                        nombre = (string)c.Nombre,
+                        apellido = (string)c.Apellido,
+                        identificacion = (string?)c.Identificacion
+                    }).ToList();
+
+                return Json(clientes);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { mensaje = "No fue posible consultar los clientes." });
+            }
+        }
+
         // GET: /Ventas/BuscarProductos?busqueda=...
         [HttpGet]
         public IActionResult BuscarProductos(string? busqueda)
@@ -385,6 +427,31 @@ namespace CharlieShop.Controllers
                 TempData["ErrorVenta"] =
                     "Seleccione una forma de pago válida.";
 
+                return RedirectToAction(nameof(Crear));
+            }
+
+            // Validar que el cliente exista y esté activo.
+            if (model.IdCliente <= 0)
+            {
+                TempData["ErrorVenta"] = "Seleccione un cliente para la venta.";
+                return RedirectToAction(nameof(Crear));
+            }
+
+            try
+            {
+                using var validacionCliente = _dbConnection.CreateConnection();
+                bool clienteValido = validacionCliente.ExecuteScalar<bool>(
+                    "SELECT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @IdCliente AND estado = TRUE);",
+                    new { model.IdCliente });
+                if (!clienteValido)
+                {
+                    TempData["ErrorVenta"] = "El cliente seleccionado no existe o está inactivo.";
+                    return RedirectToAction(nameof(Crear));
+                }
+            }
+            catch (Exception)
+            {
+                TempData["ErrorVenta"] = "No fue posible validar el cliente seleccionado.";
                 return RedirectToAction(nameof(Crear));
             }
 

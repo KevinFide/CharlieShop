@@ -20,6 +20,9 @@ namespace CharlieShop.Models
         public string? Ubicacion { get; set; }
         public DateTime? FechaActualizacion { get; set; }
 
+        public string? ImagenUrl { get; set; }
+        public IFormFile? ImagenArchivo { get; set; }
+
         public bool StockBajo =>
             StockActual > 0 && StockActual <= StockMinimo;
 

@@ -41,7 +41,7 @@
             </span>
         </div>
 
-        <form asp-action="Crear" method="post">
+        <form asp-action="Crear" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly"
@@ -158,6 +158,54 @@
                         <small class="field-hint">
                             Costo de adquisición del producto.
                         </small>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="product-form-section">
+                <h3>
+                    <i class="bi bi-image me-2"></i>
+                    Imagen del producto
+                    <span class="image-optional-tag">Opcional</span>
+                </h3>
+
+                <div class="row g-4 align-items-start">
+                    <div class="col-md-7">
+                        <label for="ImagenArchivo" class="form-label">Seleccionar imagen</label>
+                        <div class="product-image-upload" id="productImageUpload">
+                            <input type="file"
+                                   id="ImagenArchivo"
+                                   name="ImagenArchivo"
+                                   class="product-image-input"
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            <label for="ImagenArchivo" class="product-image-dropzone">
+                                <span class="product-image-upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+                                <span class="product-image-upload-title">Elegí una imagen para el producto</span>
+                                <span class="product-image-upload-copy">JPG, PNG o WEBP · Máximo 5 MB</span>
+                                <span class="product-image-upload-button"><i class="bi bi-folder2-open me-1"></i>Seleccionar archivo</span>
+                            </label>
+                        </div>
+                        <div class="product-image-file-info" id="productImageFileInfo" aria-live="polite">
+                            No se ha seleccionado ninguna imagen.
+                        </div>
+                        <div class="product-image-error" id="productImageError" role="alert"></div>
+                        <small class="field-hint">La imagen es opcional. Si no seleccionás una, el producto se registrará sin imagen.</small>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="product-image-preview-card">
+                            <div class="product-image-preview-label">Vista previa</div>
+                            <div class="product-image-preview" id="productImagePreview">
+                                <div class="product-image-placeholder">
+                                    <i class="bi bi-image"></i>
+                                    <span>Tu imagen aparecerá aquí</span>
+                                </div>
+                            </div>
+                            <button type="button" class="product-image-remove" id="removeProductImage" hidden>
+                                <i class="bi bi-x-circle me-1"></i>Quitar imagen
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -429,6 +477,170 @@
         border-color: #303030;
     }
 
+
+    .image-optional-tag {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 7px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        background: #f1f3f5;
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+
+    .product-image-upload {
+        position: relative;
+        overflow: hidden;
+        border: 1px dashed #cfd3d8;
+        border-radius: 12px;
+        background: #fcfcfd;
+        transition: border-color .2s ease, background .2s ease;
+    }
+
+    .product-image-upload:hover,
+    .product-image-upload:focus-within {
+        border-color: #777;
+        background: #f8f9fa;
+    }
+
+    .product-image-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .product-image-dropzone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        min-height: 220px;
+        padding: 20px;
+        margin: 0;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .product-image-upload-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: #f0f1f3;
+        color: #333;
+        font-size: 22px;
+    }
+
+    .product-image-upload-title {
+        color: #30343a;
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+    .product-image-upload-copy {
+        color: #9298a1;
+        font-size: 11px;
+    }
+
+    .product-image-upload-button {
+        margin-top: 3px;
+        padding: 8px 12px;
+        border: 1px solid #dedfe3;
+        border-radius: 8px;
+        background: #fff;
+        color: #30343a;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .product-image-file-info {
+        margin-top: 8px;
+        color: #7b818b;
+        font-size: 11px;
+        overflow-wrap: anywhere;
+    }
+
+    .product-image-error {
+        display: none;
+        margin-top: 6px;
+        color: #c83c43;
+        font-size: 12px;
+    }
+
+    .product-image-preview-card {
+        padding: 13px;
+        border: 1px solid #eceef1;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .product-image-preview-label {
+        margin-bottom: 10px;
+        color: #656b74;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .product-image-preview {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border-radius: 9px;
+        background: #f7f8f9;
+    }
+
+    .product-image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .product-image-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 12px;
+        color: #a0a5ad;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .product-image-placeholder i {
+        font-size: 32px;
+    }
+
+    .product-image-remove {
+        width: 100%;
+        margin-top: 10px;
+        padding: 8px 10px;
+        border: 1px solid #e0e3e7;
+        border-radius: 8px;
+        background: #fff;
+        color: #555d68;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .product-image-remove:hover {
+        background: #f7f8f9;
+    }
+
     @@media (max-width: 767px) {
         .product-page-header {
             align-items: flex-start;
@@ -471,4 +683,86 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        (function () {
+            const input = document.getElementById("ImagenArchivo");
+            const preview = document.getElementById("productImagePreview");
+            const fileInfo = document.getElementById("productImageFileInfo");
+            const error = document.getElementById("productImageError");
+            const removeButton = document.getElementById("removeProductImage");
+            const maxBytes = 5 * 1024 * 1024;
+            const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+            let currentUrl = null;
+
+            function showError(message) {
+                error.textContent = message || "";
+                error.style.display = message ? "block" : "none";
+            }
+
+            function clearPreview() {
+                if (currentUrl) {
+                    URL.revokeObjectURL(currentUrl);
+                    currentUrl = null;
+                }
+
+                preview.innerHTML = '<div class="product-image-placeholder"><i class="bi bi-image"></i><span>Tu imagen aparecerá aquí</span></div>';
+                fileInfo.textContent = "No se ha seleccionado ninguna imagen.";
+                removeButton.hidden = true;
+            }
+
+            input.addEventListener("change", function () {
+                showError("");
+                const file = input.files && input.files[0];
+
+                if (!file) {
+                    clearPreview();
+                    return;
+                }
+
+                if (!allowedTypes.includes(file.type)) {
+                    input.value = "";
+                    clearPreview();
+                    showError("Formato no válido. Seleccioná una imagen JPG, PNG o WEBP.");
+                    return;
+                }
+
+                if (file.size > maxBytes) {
+                    input.value = "";
+                    clearPreview();
+                    showError("La imagen supera los 5 MB permitidos.");
+                    return;
+                }
+
+                if (currentUrl) URL.revokeObjectURL(currentUrl);
+                currentUrl = URL.createObjectURL(file);
+
+                const image = document.createElement("img");
+                image.src = currentUrl;
+                image.alt = "Vista previa de la imagen del producto";
+                preview.replaceChildren(image);
+                fileInfo.textContent = file.name + " · " + (file.size / (1024 * 1024)).toFixed(2) + " MB";
+                removeButton.hidden = false;
+            });
+
+            removeButton.addEventListener("click", function () {
+                input.value = "";
+                showError("");
+                clearPreview();
+            });
+
+            const form = input.closest("form");
+            form.addEventListener("submit", function (event) {
+                if (!input.files || !input.files[0]) return;
+                const file = input.files[0];
+
+                if (!allowedTypes.includes(file.type) || file.size > maxBytes) {
+                    event.preventDefault();
+                    showError("Revisá el formato y el tamaño de la imagen antes de continuar.");
+                    input.focus();
+                }
+            });
+        })();
+    </script>
+
 }

@@ -140,7 +140,7 @@
                 <select id="saleStatusFilter" class="form-select">
                     <option value="">Todos los estados</option>
                     <option value="FINALIZADA">Finalizada</option>
-                    <option value="EN PROCESO">En proceso</option>
+                    <option value="EN_PROCESO">En proceso</option>
                     <option value="CANCELADA">Cancelada</option>
                 </select>
             </div>
@@ -215,8 +215,21 @@
                                         System.Globalization.CultureInfo.GetCultureInfo("es-CR"))
                                 </td>
                                 <td>
-                                    <span class="sales-status-badge">
-                                        @venta.Estado
+                                    @{
+                                        var claseEstado = venta.Estado switch
+                                        {
+                                            "FINALIZADA" => "sales-status-finalizada",
+                                            "EN_PROCESO" => "sales-status-proceso",
+                                            "CANCELADA" => "sales-status-cancelada",
+                                            _ => "sales-status-default"
+                                        };
+
+                                        var textoEstado = venta.Estado == "EN_PROCESO"
+                                            ? "EN PROCESO"
+                                            : venta.Estado;
+                                    }
+                                    <span class="sales-status-badge @claseEstado">
+                                        @textoEstado
                                     </span>
                                 </td>
                                 <td class="text-end">
@@ -230,13 +243,27 @@
         </div>
 
         <div class="sales-pagination">
-            <span class="sales-pagination-info" id="salesPaginationInfo">
-                Mostrando 0–0 de 0 ventas
-            </span>
-            <nav aria-label="Resumen del historial de ventas">
-                <ul class="pagination pagination-sm mb-0">
+            <div class="sales-pagination-left">
+                <span class="sales-pagination-info" id="salesPaginationInfo">
+                    Mostrando 0–0 de 0 ventas
+                </span>
+                <label class="sales-page-size-label" for="salesPageSize">
+                    Mostrar
+                    <select id="salesPageSize" class="form-select form-select-sm">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    por página
+                </label>
+            </div>
+            <nav aria-label="Paginación del historial de ventas">
+                <ul class="pagination pagination-sm mb-0" id="salesPaginationControls">
                     <li class="page-item disabled">
-                        <span class="page-link">Historial completo</span>
+                        <button type="button" class="page-link" disabled>Anterior</button>
+                    </li>
+                    <li class="page-item disabled">
+                        <button type="button" class="page-link" disabled>Siguiente</button>
                     </li>
                 </ul>
             </nav>
@@ -250,36 +277,32 @@
         const searchButton = document.getElementById("searchSaleButton");
         const statusFilter = document.getElementById("saleStatusFilter");
         const paginationInfo = document.getElementById("salesPaginationInfo");
+        const paginationControls = document.getElementById("salesPaginationControls");
+        const pageSizeSelect = document.getElementById("salesPageSize");
+        const tbody = document.getElementById("salesHistoryBody");
 
-        const rows = Array.from(
-            document.querySelectorAll(".sales-history-row")
-        );
-
+        const rows = Array.from(document.querySelectorAll(".sales-history-row"));
         const emptyRow = document.querySelector(".sales-empty-row");
 
-        // Abre el detalle de la venta seleccionada.
+        let currentPage = 1;
+        let pageSize = Number(pageSizeSelect?.value || 10);
+        let filteredRows = rows.slice();
+
         function openSaleDetail(row) {
             const detailUrl = row.dataset.detailUrl;
+            if (!detailUrl) return;
 
-            if (!detailUrl) {
-                return;
-            }
-
-            // Muestra visualmente la selección antes de navegar.
             row.classList.add("sales-history-row-selected");
-
             window.setTimeout(function () {
                 window.location.href = detailUrl;
             }, 160);
         }
 
-        // Toda la fila funciona como superficie seleccionable.
         rows.forEach(function (row) {
             row.addEventListener("click", function () {
                 openSaleDetail(row);
             });
 
-            // Permite seleccionar filas con Enter o barra espaciadora.
             row.addEventListener("keydown", function (event) {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -288,81 +311,99 @@
             });
         });
 
-        function filterSales() {
-            const searchTerm = (searchInput?.value || "")
-                .trim()
-                .toLocaleLowerCase();
+        function createPageButton(label, page, disabled, active, ariaLabel) {
+            const li = document.createElement("li");
+            li.className = "page-item" +
+                (disabled ? " disabled" : "") +
+                (active ? " active" : "");
 
-            const selectedStatus = (statusFilter?.value || "")
-                .trim()
-                .toLocaleLowerCase();
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "page-link";
+            button.textContent = label;
+            if (ariaLabel) button.setAttribute("aria-label", ariaLabel);
+            if (disabled || active) button.disabled = true;
 
-            let visibleCount = 0;
+            if (!disabled && !active) {
+                button.addEventListener("click", function () {
+                    currentPage = page;
+                    renderPage();
+                });
+            }
+
+            li.appendChild(button);
+            return li;
+        }
+
+        function renderPagination(totalPages) {
+            if (!paginationControls) return;
+
+            paginationControls.innerHTML = "";
+            paginationControls.appendChild(
+                createPageButton("Anterior", currentPage - 1, currentPage <= 1, false, "Página anterior")
+            );
+
+            // Mostrar un conjunto compacto de páginas alrededor de la actual.
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            if (startPage > 1) {
+                paginationControls.appendChild(
+                    createPageButton("1", 1, false, currentPage === 1, "Página 1")
+                );
+                if (startPage > 2) {
+                    const dots = document.createElement("li");
+                    dots.className = "page-item disabled";
+                    dots.innerHTML = '<span class="page-link">…</span>';
+                    paginationControls.appendChild(dots);
+                }
+            }
+
+            for (let page = startPage; page <= endPage; page++) {
+                if (page === 1 && startPage > 1) continue;
+                paginationControls.appendChild(
+                    createPageButton(String(page), page, false, page === currentPage, "Página " + page)
+                );
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dots = document.createElement("li");
+                    dots.className = "page-item disabled";
+                    dots.innerHTML = '<span class="page-link">…</span>';
+                    paginationControls.appendChild(dots);
+                }
+                paginationControls.appendChild(
+                    createPageButton(String(totalPages), totalPages, false, currentPage === totalPages, "Página " + totalPages)
+                );
+            }
+
+            paginationControls.appendChild(
+                createPageButton("Siguiente", currentPage + 1, currentPage >= totalPages, false, "Página siguiente")
+            );
+        }
+
+        function renderPage() {
+            const total = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = total === 0 ? 0 : (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, total);
+            const visibleRows = new Set(filteredRows.slice(startIndex, endIndex));
 
             rows.forEach(function (row) {
-                const saleId = (row.dataset.saleId || "")
-                    .toLocaleLowerCase();
-
-                const seller = (row.dataset.seller || "")
-                    .toLocaleLowerCase();
-
-                const status = (row.dataset.status || "")
-                    .toLocaleLowerCase();
-
-                const matchesSearch = !searchTerm ||
-                    saleId.includes(searchTerm) ||
-                    seller.includes(searchTerm) ||
-                    ("#" + saleId).includes(searchTerm);
-
-                const matchesStatus = !selectedStatus ||
-                    status === selectedStatus;
-
-                const visible = matchesSearch && matchesStatus;
-
-                row.hidden = !visible;
-
-                if (visible) {
-                    visibleCount++;
-                }
+                row.hidden = !visibleRows.has(row);
             });
 
             if (emptyRow) {
-                const hasAnySales = rows.length > 0;
-                emptyRow.hidden = hasAnySales;
+                emptyRow.hidden = rows.length !== 0;
+            }
 
-                let filteredEmptyRow =
-                    document.getElementById("salesFilteredEmptyRow");
-
-                if (hasAnySales && visibleCount === 0) {
-                    if (!filteredEmptyRow) {
-                        filteredEmptyRow = document.createElement("tr");
-                        filteredEmptyRow.id = "salesFilteredEmptyRow";
-                        filteredEmptyRow.innerHTML = `
-                            <td colspan="6">
-                                <div class="sales-history-placeholder">
-                                    <div class="sales-history-empty-icon">
-                                        <i class="bi bi-search"></i>
-                                    </div>
-                                    <strong>No se encontraron ventas</strong>
-                                    <span>
-                                        Probá con otro número, vendedor o estado.
-                                    </span>
-                                </div>
-                            </td>
-                        `;
-
-                        document.getElementById("salesHistoryBody")
-                            .appendChild(filteredEmptyRow);
-                    }
-
-                    filteredEmptyRow.hidden = false;
-                } else if (filteredEmptyRow) {
-                    filteredEmptyRow.hidden = true;
-                }
-            } else if (rows.length > 0 && visibleCount === 0) {
-                let filteredEmptyRow =
-                    document.getElementById("salesFilteredEmptyRow");
-
+            let filteredEmptyRow = document.getElementById("salesFilteredEmptyRow");
+            if (total === 0 && rows.length > 0) {
                 if (!filteredEmptyRow) {
                     filteredEmptyRow = document.createElement("tr");
                     filteredEmptyRow.id = "salesFilteredEmptyRow";
@@ -373,55 +414,67 @@
                                     <i class="bi bi-search"></i>
                                 </div>
                                 <strong>No se encontraron ventas</strong>
-                                <span>
-                                    Probá con otro número, vendedor o estado.
-                                </span>
+                                <span>Probá con otro número, vendedor o estado.</span>
                             </div>
-                        </td>
-                    `;
-
-                    document.getElementById("salesHistoryBody")
-                        .appendChild(filteredEmptyRow);
+                        </td>`;
+                    tbody.appendChild(filteredEmptyRow);
                 }
-
                 filteredEmptyRow.hidden = false;
-            } else {
-                const filteredEmptyRow =
-                    document.getElementById("salesFilteredEmptyRow");
-
-                if (filteredEmptyRow) {
-                    filteredEmptyRow.hidden = true;
-                }
+            } else if (filteredEmptyRow) {
+                filteredEmptyRow.hidden = true;
             }
 
             if (paginationInfo) {
-                if (rows.length === 0) {
-                    paginationInfo.textContent =
-                        "Mostrando 0–0 de 0 ventas";
-                } else {
-                    paginationInfo.textContent =
-                        `Mostrando ${visibleCount} de ${rows.length} ventas`;
-                }
+                const from = total === 0 ? 0 : startIndex + 1;
+                const to = total === 0 ? 0 : endIndex;
+                paginationInfo.textContent = `Mostrando ${from}–${to} de ${total} ventas`;
             }
+
+            renderPagination(totalPages);
         }
 
-        if (searchButton) {
-            searchButton.addEventListener("click", filterSales);
+        function filterSales() {
+            const searchTerm = (searchInput?.value || "").trim().toLocaleLowerCase();
+            const selectedStatus = (statusFilter?.value || "").trim().toLocaleLowerCase();
+
+            filteredRows = rows.filter(function (row) {
+                const saleId = (row.dataset.saleId || "").toLocaleLowerCase();
+                const seller = (row.dataset.seller || "").toLocaleLowerCase();
+                const status = (row.dataset.status || "").toLocaleLowerCase();
+
+                const matchesSearch = !searchTerm ||
+                    saleId.includes(searchTerm) ||
+                    seller.includes(searchTerm) ||
+                    ("#" + saleId).includes(searchTerm);
+
+                const matchesStatus = !selectedStatus || status === selectedStatus;
+                return matchesSearch && matchesStatus;
+            });
+
+            currentPage = 1;
+            renderPage();
         }
+
+        if (searchButton) searchButton.addEventListener("click", filterSales);
 
         if (searchInput) {
+            searchInput.addEventListener("input", filterSales);
             searchInput.addEventListener("keydown", function (event) {
                 if (event.key === "Enter") {
                     event.preventDefault();
                     filterSales();
                 }
             });
-
-            searchInput.addEventListener("input", filterSales);
         }
 
-        if (statusFilter) {
-            statusFilter.addEventListener("change", filterSales);
+        if (statusFilter) statusFilter.addEventListener("change", filterSales);
+
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener("change", function () {
+                pageSize = Number(pageSizeSelect.value) || 10;
+                currentPage = 1;
+                renderPage();
+            });
         }
 
         filterSales();
@@ -1023,11 +1076,29 @@
         display: inline-block;
         padding: 6px 10px;
         border-radius: 8px;
-        background: #e8f5e9;
-        color: #256029;
         font-size: 10px;
         font-weight: 700;
         white-space: nowrap;
+    }
+
+    .sales-status-finalizada {
+        background: #e8f5e9;
+        color: #256029;
+    }
+
+    .sales-status-proceso {
+        background: #fff2cc;
+        color: #8a5a00;
+    }
+
+    .sales-status-cancelada {
+        background: #fde8e7;
+        color: #b42318;
+    }
+
+    .sales-status-default {
+        background: #f1f3f5;
+        color: #495057;
     }
 
     /* Toda la fila funciona como una superficie seleccionable. */
@@ -1176,6 +1247,60 @@
 
         .sales-history-table {
             min-width: 720px;
+        }
+    }
+
+    .sales-pagination-left {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .sales-page-size-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667085;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .sales-page-size-label .form-select {
+        width: 72px;
+        border-radius: 8px;
+    }
+
+    #salesPaginationControls .page-link {
+        min-width: 36px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    #salesPaginationControls .page-item.active .page-link {
+        background-color: #171717;
+        border-color: #171717;
+        color: #fff;
+    }
+
+    #salesPaginationControls .page-item.disabled .page-link {
+        cursor: not-allowed;
+    }
+
+    @@media (max-width: 640px) {
+        .sales-pagination {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .sales-pagination-left {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        #salesPaginationControls {
+            flex-wrap: wrap;
         }
     }
 </style>

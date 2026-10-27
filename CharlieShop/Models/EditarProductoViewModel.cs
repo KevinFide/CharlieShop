@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace CharlieShop.Models
 {
@@ -34,5 +35,7 @@ namespace CharlieShop.Models
         [Display(Name = "Unidad de medida")]
         [StringLength(20)]
         public string? UnidadMedida { get; set; }
+        public string? ImagenUrl { get; set; }
+        public IFormFile? ImagenArchivo { get; set; }
     }
 }

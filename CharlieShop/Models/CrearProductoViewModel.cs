@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace CharlieShop.Models
 {
@@ -26,5 +27,7 @@ namespace CharlieShop.Models
 
         [StringLength(20)]
         public string? UnidadMedida { get; set; }
+
+        public IFormFile? ImagenArchivo { get; set; }
     }
 }

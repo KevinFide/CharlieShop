@@ -31,7 +31,7 @@
     <form asp-action="Finalizar" method="post" id="saleForm">
         @Html.AntiForgeryToken()
         <input type="hidden" id="ProductosJson" name="ProductosJson" value="[]" />
-        <input type="hidden" name="IdCliente" value="" />
+        <input type="hidden" id="selectedClientId" name="IdCliente" value="" />
         <input type="hidden" id="DescuentoPorcentaje" name="DescuentoPorcentaje" value="0" />
 
         <div class="sale-layout">
@@ -180,19 +180,19 @@
                             </button>
                         </div>
 
-                        <div class="sale-client-dropdown d-none" id="clientSearchDropdown">
+                        <div class="sale-client-dropdown d-none" id="clientSearchDropdown" role="listbox" aria-label="Resultados de clientes">
                             <div class="sale-client-empty">
                                 <i class="bi bi-people"></i>
-                                <strong>Selector de clientes</strong>
-                                <span>Se conectará cuando esté implementado el módulo de Clientes.</span>
+                                <strong>Buscando clientes...</strong>
                             </div>
                         </div>
+                        <div id="selectedClientMessage" class="sale-help-text mt-1">Ningún cliente seleccionado.</div>
 
                         <div class="sale-help-text">Seleccioná el cliente al que corresponde la venta.</div>
                     </div>
 
                     <label for="paymentMethod" class="form-label">Forma de pago</label>
-                    <select id="paymentMethod" name="FormaPago" class="form-select">
+                    <select id="paymentMethod" name="FormaPago" class="form-select" required>
                         <option value="CONTADO">Contado</option>
                         <option value="CREDITO">Crédito</option>
                     </select>
@@ -1263,6 +1263,59 @@
         border-color: #a8c8ee;
     }
 
+
+    /* Resultados del selector de clientes */
+    .sale-client-result {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 11px 13px;
+        margin: 0;
+        border: 0;
+        border-bottom: 1px solid #edf0f3;
+        border-radius: 8px;
+        background: #fff;
+        color: #222;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color .15s ease, box-shadow .15s ease;
+    }
+
+    .sale-client-result:last-child {
+        border-bottom: 0;
+    }
+
+    .sale-client-result:hover,
+    .sale-client-result:focus-visible {
+        background: #f5f7fa;
+        outline: none;
+        box-shadow: inset 3px 0 0 #222;
+    }
+
+    .sale-client-result strong {
+        display: block;
+        color: #202124;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .sale-client-result span {
+        display: block;
+        color: #747b85;
+        font-size: 11px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .sale-client-dropdown {
+        max-height: 240px;
+        overflow-y: auto;
+    }
+
     .sale-client-dropdown {
         position: absolute;
         z-index: 20;
@@ -1619,26 +1672,73 @@
 
             let saleSubmissionApproved = false;
 
-            // Interacción visual temporal del selector de cliente.
-            // No consulta ni envía clientes hasta implementar ese módulo.
-            function toggleClientDropdown() {
-                clientSearchDropdown.classList.toggle("d-none");
+            // Selector conectado al módulo de clientes.
+            const selectedClientId = document.getElementById("selectedClientId");
+            const selectedClientMessage = document.getElementById("selectedClientMessage");
+            const clientsSearchUrl = '@Url.Action("BuscarClientes", "Ventas")';
+            let clientSearchTimer = null;
+            let clientsRequestId = 0;
+
+            function renderClientResults(clients) {
+                clientSearchDropdown.replaceChildren();
+                if (!clients || clients.length === 0) {
+                    const empty = document.createElement("div");
+                    empty.className = "sale-client-empty";
+                    empty.textContent = "No se encontraron clientes activos.";
+                    clientSearchDropdown.appendChild(empty);
+                    return;
+                }
+                clients.forEach(client => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "sale-client-result";
+                    button.setAttribute("role", "option");
+                    const name = `${client.nombre ?? ""} ${client.apellido ?? ""}`.trim();
+                    const details = client.identificacion ? `Identificación: ${client.identificacion}` : "Cliente activo";
+                    const title = document.createElement("strong");
+                    title.textContent = name;
+                    const subtitle = document.createElement("span");
+                    subtitle.textContent = details;
+                    button.append(title, subtitle);
+                    button.addEventListener("click", () => {
+                        selectedClientId.value = client.idCliente;
+                        clientSearchInput.value = name;
+                        selectedClientMessage.textContent = `Cliente seleccionado: ${name}`;
+                        clientSearchDropdown.classList.add("d-none");
+                        clientSearchInput.setCustomValidity("");
+                    });
+                    clientSearchDropdown.appendChild(button);
+                });
             }
 
-            clientSearchToggle.addEventListener("click", toggleClientDropdown);
-
-            clientSearchInput.addEventListener("focus", function () {
+            async function searchClients() {
+                const requestId = ++clientsRequestId;
                 clientSearchDropdown.classList.remove("d-none");
-            });
+                clientSearchDropdown.textContent = "Buscando clientes...";
+                const query = clientSearchInput.value.trim();
+                try {
+                    const response = await fetch(`${clientsSearchUrl}?busqueda=${encodeURIComponent(query)}`, {
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    });
+                    if (!response.ok) throw new Error("No fue posible consultar los clientes.");
+                    const clients = await response.json();
+                    if (requestId === clientsRequestId) renderClientResults(clients);
+                } catch {
+                    if (requestId === clientsRequestId) clientSearchDropdown.textContent = "No fue posible cargar los clientes. Inténtalo nuevamente.";
+                }
+            }
 
+            clientSearchToggle.addEventListener("click", searchClients);
+            clientSearchInput.addEventListener("focus", searchClients);
             clientSearchInput.addEventListener("input", function () {
-                clientSearchDropdown.classList.remove("d-none");
+                selectedClientId.value = "";
+                selectedClientMessage.textContent = "Seleccioná un cliente de los resultados.";
+                clearTimeout(clientSearchTimer);
+                clientSearchTimer = setTimeout(searchClients, 250);
             });
 
             document.addEventListener("click", function (event) {
-                if (!event.target.closest(".sale-client-field")) {
-                    clientSearchDropdown.classList.add("d-none");
-                }
+                if (!event.target.closest(".sale-client-field")) clientSearchDropdown.classList.add("d-none");
             });
 
             const searchUrl = '@Url.Action("BuscarProductos", "Ventas")';
@@ -1756,8 +1856,22 @@
 
                     const image = document.createElement("div");
                     image.className = "sale-product-image";
-                    image.innerHTML = '<i class="bi bi-image"></i>';
-                    image.setAttribute("aria-label", "Imagen de producto pendiente");
+
+                    const imageUrl = product.imagenUrl || product.ImagenUrl || "";
+                    if (imageUrl.trim()) {
+                        const photo = document.createElement("img");
+                        photo.src = imageUrl;
+                        photo.alt = product.nombre || "Imagen del producto";
+                        photo.loading = "lazy";
+                        photo.onerror = function () {
+                            image.innerHTML = '<i class="bi bi-image"></i>';
+                            image.setAttribute("aria-label", "Imagen no disponible");
+                        };
+                        image.appendChild(photo);
+                    } else {
+                        image.innerHTML = '<i class="bi bi-image"></i>';
+                        image.setAttribute("aria-label", "Producto sin imagen");
+                    }
 
                     const body = document.createElement("div");
                     body.className = "sale-product-card-body";
@@ -2241,6 +2355,14 @@
                 }
 
                 event.preventDefault();
+
+                if (!selectedClientId.value || Number(selectedClientId.value) <= 0) {
+                    clientSearchInput.setCustomValidity("Seleccioná un cliente de la lista.");
+                    clientSearchInput.reportValidity();
+                    clientSearchInput.focus();
+                    return;
+                }
+                clientSearchInput.setCustomValidity("");
 
                 if (cart.length === 0) {
                     showCartActionMessage(

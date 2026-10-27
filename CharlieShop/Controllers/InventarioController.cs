@@ -67,6 +67,8 @@ namespace CharlieShop.Controllers
                     parametrosInventario,
                     commandType: CommandType.StoredProcedure);
 
+                // El JSON de sp_listar_inventario debe incluir la propiedad
+                // "ImagenUrl" para que se muestre la imagen en la vista.
                 modelo.Productos =
                     Deserializar<List<InventarioItemViewModel>>(
                         parametrosInventario.Get<string?>("o_productos"))

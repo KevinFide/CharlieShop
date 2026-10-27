@@ -7,183 +7,401 @@
     {
         ("Clientes", null, null)
     };
+
+    var clientes = Model ?? new List<CharlieShop.Models.Cliente>();
+    var totalClientes = clientes.Count;
+    var clientesActivos = clientes.Count(c => c.Estado);
+    var clientesInactivos = totalClientes - clientesActivos;
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-        <div class="page-title">
-            Clientes
+<div class="clients-page">
+    <div class="clients-header">
+        <div>
+            <div class="page-title">Clientes</div>
+            <div class="page-subtitle">Gestioná la información y el seguimiento de tus clientes desde un solo lugar.</div>
         </div>
 
-        <div class="page-subtitle">
-            Gestión de información y seguimiento de clientes.
-        </div>
-    </div>
-
-    <div class="d-flex gap-2">
-        <a asp-action="Crear" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>
-            Nuevo cliente
+        <a asp-action="Crear" class="btn btn-dark clients-primary-button">
+            <i class="bi bi-plus-lg me-2"></i>Nuevo cliente
         </a>
     </div>
-</div>
-
-<div class="card p-4">
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show"
-             role="alert">
-            @TempData["Success"]
-
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Cerrar">
-            </button>
+        <div class="clients-alert clients-alert-success" role="status">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@TempData["Success"]</span>
         </div>
     }
 
-    <div class="row mb-3">
-        <div class="col-md-7">
-            <form asp-action="Buscar" method="get">
-                <div class="input-group">
-                    <input type="text"
-                           name="termino"
-                           value="@ViewBag.Termino"
-                           class="form-control"
-                           placeholder="Buscar por nombre, apellido, identificación o teléfono..." />
-
-                    <button type="submit"
-                            class="btn btn-outline-primary">
-                        <i class="bi bi-search"></i>
-                        Buscar
-                    </button>
-
-                    <a asp-action="Index"
-                       class="btn btn-outline-secondary">
-                        Limpiar
-                    </a>
-                </div>
-            </form>
+    <div class="clients-stats">
+        <div class="clients-stat-card">
+            <div class="clients-stat-icon clients-stat-icon-neutral"><i class="bi bi-people"></i></div>
+            <div>
+                <div class="clients-stat-label">Clientes encontrados</div>
+                <div class="clients-stat-value">@totalClientes</div>
+            </div>
+        </div>
+        <div class="clients-stat-card">
+            <div class="clients-stat-icon clients-stat-icon-success"><i class="bi bi-person-check"></i></div>
+            <div>
+                <div class="clients-stat-label">Activos</div>
+                <div class="clients-stat-value">@clientesActivos</div>
+            </div>
+        </div>
+        <div class="clients-stat-card">
+            <div class="clients-stat-icon clients-stat-icon-muted"><i class="bi bi-person-dash"></i></div>
+            <div>
+                <div class="clients-stat-label">Inactivos</div>
+                <div class="clients-stat-value">@clientesInactivos</div>
+            </div>
         </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Teléfono</th>
-                    <th>Correo</th>
-                    <th>Saldo pendiente</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
+    <section class="clients-panel">
+        <div class="clients-panel-header">
+            <div>
+                <h2>Listado de clientes</h2>
+                <p>Consultá, buscá y administrá los clientes registrados.</p>
+            </div>
+            <span class="clients-count">@totalClientes @(totalClientes == 1 ? "cliente" : "clientes")</span>
+        </div>
 
-            <tbody>
-                @if (Model != null && Model.Any())
+        <div class="clients-toolbar">
+            <form asp-action="Buscar" method="get" class="clients-search-form">
+                <div class="clients-search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           name="termino"
+                           value="@ViewBag.Termino"
+                           placeholder="Buscar por nombre, apellido, identificación o teléfono..."
+                           aria-label="Buscar clientes" />
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.Termino as string))
+                    {
+                        <a asp-action="Index" class="clients-clear-search" aria-label="Limpiar búsqueda" title="Limpiar búsqueda">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    }
+                </div>
+                <button type="submit" class="btn btn-dark clients-search-button">Buscar</button>
+                @if (!string.IsNullOrWhiteSpace(ViewBag.Termino as string))
                 {
-                    @foreach (var cliente in Model)
+                    <a asp-action="Index" class="btn btn-light clients-reset-button">Limpiar</a>
+                }
+            </form>
+        </div>
+
+        <div class="table-responsive clients-table-wrap">
+            <table class="table clients-table align-middle">
+                <thead>
+                    <tr>
+                        <th class="clients-id-column">ID</th>
+                        <th>Cliente</th>
+                        <th>Teléfono</th>
+                        <th>Correo electrónico</th>
+                        <th>Saldo pendiente</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (clientes.Any())
+                    {
+                        @foreach (var cliente in clientes)
+                        {
+                            <tr data-client-row>
+                                <td><span class="clients-id">#@cliente.IdCliente</span></td>
+                                <td>
+                                    <div class="clients-name-cell">
+                                        <div class="clients-avatar">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div class="clients-name-info">
+                                            <span class="clients-name">@cliente.Nombre @cliente.Apellido</span>
+                                            <span class="clients-subtitle">Cliente registrado</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="clients-secondary">@(cliente.Telefono ?? "—")</td>
+                                <td class="clients-secondary">@(cliente.Email ?? "—")</td>
+                                <td><span class="clients-balance-placeholder">No disponible</span></td>
+                                <td>
+                                    @if (cliente.Estado)
+                                    {
+                                        <span class="clients-status clients-status-active"><span></span>Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="clients-status clients-status-inactive"><span></span>Inactivo</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="clients-actions">
+                                        <a asp-action="Detalle"
+                                           asp-route-id="@cliente.IdCliente"
+                                           class="clients-action-button"
+                                           title="Ver detalle"
+                                           aria-label="Ver detalle de @cliente.Nombre @cliente.Apellido">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Editar"
+                                           asp-route-id="@cliente.IdCliente"
+                                           class="clients-action-button"
+                                           title="Editar cliente"
+                                           aria-label="Editar @cliente.Nombre @cliente.Apellido">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="CambiarEstado" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@cliente.IdCliente" />
+                                            @if (cliente.Estado)
+                                            {
+                                                <button type="submit"
+                                                        class="clients-action-button clients-action-danger"
+                                                        title="Desactivar cliente"
+                                                        aria-label="Desactivar @cliente.Nombre @cliente.Apellido"
+                                                        onclick="return confirm('¿Desea cambiar el estado de este cliente?');">
+                                                    <i class="bi bi-person-x"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit"
+                                                        class="clients-action-button clients-action-success"
+                                                        title="Activar cliente"
+                                                        aria-label="Activar @cliente.Nombre @cliente.Apellido"
+                                                        onclick="return confirm('¿Desea cambiar el estado de este cliente?');">
+                                                    <i class="bi bi-person-check"></i>
+                                                </button>
+                                            }
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td>@cliente.IdCliente</td>
-
-                            <td>
-                                <span class="fw-semibold">
-                                    @cliente.Nombre @cliente.Apellido
-                                </span>
-                            </td>
-
-                            <td>
-                                @(cliente.Telefono ?? "—")
-                            </td>
-
-                            <td>
-                                @(cliente.Email ?? "—")
-                            </td>
-
-                            <td>
-                                <span class="text-muted">—</span>
-                            </td>
-
-                            <td>
-                                @if (cliente.Estado)
-                                {
-                                    <span class="badge bg-success">
-                                        Activo
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">
-                                        Inactivo
-                                    </span>
-                                }
-                            </td>
-
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <a asp-action="Detalle"
-                                       asp-route-id="@cliente.IdCliente"
-                                       class="btn btn-sm btn-outline-primary"
-                                       title="Ver detalle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-
-                                    <a asp-action="Editar"
-                                       asp-route-id="@cliente.IdCliente"
-                                       class="btn btn-sm btn-outline-secondary"
-                                       title="Editar cliente">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-
-                                    <form asp-action="CambiarEstado"
-                                          method="post"
-                                          class="d-inline"
-                                          onsubmit="return confirm('¿Desea cambiar el estado de este cliente?');">
-
-                                        @Html.AntiForgeryToken()
-
-                                        <input type="hidden"
-                                               name="id"
-                                               value="@cliente.IdCliente" />
-
-                                        @if (cliente.Estado)
+                            <td colspan="7">
+                                <div class="clients-empty-state">
+                                    <div class="clients-empty-icon"><i class="bi bi-people"></i></div>
+                                    <strong>No se encontraron clientes</strong>
+                                    <span>
+                                        @if (!string.IsNullOrWhiteSpace(ViewBag.Termino as string))
                                         {
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    title="Desactivar cliente">
-                                                <i class="bi bi-person-x"></i>
-                                            </button>
+                                            @:Probá con otro término de búsqueda o limpiá los filtros.
                                         }
                                         else
                                         {
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-success"
-                                                    title="Activar cliente">
-                                                <i class="bi bi-person-check"></i>
-                                            </button>
+                                            @:Cuando registres clientes, aparecerán en este listado.
                                         }
-                                    </form>
+                                    </span>
+                                    @if (string.IsNullOrWhiteSpace(ViewBag.Termino as string))
+                                    {
+                                        <a asp-action="Crear" class="btn btn-dark btn-sm mt-2">
+                                            <i class="bi bi-plus-lg me-1"></i>Registrar primer cliente
+                                        </a>
+                                    }
                                 </div>
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="7"
-                            class="text-center text-muted py-4">
-                            <i class="bi bi-people fs-3 d-block mb-2"></i>
-                            No hay clientes registrados.
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="clients-panel-footer">
+            <span id="clientsPaginationInfo">Mostrando <strong>@totalClientes</strong> @(totalClientes == 1 ? "cliente" : "clientes")</span>
+            <div class="clients-pagination" id="clientsPagination" aria-label="Paginación de clientes">
+                <button type="button" class="clients-page-button" id="clientsPrevPage" aria-label="Página anterior" title="Página anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span id="clientsPageNumbers" class="clients-page-numbers"></span>
+                <button type="button" class="clients-page-button" id="clientsNextPage" aria-label="Página siguiente" title="Página siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <span class="clients-footer-note"><i class="bi bi-shield-check me-1"></i>Información de clientes</span>
+        </div>
+    </section>
 </div>
+
+<style>
+    .clients-page { color:#202124; }
+    .clients-header { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; margin-bottom:24px; }
+    .clients-header .page-title { font-size:27px; line-height:1.25; font-weight:750; letter-spacing:-.65px; color:#171717; }
+    .clients-header .page-subtitle { margin-top:6px; color:#777e87; font-size:13px; }
+    .clients-primary-button { flex-shrink:0; border-radius:9px; padding:11px 16px; font-size:12px; font-weight:600; box-shadow:0 2px 4px rgba(0,0,0,.06); }
+    .clients-alert { display:flex; align-items:center; gap:10px; padding:13px 15px; margin-bottom:18px; border:1px solid #ccebd8; border-radius:10px; background:#f0faf4; color:#226b42; font-size:13px; }
+    .clients-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; margin-bottom:22px; }
+    .clients-stat-card { display:flex; align-items:center; gap:13px; min-height:94px; padding:18px; border:1px solid #e9eaec; border-radius:13px; background:#fff; box-shadow:0 2px 8px rgba(18,25,38,.025); }
+    .clients-stat-icon { display:flex; align-items:center; justify-content:center; width:43px; height:43px; flex-shrink:0; border-radius:11px; font-size:19px; }
+    .clients-stat-icon-neutral { background:#f1f3f5; color:#505761; }
+    .clients-stat-icon-success { background:#eaf7ef; color:#25804b; }
+    .clients-stat-icon-muted { background:#f2f3f5; color:#858b95; }
+    .clients-stat-label { margin-bottom:4px; color:#7b818a; font-size:11px; }
+    .clients-stat-value { color:#202124; font-size:24px; font-weight:750; line-height:1.1; }
+    .clients-panel { overflow:hidden; border:1px solid #e8e9eb; border-radius:14px; background:#fff; box-shadow:0 3px 12px rgba(18,25,38,.025); }
+    .clients-panel-header { display:flex; justify-content:space-between; align-items:center; gap:15px; padding:22px 23px 18px; }
+    .clients-panel-header h2 { margin:0; color:#222; font-size:16px; font-weight:700; }
+    .clients-panel-header p { margin:5px 0 0; color:#858a92; font-size:11px; }
+    .clients-count { padding:6px 10px; border:1px solid #e8e9eb; border-radius:20px; color:#5f6670; background:#fafafa; white-space:nowrap; font-size:11px; font-weight:600; }
+    .clients-toolbar { padding:0 23px 18px; }
+    .clients-search-form { display:flex; align-items:center; gap:9px; }
+    .clients-search-box { display:flex; align-items:center; gap:10px; flex:1; min-width:0; height:42px; padding:0 12px; border:1px solid #e0e2e5; border-radius:9px; background:#fff; color:#9298a1; }
+    .clients-search-box:focus-within { border-color:#9ca3af; box-shadow:0 0 0 3px rgba(30,41,59,.05); }
+    .clients-search-box input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:#252525; font-size:12px; }
+    .clients-search-box input::placeholder { color:#a0a4ab; }
+    .clients-clear-search { display:flex; align-items:center; justify-content:center; width:25px; height:25px; border-radius:6px; color:#777; text-decoration:none; }
+    .clients-clear-search:hover { background:#f1f2f4; color:#222; }
+    .clients-search-button,.clients-reset-button { height:42px; padding:0 16px; border-radius:9px; font-size:12px; font-weight:600; }
+    .clients-reset-button { display:flex; align-items:center; border:1px solid #e5e7eb; color:#555; background:#fff; }
+    .clients-table-wrap { padding:0 12px; }
+    .clients-table { margin-bottom:0; border-collapse:separate; border-spacing:0; }
+    .clients-table thead th { padding:13px 12px; border-top:1px solid #eff0f2; border-bottom:1px solid #e9eaec; background:#fafbfc; color:#858b94; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.45px; white-space:nowrap; }
+    .clients-table tbody td { padding:14px 12px; border-bottom:1px solid #f0f1f2; color:#30343a; font-size:12px; }
+    .clients-table tbody tr:last-child td { border-bottom:0; }
+    .clients-table tbody tr:hover { background:#fcfcfd; }
+    .clients-id { color:#858b94; font-size:11px; font-weight:650; }
+    .clients-name-cell { display:flex; align-items:center; gap:11px; min-width:180px; }
+    .clients-avatar { display:flex; align-items:center; justify-content:center; width:37px; height:37px; flex-shrink:0; border:1px solid #e8eaed; border-radius:11px; background:#f7f8fa; color:#69717c; font-size:16px; }
+    .clients-name-info { display:flex; flex-direction:column; gap:3px; }
+    .clients-name { color:#24262a; font-size:12px; font-weight:650; }
+    .clients-subtitle { color:#a0a4ab; font-size:10px; }
+    .clients-secondary { color:#68707a !important; }
+    .clients-balance-placeholder { color:#a0a4ab; }
+    .clients-status { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:20px; font-size:10px; font-weight:650; white-space:nowrap; }
+    .clients-status > span { width:6px; height:6px; border-radius:50%; }
+    .clients-status-active { color:#267548; background:#edf8f1; }
+    .clients-status-active > span { background:#2d9b5f; }
+    .clients-status-inactive { color:#737780; background:#f0f1f3; }
+    .clients-status-inactive > span { background:#9297a0; }
+    .clients-actions { display:flex; justify-content:flex-end; align-items:center; gap:6px; }
+    .clients-action-button { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border:1px solid #e6e8eb; border-radius:8px; background:#fff; color:#626974; text-decoration:none; font-size:13px; transition:background .15s,border-color .15s,color .15s; }
+    .clients-action-button:hover { border-color:#cfd3d8; background:#f7f8fa; color:#1f2937; }
+    .clients-action-button.clients-action-danger:hover { border-color:#f3caca; background:#fff3f3; color:#b42318; }
+    .clients-action-button.clients-action-success:hover { border-color:#ccebd8; background:#f0faf4; color:#187343; }
+    .clients-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; min-height:230px; padding:30px; text-align:center; }
+    .clients-empty-icon { display:flex; align-items:center; justify-content:center; width:55px; height:55px; margin-bottom:5px; border-radius:16px; background:#f2f4f7; color:#747b86; font-size:24px; }
+    .clients-empty-state strong { color:#34383e; font-size:14px; }
+    .clients-empty-state span { max-width:360px; color:#858b94; font-size:12px; line-height:1.5; }
+    .clients-panel-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 23px; border-top:1px solid #eff0f2; color:#858b94; font-size:11px; }
+    .clients-panel-footer strong { color:#42464d; }
+    .clients-footer-note { color:#9a9fa7; }
+    .clients-pagination { display:flex; align-items:center; justify-content:center; gap:5px; }
+    .clients-page-button,.clients-page-number { display:inline-flex; align-items:center; justify-content:center; min-width:31px; height:31px; padding:0 9px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; color:#555d68; font-size:11px; cursor:pointer; }
+    .clients-page-number { font-weight:600; }
+    .clients-page-number.active { border-color:#222; background:#222; color:#fff; }
+    .clients-page-button:disabled { opacity:.35; cursor:not-allowed; }
+    .clients-page-button:hover:not(:disabled),.clients-page-number:hover:not(.active) { background:#f5f6f7; }
+    .clients-page-numbers { display:flex; gap:5px; }
+    .clients-page-ellipsis { display:inline-flex; align-items:center; padding:0 3px; color:#858b94; font-size:11px; }
+
+    @@media (max-width: 900px) {
+        .clients-table { min-width:850px; }
+        .clients-stats { gap:10px; }
+        .clients-stat-card { padding:14px; }
+    }
+
+    @@media (max-width: 600px) {
+        .clients-header { flex-direction:column; align-items:stretch; }
+        .clients-primary-button { align-self:flex-start; }
+        .clients-stats { grid-template-columns:1fr; }
+        .clients-stat-card { min-height:76px; }
+        .clients-panel-header { align-items:flex-start; padding:18px 16px 15px; }
+        .clients-toolbar { padding:0 16px 15px; }
+        .clients-search-form { flex-wrap:wrap; }
+        .clients-search-box { flex-basis:100%; }
+        .clients-search-button,.clients-reset-button { flex:1; justify-content:center; }
+        .clients-table-wrap { padding:0 8px; }
+        .clients-panel-footer { padding:13px 16px; flex-wrap:wrap; }
+        .clients-pagination { order:3; width:100%; }
+        .clients-footer-note { display:none; }
+    }
+</style>
+
+<script>
+    (function () {
+        const pageSize = 10;
+        const rows = Array.from(document.querySelectorAll("[data-client-row]"));
+        const info = document.getElementById("clientsPaginationInfo");
+        const pagination = document.getElementById("clientsPagination");
+        const pageNumbers = document.getElementById("clientsPageNumbers");
+        const previous = document.getElementById("clientsPrevPage");
+        const next = document.getElementById("clientsNextPage");
+
+        if (!pagination || rows.length === 0) {
+            if (pagination) pagination.style.display = "none";
+            return;
+        }
+
+        let currentPage = 1;
+        const totalPages = Math.ceil(rows.length / pageSize);
+
+        function renderPagination() {
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, rows.length);
+
+            rows.forEach((row, index) => {
+                row.style.display = index >= start && index < end ? "" : "none";
+            });
+
+            if (info) {
+                info.innerHTML = `Mostrando <strong>${start + 1}–${end}</strong> de <strong>${rows.length}</strong> ${rows.length === 1 ? "cliente" : "clientes"}`;
+            }
+
+            previous.disabled = currentPage === 1;
+            next.disabled = currentPage === totalPages;
+            pageNumbers.innerHTML = "";
+
+            let pages = [];
+            if (totalPages <= 5) {
+                for (let page = 1; page <= totalPages; page++) pages.push(page);
+            } else {
+                pages = [...new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages])]
+                    .filter(page => page >= 1 && page <= totalPages)
+                    .sort((a, b) => a - b);
+            }
+
+            let lastPage = 0;
+            pages.forEach(page => {
+                if (lastPage && page - lastPage > 1) {
+                    const ellipsis = document.createElement("span");
+                    ellipsis.className = "clients-page-ellipsis";
+                    ellipsis.textContent = "…";
+                    pageNumbers.appendChild(ellipsis);
+                }
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "clients-page-number" + (page === currentPage ? " active" : "");
+                button.textContent = page;
+                button.setAttribute("aria-label", `Ir a la página ${page}`);
+                if (page === currentPage) button.setAttribute("aria-current", "page");
+                button.addEventListener("click", () => {
+                    currentPage = page;
+                    renderPagination();
+                });
+                pageNumbers.appendChild(button);
+                lastPage = page;
+            });
+        }
+
+        previous.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPagination();
+            }
+        });
+
+        next.addEventListener("click", () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPagination();
+            }
+        });
+
+        renderPagination();
+    })();
+</script>

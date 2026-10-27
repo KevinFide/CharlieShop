@@ -18,5 +18,7 @@ namespace CharlieShop.Models
         public decimal StockActual { get; set; }
 
         public string? UnidadMedida { get; set; }
+
+        public string? ImagenUrl { get; set; }
     }
 }
