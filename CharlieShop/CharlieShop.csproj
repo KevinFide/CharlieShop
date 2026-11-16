@@ -18,4 +18,8 @@
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="database\Sprint3\Procedures\" />
+	</ItemGroup>
+
 </Project>

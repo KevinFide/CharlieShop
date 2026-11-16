@@ -1,4 +1,4 @@
-﻿@{
+﻿﻿@{
     ViewData["Title"] = "Registrar venta";
 }
 
@@ -197,6 +197,15 @@
                         <option value="CREDITO">Crédito</option>
                     </select>
                     <div class="sale-help-text">Seleccioná la forma de pago de la venta.</div>
+
+                    <div class="sale-discount-field d-none" id="creditDueDateField">
+                        <label for="FechaVencimiento" class="form-label">Fecha de vencimiento</label>
+                        <input id="FechaVencimiento" name="FechaVencimiento" type="date"
+                               class="form-control" />
+                        <div class="sale-help-text">
+                            Indicá la fecha límite en la que el cliente debe cancelar esta cuenta.
+                        </div>
+                    </div>
 
                     <div class="sale-discount-field">
                         <label for="discountPercentage" class="form-label">Descuento (%)</label>
@@ -1617,6 +1626,70 @@
             font-size: 9px;
         }
     }
+
+
+    /* Rediseño compacto de Registrar venta: catálogo y carrito a la izquierda,
+       resumen fijo en la columna derecha. */
+    .sale-create-page { max-width: 1500px; padding: 0 8px 32px; }
+    #saleForm { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 350px); gap: 18px; align-items: start; }
+    #saleForm > .sale-layout { display: contents; }
+    #saleForm .sale-main-column { grid-column: 1; grid-row: 1; min-width: 0; }
+    #saleForm > .sale-detail-layout { display: contents; }
+    #saleForm .sale-cart-panel { grid-column: 1; grid-row: 2; min-width: 0; }
+    #saleForm .sale-summary-panel { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 84px; align-self: start; max-height: calc(100vh - 104px); overflow-y: auto; }
+    .sale-page-header { margin: 4px 0 18px; padding: 0 2px; }
+    .sale-page-header h1 { margin-bottom: 3px; }
+    .sale-page-header p { margin: 0; }
+    .sale-page-icon { width: 48px; height: 48px; }
+    .sale-panel, .sale-summary-panel { border: 1px solid #e6eaf0; border-radius: 13px; box-shadow: 0 3px 14px rgba(15,23,42,.045); }
+    .sale-panel-header { padding: 17px 18px 12px; }
+    .sale-panel-body { padding: 0 18px 18px; }
+    .sale-demo-product, .sale-quantity-row { display: none !important; }
+    .sale-catalog-heading { margin-top: 18px; }
+    .sale-search-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 12px; }
+    .sale-product-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px; border: 1px solid #e5e9ef; border-radius: 11px; background: #fff; transition: border-color .15s ease, box-shadow .15s ease; }
+    .sale-product-card:hover { border-color: #cbd5e1; box-shadow: 0 5px 16px rgba(15,23,42,.06); }
+    .sale-product-image { width: 72px; height: 78px; flex: 0 0 72px; overflow: hidden; border-radius: 8px; background: #f3f5f7; }
+    .sale-product-image img { width: 100%; height: 100%; object-fit: contain; }
+    .sale-product-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+    .sale-product-card-title { font-weight: 700; color: #182230; line-height: 1.25; }
+    .sale-product-card-code { font-size: 12px; color: #748094; }
+    .sale-product-card-price { font-size: 15px; font-weight: 750; color: #172033; }
+    .sale-product-card-stock { font-size: 12px; color: #64748b; }
+    .sale-card-quantity-controls { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+    .sale-card-quantity-label { margin: 0; font-size: 12px; color: #64748b; }
+    .sale-card-quantity-group { display: inline-flex; align-items: center; gap: 4px; }
+    .sale-card-quantity-button { width: 28px; height: 28px; border: 1px solid #dbe1e8; border-radius: 7px; background: #f8fafc; color: #273449; font-weight: 700; }
+    .sale-card-quantity-button:disabled { opacity: .4; cursor: not-allowed; }
+    .sale-card-quantity-input { width: 42px; height: 28px; border: 1px solid #dbe1e8; border-radius: 7px; text-align: center; font-size: 13px; font-weight: 650; }
+    .sale-card-add-button { min-height: 34px; border-radius: 7px; font-size: 12px; font-weight: 650; }
+    .sale-card-add-button:disabled { opacity: .45; cursor: not-allowed; }
+    .sale-product-card-footer { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+    .sale-summary-header { padding: 17px 18px 12px; }
+    .sale-summary-body { padding: 0 16px 17px; }
+    .sale-summary-body .form-label { margin-bottom: 5px; font-size: 13px; font-weight: 650; }
+    .sale-summary-line { padding: 9px 0; }
+    .sale-summary-total { margin-top: 8px; padding: 13px; border-radius: 9px; background: #edf5fc; }
+    .sale-finish-button, .sale-cancel-button { min-height: 42px; border-radius: 8px; font-weight: 650; }
+    .sale-live-total-bar { display: none !important; }
+    .sale-prototype-notice { margin-top: 14px; }
+    @@media (max-width: 1050px) {
+        #saleForm { grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; }
+        .sale-search-results { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    }
+    @@media (max-width: 800px) {
+        #saleForm { display: flex; flex-direction: column; }
+        #saleForm .sale-main-column, #saleForm .sale-cart-panel, #saleForm .sale-summary-panel { width: 100%; position: static; max-height: none; }
+        #saleForm .sale-summary-panel { order: 3; }
+        .sale-search-results { grid-template-columns: 1fr; }
+        .sale-page-header { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    }
+    @@media (max-width: 480px) {
+        .sale-product-card { align-items: flex-start; }
+        .sale-product-image { width: 60px; height: 68px; flex-basis: 60px; }
+        .sale-card-quantity-controls { align-items: flex-start; flex-direction: column; }
+    }
+
 </style>
 
 @section Scripts {
@@ -1658,6 +1731,9 @@
             const mainMenuUrl = '@Url.Action("Index", "Ventas")';
             const discountPercentage = document.getElementById("discountPercentage");
             const discountPercentageHidden = document.getElementById("DescuentoPorcentaje");
+            const paymentMethod = document.getElementById("paymentMethod");
+            const creditDueDateField = document.getElementById("creditDueDateField");
+            const dueDateInput = document.getElementById("FechaVencimiento");
             const productsJson = document.getElementById("ProductosJson");
             const saleForm = document.getElementById("saleForm");
             const finishSaleButton = document.getElementById("finishSaleButton");
@@ -1671,6 +1747,43 @@
             const acceptConfirmSale = document.getElementById("acceptConfirmSale");
 
             let saleSubmissionApproved = false;
+
+            // La fecha de vencimiento solo aplica a las ventas a crédito.
+            function updateCreditDueDateVisibility() {
+                const isCreditSale = paymentMethod.value === "CREDITO";
+
+                creditDueDateField.classList.toggle("d-none", !isCreditSale);
+                dueDateInput.required = isCreditSale;
+
+                if (!isCreditSale) {
+                    dueDateInput.value = "";
+                    dueDateInput.setCustomValidity("");
+                    return;
+                }
+
+                const today = new Date();
+                const localToday = [
+                    today.getFullYear(),
+                    String(today.getMonth() + 1).padStart(2, "0"),
+                    String(today.getDate()).padStart(2, "0")
+                ].join("-");
+
+                dueDateInput.min = localToday;
+            }
+
+            paymentMethod.addEventListener("change", updateCreditDueDateVisibility);
+            updateCreditDueDateVisibility();
+
+            dueDateInput.addEventListener("change", function () {
+                if (dueDateInput.value && dueDateInput.min &&
+                    dueDateInput.value < dueDateInput.min) {
+                    dueDateInput.setCustomValidity(
+                        "La fecha de vencimiento no puede ser anterior a hoy."
+                    );
+                } else {
+                    dueDateInput.setCustomValidity("");
+                }
+            });
 
             // Selector conectado al módulo de clientes.
             const selectedClientId = document.getElementById("selectedClientId");
@@ -1888,17 +2001,91 @@
                     price.className = "sale-product-card-price";
                     price.textContent = currency.format(Number(product.precioVenta || 0));
 
+                    const stockValue = Math.max(0, Number(product.stockActual || 0));
                     const stock = document.createElement("div");
                     stock.className = "sale-product-card-stock";
-                    stock.textContent = `Stock disponible: ${Number(product.stockActual || 0)}`;
+                    stock.textContent = stockValue > 0
+                        ? `Stock disponible: ${stockValue}`
+                        : "Sin existencias";
+
+                    const existingItem = cart.find(item => item.idProducto === Number(product.idProducto));
+                    const alreadyInCart = existingItem ? existingItem.cantidad : 0;
+                    const availableForCart = Math.max(0, stockValue - alreadyInCart);
+
+                    const quantityControls = document.createElement("div");
+                    quantityControls.className = "sale-card-quantity-controls";
+
+                    const quantityLabel = document.createElement("label");
+                    quantityLabel.className = "sale-card-quantity-label";
+                    quantityLabel.textContent = "Cantidad";
+
+                    const quantityGroup = document.createElement("div");
+                    quantityGroup.className = "sale-card-quantity-group";
+
+                    const decreaseButton = document.createElement("button");
+                    decreaseButton.type = "button";
+                    decreaseButton.className = "sale-card-quantity-button";
+                    decreaseButton.textContent = "−";
+                    decreaseButton.setAttribute("aria-label", `Disminuir cantidad de ${product.nombre}`);
+
+                    const cardQuantity = document.createElement("input");
+                    cardQuantity.type = "number";
+                    cardQuantity.className = "sale-card-quantity-input";
+                    cardQuantity.min = "1";
+                    cardQuantity.max = String(availableForCart);
+                    cardQuantity.step = "1";
+                    cardQuantity.value = availableForCart > 0 ? "1" : "0";
+                    cardQuantity.disabled = availableForCart <= 0;
+                    cardQuantity.setAttribute("aria-label", `Cantidad de ${product.nombre}`);
+
+                    const increaseButton = document.createElement("button");
+                    increaseButton.type = "button";
+                    increaseButton.className = "sale-card-quantity-button";
+                    increaseButton.textContent = "+";
+                    increaseButton.setAttribute("aria-label", `Aumentar cantidad de ${product.nombre}`);
+
+                    function validateCardQuantity() {
+                        let value = Number(cardQuantity.value);
+                        if (!Number.isInteger(value) || value < 1) value = 1;
+                        if (value > availableForCart) value = availableForCart;
+                        cardQuantity.value = String(value);
+                        return value;
+                    }
+
+                    decreaseButton.disabled = availableForCart <= 0;
+                    increaseButton.disabled = availableForCart <= 0;
+                    decreaseButton.addEventListener("click", () => {
+                        cardQuantity.value = String(Math.max(1, Number(cardQuantity.value || 1) - 1));
+                    });
+                    increaseButton.addEventListener("click", () => {
+                        cardQuantity.value = String(Math.min(availableForCart, Number(cardQuantity.value || 1) + 1));
+                    });
+                    cardQuantity.addEventListener("change", validateCardQuantity);
+
+                    quantityGroup.append(decreaseButton, cardQuantity, increaseButton);
+                    quantityControls.append(quantityLabel, quantityGroup);
 
                     const button = document.createElement("button");
                     button.type = "button";
-                    button.className = "btn btn-outline-dark btn-sm";
-                    button.textContent = "Seleccionar";
-                    button.addEventListener("click", () => selectProduct(product));
+                    button.className = "btn btn-dark sale-card-add-button";
+                    button.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Agregar';
+                    button.disabled = availableForCart <= 0;
+                    button.addEventListener("click", () => {
+                        if (availableForCart <= 0) {
+                            showCartActionMessage(`No hay unidades disponibles de ${product.nombre}.`, true);
+                            return;
+                        }
+                        selectProduct(product);
+                        quantityInput.value = String(validateCardQuantity());
+                        addProductButton.click();
+                        renderCatalogPage();
+                    });
 
-                    body.append(name, code, price, stock, button);
+                    const cardFooter = document.createElement("div");
+                    cardFooter.className = "sale-product-card-footer";
+                    cardFooter.append(quantityControls, button);
+
+                    body.append(name, code, price, stock, cardFooter);
                     card.append(image, body);
                     searchResults.appendChild(card);
                 });
@@ -2224,6 +2411,11 @@
                     `${units} ${units === 1 ? "unidad" : "unidades"} · ${cart.length} ${cart.length === 1 ? "producto" : "productos"}`;
 
                 syncProductsJson();
+
+                // Mantener las cantidades disponibles de las tarjetas sincronizadas con el carrito.
+                if (Array.isArray(catalogProducts)) {
+                    renderCatalogPage();
+                }
             }
 
             // Cancelar la venta desde el banner superior.

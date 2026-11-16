@@ -1,5 +1,4 @@
-﻿
-using System.Data;
+﻿using System.Data;
 using System.Security.Claims;
 using System.Text.Json;
 using CharlieShop.Data;
@@ -84,7 +83,6 @@ namespace CharlieShop.Controllers
             {
                 using var connection = _dbConnection.CreateConnection();
 
-                // Consultar la información general de la venta.
                 var venta = connection.QuerySingleOrDefault<
                     ConsultaDetalleVentaViewModel>(
                     @"
@@ -118,7 +116,6 @@ namespace CharlieShop.Controllers
                     new { IdVenta = id }
                 );
 
-                // Si la venta no existe, informar al usuario.
                 if (venta == null)
                 {
                     return NotFound(
@@ -126,7 +123,6 @@ namespace CharlieShop.Controllers
                     );
                 }
 
-                // Consultar los productos asociados a la venta.
                 var productos = connection.Query<
                     ProductoConsultaDetalleVentaViewModel>(
                     @"
@@ -186,6 +182,11 @@ namespace CharlieShop.Controllers
                     Convert.ToInt32(TempData["IdVenta"]);
             }
 
+            if (TempData["ErrorVenta"] != null)
+            {
+                model.Mensaje = TempData["ErrorVenta"]?.ToString();
+            }
+
             return View(model);
         }
 
@@ -196,6 +197,7 @@ namespace CharlieShop.Controllers
             try
             {
                 using var connection = _dbConnection.CreateConnection();
+
                 const string sql = @"
                     SELECT
                         id_cliente AS ""IdCliente"",
@@ -213,21 +215,27 @@ namespace CharlieShop.Controllers
                     ORDER BY nombre, apellido
                     LIMIT 25;";
 
-                var clientes = connection.Query(sql, new { Busqueda = busqueda?.Trim() ?? string.Empty })
-                    .Select(c => new
-                    {
-                        idCliente = (int)c.IdCliente,
-                        nombre = (string)c.Nombre,
-                        apellido = (string)c.Apellido,
-                        identificacion = (string?)c.Identificacion
-                    }).ToList();
+                var clientes = connection.Query(
+                    sql,
+                    new { Busqueda = busqueda?.Trim() ?? string.Empty }
+                )
+                .Select(c => new
+                {
+                    idCliente = (int)c.IdCliente,
+                    nombre = (string)c.Nombre,
+                    apellido = (string)c.Apellido,
+                    identificacion = (string?)c.Identificacion
+                })
+                .ToList();
 
                 return Json(clientes);
             }
             catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { mensaje = "No fue posible consultar los clientes." });
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { mensaje = "No fue posible consultar los clientes." }
+                );
             }
         }
 
@@ -389,7 +397,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar carrito vacío.
             if (productos.Count == 0)
             {
                 TempData["ErrorVenta"] =
@@ -398,7 +405,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar identificadores y cantidades.
             if (productos.Any(p =>
                 p.IdProducto <= 0 ||
                 p.Cantidad <= 0 ||
@@ -410,7 +416,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // El SP espera una línea por producto.
             if (productos.GroupBy(p => p.IdProducto)
                          .Any(g => g.Count() > 1))
             {
@@ -420,7 +425,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar forma de pago.
             if (model.FormaPago != "CONTADO" &&
                 model.FormaPago != "CREDITO")
             {
@@ -430,32 +434,75 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar que el cliente exista y esté activo.
-            if (model.IdCliente <= 0)
+            if (!model.IdCliente.HasValue || model.IdCliente.Value <= 0)
             {
-                TempData["ErrorVenta"] = "Seleccione un cliente para la venta.";
+                TempData["ErrorVenta"] =
+                    "Seleccione un cliente para la venta.";
+
+                return RedirectToAction(nameof(Crear));
+            }
+
+            // El plazo de crédito se define manualmente para cada cuenta.
+            // Por eso, una venta a crédito debe incluir su fecha de vencimiento.
+            DateTime? fechaVencimiento = model.FechaVencimiento?.Date;
+
+            if (model.FormaPago == "CREDITO")
+            {
+                if (!fechaVencimiento.HasValue)
+                {
+                    TempData["ErrorVenta"] =
+                        "Debe indicar la fecha de vencimiento de la cuenta por cobrar.";
+
+                    return RedirectToAction(nameof(Crear));
+                }
+
+                if (fechaVencimiento.Value < DateTime.Today)
+                {
+                    TempData["ErrorVenta"] =
+                        "La fecha de vencimiento no puede ser anterior al día de hoy.";
+
+                    return RedirectToAction(nameof(Crear));
+                }
+            }
+            else if (fechaVencimiento.HasValue)
+            {
+                TempData["ErrorVenta"] =
+                    "Las ventas de contado no deben incluir una fecha de vencimiento.";
+
                 return RedirectToAction(nameof(Crear));
             }
 
             try
             {
                 using var validacionCliente = _dbConnection.CreateConnection();
+
                 bool clienteValido = validacionCliente.ExecuteScalar<bool>(
-                    "SELECT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @IdCliente AND estado = TRUE);",
-                    new { model.IdCliente });
+                    @"
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM cliente
+                        WHERE id_cliente = @IdCliente
+                          AND estado = TRUE
+                    );",
+                    new { IdCliente = model.IdCliente.Value }
+                );
+
                 if (!clienteValido)
                 {
-                    TempData["ErrorVenta"] = "El cliente seleccionado no existe o está inactivo.";
+                    TempData["ErrorVenta"] =
+                        "El cliente seleccionado no existe o está inactivo.";
+
                     return RedirectToAction(nameof(Crear));
                 }
             }
             catch (Exception)
             {
-                TempData["ErrorVenta"] = "No fue posible validar el cliente seleccionado.";
+                TempData["ErrorVenta"] =
+                    "No fue posible validar el cliente seleccionado.";
+
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar descuento.
             if (model.DescuentoPorcentaje < 0 ||
                 model.DescuentoPorcentaje > 100)
             {
@@ -465,7 +512,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Obtener el usuario autenticado.
             var claimId = User.FindFirstValue(
                 ClaimTypes.NameIdentifier
             );
@@ -480,7 +526,6 @@ namespace CharlieShop.Controllers
                 using var connection =
                     _dbConnection.CreateConnection();
 
-                // PostgreSQL consulta los precios y valida las existencias.
                 var productosJson = JsonSerializer.Serialize(
                     productos.Select(p => new
                     {
@@ -493,7 +538,7 @@ namespace CharlieShop.Controllers
 
                 parametros.Add(
                     "p_cliente_id",
-                    model.IdCliente,
+                    model.IdCliente.Value,
                     DbType.Int32
                 );
 
@@ -521,13 +566,22 @@ namespace CharlieShop.Controllers
                     DbType.String
                 );
 
+                parametros.Add(
+                    "p_fecha_vencimiento",
+                    fechaVencimiento,
+                    DbType.Date
+                );
+
+                // El procedimiento Sprint 3 registra la venta y,
+                // cuando es crédito, crea la cuenta por cobrar.
                 var fila = connection.QuerySingle(
-                    @"CALL sp_registrar_venta(
+                    @"CALL sp_registrar_venta_sprint3(
                         @p_cliente_id,
                         @p_forma_pago,
                         @p_usuario_id,
                         @p_descuento_porcentaje,
                         CAST(@p_productos AS JSON),
+                        @p_fecha_vencimiento,
                         NULL::VARCHAR,
                         NULL::INTEGER
                     )",
@@ -551,7 +605,9 @@ namespace CharlieShop.Controllers
                 }
 
                 TempData["VentaExitosa"] =
-                    $"La venta #{idVenta.Value} se registró correctamente.";
+                    model.FormaPago == "CREDITO"
+                        ? $"La venta a crédito #{idVenta.Value} se registró correctamente y se creó su cuenta por cobrar."
+                        : $"La venta #{idVenta.Value} se registró correctamente.";
 
                 TempData["IdVenta"] = idVenta.Value;
 
