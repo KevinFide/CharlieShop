@@ -1,13 +1,16 @@
 ﻿
-using System.Data;
-using System.Security.Claims;
-using System.Text.Json;
 using CharlieShop.Data;
 using CharlieShop.Models;
+using CharlieShop.Services;
 using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using System.Data;
+using System.Globalization;
+using System.Net;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace CharlieShop.Controllers
 {
@@ -15,6 +18,7 @@ namespace CharlieShop.Controllers
     public class CuentasPorCobrarController : Controller
     {
         private readonly DbConnection _dbConnection;
+        private readonly EmailService _emailService;
 
         private readonly JsonSerializerOptions _jsonOptions =
             new JsonSerializerOptions
@@ -22,9 +26,12 @@ namespace CharlieShop.Controllers
                 PropertyNameCaseInsensitive = true
             };
 
-        public CuentasPorCobrarController(DbConnection dbConnection)
+        public CuentasPorCobrarController(
+            DbConnection dbConnection,
+            EmailService emailService)
         {
             _dbConnection = dbConnection;
+            _emailService = emailService;
         }
 
         // =====================================================
@@ -51,7 +58,8 @@ namespace CharlieShop.Controllers
                 "TODOS",
                 "PENDIENTE",
                 "PARCIAL",
-                "VENCIDA"
+                "VENCIDA",
+                "PAGADA"
             };
 
             if (!estadosPermitidos.Contains(model.EstadoFiltro))
@@ -308,7 +316,7 @@ namespace CharlieShop.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RegistrarPago(
+        public async Task<IActionResult> RegistrarPago(
             RegistrarPagoCuentaViewModel model)
         {
             if (model.IdCxc <= 0)
@@ -413,6 +421,110 @@ namespace CharlieShop.Controllers
                     TempData["ExitoPago"] =
                         $"El pago se registró correctamente. " +
                         $"Saldo pendiente: {saldoActualizado:N2}.";
+
+                    // La notificación es independiente del registro del pago:
+                    // un fallo de correo nunca debe revertir ni invalidar el pago.
+                    try
+                    {
+                        var filaDetalle = connection.QuerySingle(
+                            @"CALL public.sp_obtener_detalle_cuenta(
+                                @p_id_cxc,
+                                NULL::TEXT
+                            )",
+                            new
+                            {
+                                p_id_cxc = model.IdCxc
+                            },
+                            commandType: CommandType.Text
+                        );
+
+                        string? jsonDetalle =
+                            Convert.ToString(filaDetalle.o_detalle);
+
+                        var detalle = string.IsNullOrWhiteSpace(jsonDetalle) ||
+                                      jsonDetalle == "null"
+                            ? null
+                            : JsonSerializer.Deserialize<
+                                DetalleCuentaPorCobrarViewModel>(
+                                    jsonDetalle,
+                                    _jsonOptions
+                                );
+
+                        if (detalle == null ||
+                            string.IsNullOrWhiteSpace(detalle.Email))
+                        {
+                            TempData["AvisoCorreo"] =
+                                "El pago quedó registrado, pero no se envió la notificación " +
+                                "porque el cliente no tiene un correo electrónico registrado.";
+                        }
+                        else
+                        {
+                            string nombreCliente =
+                                WebUtility.HtmlEncode(detalle.NombreCliente);
+
+                            string montoPagado = model.Monto.ToString(
+                                "C",
+                                CultureInfo.GetCultureInfo("es-CR")
+                            );
+
+                            string saldoTexto = (saldoActualizado ?? 0m).ToString(
+                                "C",
+                                CultureInfo.GetCultureInfo("es-CR")
+                            );
+
+                            string estado = saldoActualizado <= 0
+                                ? "Cuenta pagada"
+                                : detalle.Estado == "VENCIDA"
+                                    ? "Cuenta vencida"
+                                    : "Pago parcial";
+
+                            string cuerpoCorreo = $"""
+                                <!DOCTYPE html>
+                                <html lang="es">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                </head>
+                                <body style="margin:0;padding:24px;background-color:#f5f5f5;font-family:Arial,sans-serif;color:#262626;">
+                                    <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;">
+                                        <div style="padding:24px;background:#171717;color:#ffffff;">
+                                            <h1 style="margin:0;font-size:22px;">Charlie Shop</h1>
+                                            <p style="margin:8px 0 0;color:#d4d4d4;">Confirmación de pago</p>
+                                        </div>
+                                        <div style="padding:28px 24px;">
+                                            <p>Hola <strong>{nombreCliente}</strong>,</p>
+                                            <p>Te confirmamos que hemos recibido correctamente tu pago.</p>
+                                            <div style="margin:22px 0;padding:18px;background:#f5f5f5;border-radius:8px;">
+                                                <p style="margin:0 0 12px;color:#737373;font-size:13px;">RESUMEN DEL PAGO</p>
+                                                <p style="margin:8px 0;">Monto recibido: <strong>{montoPagado}</strong></p>
+                                                <p style="margin:8px 0;">Saldo pendiente: <strong>{saldoTexto}</strong></p>
+                                                <p style="margin:8px 0;">Estado: <strong>{estado}</strong></p>
+                                                <p style="margin:8px 0;">Cuenta por cobrar: <strong>#{detalle.IdCxc}</strong></p>
+                                            </div>
+                                            <p>Gracias por tu compra y por confiar en Charlie Shop.</p>
+                                            <p style="margin-top:28px;">Saludos,<br><strong>Charlie Shop</strong></p>
+                                        </div>
+                                        <div style="padding:14px 24px;background:#fafafa;border-top:1px solid #e5e5e5;color:#737373;font-size:12px;">
+                                            Este es un correo automático de confirmación de pago.
+                                        </div>
+                                    </div>
+                                </body>
+                                </html>
+                                """;
+
+                            await _emailService.SendAsync(
+                                detalle.Email,
+                                $"Charlie Shop - Confirmación de pago #{detalle.IdCxc}",
+                                cuerpoCorreo
+                            );
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        TempData["AvisoCorreo"] =
+                            "El pago quedó registrado correctamente, pero no fue posible enviar " +
+                            "el correo de confirmación.";
+                    }
 
                     return RedirectToAction(
                         nameof(Detalle),

@@ -1,285 +1,562 @@
-﻿@{
+﻿@model CharlieShop.Models.DashboardViewModel
+
+@{
     ViewData["Title"] = "Dashboard";
+
+    var maxVentas = Model.VentasUltimosMeses.Any()
+        ? Math.Max(Model.VentasUltimosMeses.Max(x => x.Total), 1)
+        : 1;
 }
 
-<div class="page-title">
-    Dashboard
-</div>
+@section Styles {
+    <style>
+        .dashboard-page {
+            color: #20242b;
+        }
 
-<div class="page-subtitle">
-    Resumen general de la operación comercial de Charlie Shop.
-</div>
+        .dashboard-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
+            .dashboard-heading h1 {
+                font-size: 25px;
+                font-weight: 700;
+                letter-spacing: -.5px;
+                margin: 0 0 5px;
+            }
 
-<div class="row g-3 mb-4">
+            .dashboard-heading p {
+                color: #818895;
+                font-size: 13px;
+                margin: 0;
+            }
 
-    <!-- VENTAS -->
+        .dashboard-date {
+            color: #737b88;
+            font-size: 12px;
+            background: #fff;
+            border: 1px solid #e9ebef;
+            border-radius: 10px;
+            padding: 10px 13px;
+            white-space: nowrap;
+        }
 
-    <div class="col-md-3">
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4,minmax(0,1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
 
-        <div class="card metric">
+        .dash-card {
+            background: #fff;
+            border: 1px solid #e9ebef;
+            border-radius: 14px;
+            padding: 19px;
+            box-shadow: 0 3px 12px rgba(20,32,55,.035);
+            min-width: 0;
+        }
 
-            <div class="d-flex justify-content-between">
+        .metric-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
 
+        .metric-label {
+            color: #7b8491;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            color: #20242b;
+            font-size: 25px;
+            font-weight: 700;
+            letter-spacing: -.7px;
+            margin-top: 9px;
+            overflow-wrap: anywhere;
+        }
+
+        .metric-note {
+            color: #9299a4;
+            font-size: 11px;
+            margin-top: 6px;
+        }
+
+        .metric-icon {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 19px;
+            flex-shrink: 0;
+        }
+
+        .icon-blue {
+            color: #2864c5;
+            background: #edf3ff;
+        }
+
+        .icon-green {
+            color: #16865b;
+            background: #eaf7f0;
+        }
+
+        .icon-purple {
+            color: #7952c7;
+            background: #f2edfc;
+        }
+
+        .icon-orange {
+            color: #c77a19;
+            background: #fff4e6;
+        }
+
+        .dashboard-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0,1.65fr) minmax(280px,1fr);
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .dash-panel {
+            background: #fff;
+            border: 1px solid #e9ebef;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 3px 12px rgba(20,32,55,.035);
+            min-width: 0;
+        }
+
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+            .panel-heading h2 {
+                font-size: 15px;
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .panel-heading span {
+                color: #9299a4;
+                font-size: 11px;
+            }
+
+        .chart {
+            height: 210px;
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+            padding: 12px 3px 0;
+            border-bottom: 1px solid #edf0f3;
+        }
+
+        .chart-column {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .chart-bar-area {
+            height: 170px;
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .chart-bar {
+            width: min(34px,70%);
+            min-height: 3px;
+            border-radius: 7px 7px 2px 2px;
+            background: linear-gradient(180deg,#5b8def,#3267c8);
+            transition: height .25s ease;
+        }
+
+        .chart-label {
+            color: #8b929e;
+            font-size: 10px;
+            padding-bottom: 9px;
+        }
+
+        .dashboard-bottom-grid {
+            display: grid;
+            grid-template-columns: minmax(0,1.5fr) minmax(280px,1fr);
+            gap: 16px;
+        }
+
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+            .dashboard-table th {
+                color: #89919d;
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: .35px;
+                padding: 10px 8px;
+                border-bottom: 1px solid #edf0f3;
+                white-space: nowrap;
+            }
+
+            .dashboard-table td {
+                color: #424954;
+                padding: 12px 8px;
+                border-bottom: 1px solid #f0f2f5;
+                vertical-align: middle;
+            }
+
+            .dashboard-table tr:last-child td {
+                border-bottom: 0;
+            }
+
+        .sale-id {
+            color: #2d5fae;
+            font-weight: 700;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #edf3ff;
+            color: #3567b8;
+        }
+
+        .status-finalizada {
+            background: #eaf7f0;
+            color: #16865b;
+        }
+
+        .status-proceso {
+            background: #fff5e7;
+            color: #b87518;
+        }
+
+        .stock-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+            .stock-item:last-child {
+                border-bottom: 0;
+            }
+
+        .stock-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #3b424d;
+        }
+
+        .stock-min {
+            color: #969da7;
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .stock-quantity {
+            color: #c87919;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            color: #9299a4;
+            text-align: center;
+            font-size: 12px;
+            padding: 24px 8px;
+        }
+
+        .panel-link {
+            color: #3267c8;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+            .panel-link:hover {
+                color: #214f9f;
+            }
+
+        .dashboard-shortcuts {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+            .dashboard-shortcuts a {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                padding: 9px 12px;
+                border: 1px solid #e7eaf0;
+                border-radius: 9px;
+                color: #4c5664;
+                text-decoration: none;
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+                .dashboard-shortcuts a:hover {
+                    background: #f7f9fc;
+                    border-color: #cfd8e8;
+                }
+
+        @@media (max-width: 1100px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2,minmax(0,1fr));
+            }
+        }
+
+        @@media (max-width: 760px) {
+            .dashboard-heading {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .dashboard-main-grid, .dashboard-bottom-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dash-panel {
+                padding: 16px;
+            }
+
+            .dashboard-table {
+                min-width: 560px;
+            }
+
+            .metric-value {
+                font-size: 22px;
+            }
+        }
+
+        @@media (max-width: 430px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="dashboard-page">
+    <div class="dashboard-heading">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Resumen general de la operación comercial de Charlie Shop.</p>
+        </div>
+        <div class="dashboard-date">
+            <i class="bi bi-calendar3 me-2"></i>@DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-CR"))
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dash-card">
+            <div class="metric-top">
                 <div>
-
-                    <div class="label">
-                        Ventas del mes
-                    </div>
-
-                    <div class="value">
-                        ₡1.250.000
-                    </div>
-
+                    <div class="metric-label">Ventas del mes</div>
+                    <div class="metric-value">@Model.VentasMes.ToString("C2", new System.Globalization.CultureInfo("es-CR"))</div>
+                    <div class="metric-note">Total vendido en el mes actual</div>
                 </div>
-
-                <div class="icon-box">
-
-                    <i class="bi bi-cart-check"></i>
-
-                </div>
-
+                <div class="metric-icon icon-blue"><i class="bi bi-graph-up-arrow"></i></div>
             </div>
-
         </div>
-
-    </div>
-
-
-    <!-- PRODUCTOS -->
-
-    <div class="col-md-3">
-
-        <div class="card metric">
-
-            <div class="d-flex justify-content-between">
-
+        <div class="dash-card">
+            <div class="metric-top">
                 <div>
-
-                    <div class="label">
-                        Productos
-                    </div>
-
-                    <div class="value">
-                        128
-                    </div>
-
+                    <div class="metric-label">Productos activos</div>
+                    <div class="metric-value">@Model.TotalProductos.ToString("N0")</div>
+                    <div class="metric-note">Productos registrados</div>
                 </div>
-
-                <div class="icon-box">
-
-                    <i class="bi bi-box-seam"></i>
-
-                </div>
-
+                <div class="metric-icon icon-purple"><i class="bi bi-box-seam"></i></div>
             </div>
-
         </div>
-
-    </div>
-
-
-    <!-- CLIENTES -->
-
-    <div class="col-md-3">
-
-        <div class="card metric">
-
-            <div class="d-flex justify-content-between">
-
+        <div class="dash-card">
+            <div class="metric-top">
                 <div>
-
-                    <div class="label">
-                        Clientes
-                    </div>
-
-                    <div class="value">
-                        86
-                    </div>
-
+                    <div class="metric-label">Clientes registrados</div>
+                    <div class="metric-value">@Model.TotalClientes.ToString("N0")</div>
+                    <div class="metric-note">Clientes activos</div>
                 </div>
-
-                <div class="icon-box">
-
-                    <i class="bi bi-people"></i>
-
-                </div>
-
+                <div class="metric-icon icon-green"><i class="bi bi-people"></i></div>
             </div>
-
         </div>
-
-    </div>
-
-
-    <!-- CUENTAS -->
-
-    <div class="col-md-3">
-
-        <div class="card metric">
-
-            <div class="d-flex justify-content-between">
-
+        <div class="dash-card">
+            <div class="metric-top">
                 <div>
-
-                    <div class="label">
-                        Por cobrar
-                    </div>
-
-                    <div class="value">
-                        ₡420.000
-                    </div>
-
+                    <div class="metric-label">Cuentas por cobrar</div>
+                    <div class="metric-value">@Model.CuentasPorCobrar.ToString("C2", new System.Globalization.CultureInfo("es-CR"))</div>
+                    <div class="metric-note">@Model.CuentasPendientes cuenta(s) con saldo pendiente</div>
                 </div>
+                <div class="metric-icon icon-orange"><i class="bi bi-cash-stack"></i></div>
+            </div>
+        </div>
+    </div>
 
-                <div class="icon-box">
-
-                    <i class="bi bi-cash-stack"></i>
-
+    <div class="dashboard-main-grid">
+        <section class="dash-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Resumen de ventas</h2>
+                    <span>Comportamiento de los últimos 6 meses</span>
                 </div>
-
+                <i class="bi bi-bar-chart-line text-secondary"></i>
             </div>
+            @if (Model.VentasUltimosMeses.Any())
+            {
+                <div class="chart">
+                    @foreach (var dia in Model.VentasUltimosMeses)
+                    {
+                        var porcentaje = dia.Total <= 0 ? 2 : (double)(dia.Total / maxVentas * 100);
+                        <div class="chart-column" title="@dia.Total.ToString("C2", new System.Globalization.CultureInfo("es-CR"))">
+                            <div class="chart-bar-area">
+                                <div class="chart-bar" style="height:@(porcentaje.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                            </div>
+                            <div class="chart-label">@dia.Fecha.ToString("MMM", new System.Globalization.CultureInfo("es-CR"))</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">No hay información de ventas para mostrar.</div>
+            }
+            <div class="dashboard-shortcuts">
+                <a asp-controller="Ventas" asp-action="Index"><i class="bi bi-receipt"></i>Ver ventas</a>
+                <a asp-controller="Inventario" asp-action="Index"><i class="bi bi-boxes"></i>Ver inventario</a>
+            </div>
+        </section>
 
-        </div>
-
+        <section class="dash-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Indicadores del día</h2>
+                    <span>Actividad registrada hoy</span>
+                </div>
+                <i class="bi bi-speedometer2 text-secondary"></i>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                    <div class="metric-label">Ventas del día</div>
+                    <div class="fw-bold fs-5 mt-1">@Model.VentasHoy.ToString("C2", new System.Globalization.CultureInfo("es-CR"))</div>
+                </div>
+                <div class="metric-icon icon-green"><i class="bi bi-currency-dollar"></i></div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <div class="metric-label">Transacciones realizadas</div>
+                    <div class="fw-bold fs-5 mt-1">@Model.TransaccionesHoy.ToString("N0")</div>
+                </div>
+                <div class="metric-icon icon-blue"><i class="bi bi-cart-check"></i></div>
+            </div>
+            <div class="mt-3 p-3 rounded-3" style="background:#fff8ed;">
+                <div class="d-flex align-items-center gap-2 mb-1" style="color:#b87518;font-size:12px;font-weight:700;">
+                    <i class="bi bi-exclamation-triangle"></i> Atención de inventario
+                </div>
+                <div style="font-size:12px;color:#747c88;">@Model.ProductosStockBajo producto(s) con existencias iguales o inferiores al mínimo.</div>
+            </div>
+        </section>
     </div>
 
-</div>
-
-
-<div class="row g-3">
-
-
-    <!-- VENTAS RECIENTES -->
-
-    <div class="col-lg-8">
-
-        <div class="card p-4">
-
-            <h5 class="mb-3">
-                Ventas recientes
-            </h5>
-
-            <div class="table-responsive">
-
-                <table class="table align-middle">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>Venta</th>
-                            <th>Cliente</th>
-                            <th>Fecha</th>
-                            <th>Total</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        <tr>
-
-                            <td>#V-1048</td>
-
-                            <td>
-                                María López
-                            </td>
-
-                            <td>
-                                08/08/2026
-                            </td>
-
-                            <td>
-                                ₡45.000
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>#V-1047</td>
-
-                            <td>
-                                Carlos Mora
-                            </td>
-
-                            <td>
-                                08/08/2026
-                            </td>
-
-                            <td>
-                                ₡72.500
-                            </td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>#V-1046</td>
-
-                            <td>
-                                Andrea Solís
-                            </td>
-
-                            <td>
-                                07/08/2026
-                            </td>
-
-                            <td>
-                                ₡31.000
-                            </td>
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
-
+    <div class="dashboard-bottom-grid">
+        <section class="dash-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Ventas recientes</h2>
+                    <span>Últimas 6 ventas registradas</span>
+                </div>
+                <a asp-controller="Ventas" asp-action="Index" class="panel-link">Ver todas <i class="bi bi-arrow-right"></i></a>
             </div>
+            @if (Model.VentasRecientes.Any())
+            {
+                <div class="table-responsive">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr><th>Venta</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in Model.VentasRecientes)
+                            {
+                                var estadoClass = venta.Estado == "FINALIZADA" ? "status-finalizada" : venta.Estado == "EN_PROCESO" ? "status-proceso" : "";
+                                <tr>
+                                    <td class="sale-id">#@venta.IdVenta</td>
+                                    <td>@venta.Cliente</td>
+                                    <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="fw-semibold">@venta.TotalNeto.ToString("C2", new System.Globalization.CultureInfo("es-CR"))</td>
+                                    <td><span class="status-pill @estadoClass">@venta.Estado.Replace("_", " ")</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">Todavía no hay ventas registradas.</div>
+            }
+        </section>
 
-        </div>
-
+        <section class="dash-panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Productos con stock bajo</h2>
+                    <span>Requieren revisión o reabastecimiento</span>
+                </div>
+                <a asp-controller="Inventario" asp-action="Index" class="panel-link">Ver inventario <i class="bi bi-arrow-right"></i></a>
+            </div>
+            @if (Model.ProductosBajoStock.Any())
+            {
+                <div class="stock-list">
+                    @foreach (var producto in Model.ProductosBajoStock)
+                    {
+                        <div class="stock-item">
+                            <div>
+                                <div class="stock-name">@producto.Nombre</div>
+                                <div class="stock-min">Stock mínimo: @producto.StockMinimo.ToString("N0")</div>
+                            </div>
+                            <div class="stock-quantity">@producto.StockActual.ToString("N0") disp.</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">No hay productos con stock bajo.</div>
+            }
+        </section>
     </div>
-
-
-    <!-- ALERTAS -->
-
-    <div class="col-lg-4">
-
-        <div class="card p-4">
-
-            <h5 class="mb-3">
-                Alertas
-            </h5>
-
-            <div class="alert alert-warning">
-
-                <i class="bi bi-exclamation-triangle me-2"></i>
-
-                5 productos con stock bajo.
-
-            </div>
-
-            <div class="alert alert-info">
-
-                <i class="bi bi-info-circle me-2"></i>
-
-                3 cuentas pendientes de pago.
-
-            </div>
-
-            <a asp-controller="Inventario"
-               asp-action="Index"
-               class="btn btn-outline-primary w-100">
-
-                Revisar inventario
-
-            </a>
-
-        </div>
-
-    </div>
-
 </div>
