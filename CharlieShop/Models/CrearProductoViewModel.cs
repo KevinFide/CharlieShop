@@ -18,13 +18,16 @@ namespace CharlieShop.Models
         public string? Categoria { get; set; }
 
         [Required(ErrorMessage = "El precio de venta es obligatorio.")]
-        [Range(0, double.MaxValue, ErrorMessage = "El precio debe ser mayor o igual a cero.")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "El precio debe ser mayor o igual a cero.")]
         public decimal PrecioVenta { get; set; }
 
-        [Range(0, double.MaxValue, ErrorMessage = "El costo debe ser mayor o igual a cero.")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "El costo debe ser mayor o igual a cero.")]
         public decimal? Costo { get; set; }
 
         [StringLength(20)]
         public string? UnidadMedida { get; set; }
+
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "El stock inicial no puede ser negativo.")]
+        public decimal StockInicial { get; set; } = 0;
     }
 }
