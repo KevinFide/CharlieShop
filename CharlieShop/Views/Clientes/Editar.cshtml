@@ -8,106 +8,183 @@
         ("Clientes", "Clientes", "Index"),
         ("Editar cliente", null, null)
     };
+
+    var nombreCompleto = $"{Model.Nombre} {Model.Apellido}".Trim();
+    var iniciales = $"{(string.IsNullOrWhiteSpace(Model.Nombre) ? "" : Model.Nombre.Substring(0, 1))}{(string.IsNullOrWhiteSpace(Model.Apellido) ? "" : Model.Apellido.Substring(0, 1))}".ToUpperInvariant();
 }
 
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <div class="page-title">Editar cliente</div>
-        <div class="page-subtitle">
-            Actualización de la información personal del cliente.
+<style>
+    .client-edit-page { color:#25282d; }
+    .client-edit-page .edit-heading { font-size:25px; font-weight:750; letter-spacing:-.65px; margin:0; }
+    .client-edit-page .edit-subtitle { color:#858b95; font-size:13px; margin-top:5px; }
+    .client-edit-page .edit-card { background:#fff; border:1px solid #eceef1; border-radius:15px; box-shadow:0 3px 12px rgba(20,25,35,.035); overflow:hidden; }
+    .client-edit-page .edit-card-header { display:flex; align-items:center; gap:12px; padding:21px 24px; border-bottom:1px solid #eff0f2; }
+    .client-edit-page .header-icon { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#f1f2f4; color:#373b42; font-size:18px; }
+    .client-edit-page .card-title { font-size:14px; font-weight:750; margin:0; }
+    .client-edit-page .card-description { font-size:11px; color:#9298a1; margin-top:3px; }
+    .client-edit-page .edit-card-body { padding:25px 24px; }
+    .client-edit-page .edit-label { display:block; color:#505660; font-size:12px; font-weight:650; margin-bottom:8px; }
+    .client-edit-page .form-control, .client-edit-page .form-select { min-height:43px; border:1px solid #e1e4e8; border-radius:9px; color:#30343a; font-size:13px; padding:10px 12px; box-shadow:none; }
+    .client-edit-page .form-control:focus, .client-edit-page .form-select:focus { border-color:#9ca1a9; box-shadow:0 0 0 3px rgba(45,49,55,.07); }
+    .client-edit-page .form-control::placeholder { color:#b0b5bd; }
+    .client-edit-page .field-validation-error { display:block; font-size:11px; margin-top:5px; color:#c0392b; }
+    .client-edit-page .validation-summary-errors { padding:11px 13px; border:1px solid #f1c7c4; border-radius:9px; background:#fff5f4; color:#b42318; font-size:12px; }
+    .client-edit-page .validation-summary-errors ul { margin:0; padding-left:18px; }
+    .client-edit-page .field-validation-valid { display:none; }
+    .client-edit-page .edit-section-label { color:#9298a1; font-size:10px; font-weight:750; letter-spacing:.9px; text-transform:uppercase; margin:0 0 16px; }
+    .client-edit-page .client-preview { background:#f8f9fa; border:1px solid #eceef1; border-radius:13px; padding:18px; }
+    .client-edit-page .preview-avatar { width:48px; height:48px; border-radius:15px; display:flex; align-items:center; justify-content:center; background:#e9eaed; color:#30343a; font-size:15px; font-weight:750; }
+    .client-edit-page .preview-name { font-size:14px; font-weight:750; overflow-wrap:anywhere; }
+    .client-edit-page .preview-id { color:#9298a1; font-size:11px; margin-top:3px; }
+    .client-edit-page .status-note { color:#7b818b; font-size:11px; line-height:1.6; margin:15px 0 0; }
+    .client-edit-page .edit-card-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:17px 24px; background:#fcfcfd; border-top:1px solid #eff0f2; }
+    .client-edit-page .footer-hint { color:#9298a1; font-size:11px; }
+    .client-edit-page .btn-cancel { background:#fff; border:1px solid #e0e3e7; color:#4c525b; border-radius:9px; padding:10px 14px; font-size:12px; font-weight:650; }
+    .client-edit-page .btn-save { background:#202124; border:1px solid #202124; color:#fff; border-radius:9px; padding:10px 15px; font-size:12px; font-weight:650; }
+    .client-edit-page .btn-save:hover { background:#383a3d; color:#fff; }
+    .client-edit-page .btn-cancel:hover { background:#f5f6f7; }
+    @@media (max-width: 767.98px) {
+        .client-edit-page .edit-heading { font-size:22px; }
+        .client-edit-page .edit-card-header, .client-edit-page .edit-card-body { padding:18px; }
+        .client-edit-page .edit-card-footer { padding:16px 18px; }
+        .client-edit-page .edit-card-footer .footer-hint { width:100%; }
+        .client-edit-page .edit-card-footer .footer-actions { display:flex; width:100%; }
+        .client-edit-page .edit-card-footer .footer-actions a, .client-edit-page .edit-card-footer .footer-actions button { flex:1; justify-content:center; }
+    }
+</style>
+
+<div class="client-edit-page">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="edit-heading">Editar cliente</h1>
+            <p class="edit-subtitle mb-0">Actualiza la información personal y los datos de contacto del cliente.</p>
         </div>
+
+        <a asp-action="Detalle" asp-route-id="@Model.IdCliente"
+           class="btn btn-cancel d-inline-flex align-items-center">
+            <i class="bi bi-arrow-left me-2"></i>Volver al detalle
+        </a>
     </div>
 
-    <a asp-action="Detalle"
-       asp-route-id="@Model.IdCliente" 
-       class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>
-        Volver al detalle
-    </a>
-</div>
-
-<div class="card border-0 shadow-sm p-4">
-    <form asp-action="Editar" method="post">
-        @Html.AntiForgeryToken()
-
-        <input type="hidden" asp-for="IdCliente" />
-
-        <div asp-validation-summary="ModelOnly"
-             class="text-danger mb-3"></div>
-
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label asp-for="Nombre" class="form-label"></label>
-                <input asp-for="Nombre" class="form-control" />
-                <span asp-validation-for="Nombre"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Apellido" class="form-label"></label>
-                <input asp-for="Apellido" class="form-control" />
-                <span asp-validation-for="Apellido"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Identificacion"
-                       class="form-label"></label>
-                <input asp-for="Identificacion"
-                       class="form-control" />
-                <span asp-validation-for="Identificacion"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Telefono" class="form-label"></label>
-                <input asp-for="Telefono" class="form-control" />
-                <span asp-validation-for="Telefono"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Email"
-                       class="form-label">Correo electrónico</label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Direccion" class="form-label"></label>
-                <input asp-for="Direccion" class="form-control" />
-                <span asp-validation-for="Direccion"
-                      class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6">
-                <label asp-for="Estado" class="form-label">
-                    Estado del cliente
-                </label>
-
-                <select asp-for="Estado" class="form-select">
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                </select>
-            </div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <aside class="client-preview">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="preview-avatar" id="clientPreviewAvatar">
+                        @(string.IsNullOrWhiteSpace(iniciales) ? "CL" : iniciales)
+                    </div>
+                    <div class="min-w-0">
+                        <div class="preview-name" id="clientPreviewName">@nombreCompleto</div>
+                        <div class="preview-id">Cliente #@Model.IdCliente</div>
+                    </div>
+                </div>
+                <p class="status-note mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Los cambios se aplicarán cuando presiones <strong>Guardar cambios</strong>.
+                </p>
+            </aside>
         </div>
 
-        <div class="d-flex justify-content-end gap-2 mt-4">
-            <a asp-action="Index"
-               class="btn btn-outline-secondary">
-                Cancelar
-            </a>
+        <div class="col-lg-8">
+            <section class="edit-card">
+                <div class="edit-card-header">
+                    <div class="header-icon"><i class="bi bi-person-gear"></i></div>
+                    <div>
+                        <h2 class="card-title">Información del cliente</h2>
+                        <div class="card-description">Modifica los campos necesarios y revisa los datos antes de guardar.</div>
+                    </div>
+                </div>
 
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-save me-1"></i>
-                Guardar cambios
-            </button>
+                <form asp-action="Editar" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdCliente" />
+
+                    <div class="edit-card-body">
+                        <div asp-validation-summary="ModelOnly" class="mb-4"></div>
+
+                        <h3 class="edit-section-label">Datos personales</h3>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="Nombre" class="edit-label">Nombre <span class="text-danger">*</span></label>
+                                <input asp-for="Nombre" class="form-control" placeholder="Ingrese el nombre" autocomplete="given-name" />
+                                <span asp-validation-for="Nombre"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Apellido" class="edit-label">Apellido <span class="text-danger">*</span></label>
+                                <input asp-for="Apellido" class="form-control" placeholder="Ingrese el apellido" autocomplete="family-name" />
+                                <span asp-validation-for="Apellido"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Identificacion" class="edit-label">Identificación</label>
+                                <input asp-for="Identificacion" class="form-control" placeholder="Número de identificación" autocomplete="off" />
+                                <span asp-validation-for="Identificacion"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Estado" class="edit-label">Estado del cliente <span class="text-danger">*</span></label>
+                                <select asp-for="Estado" class="form-select">
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                                <span asp-validation-for="Estado"></span>
+                            </div>
+                        </div>
+
+                        <h3 class="edit-section-label">Información de contacto</h3>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Telefono" class="edit-label">Teléfono</label>
+                                <input asp-for="Telefono" class="form-control" placeholder="Ej. 8888-8888" autocomplete="tel" />
+                                <span asp-validation-for="Telefono"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="edit-label">Correo electrónico</label>
+                                <input asp-for="Email" class="form-control" placeholder="correo@ejemplo.com" autocomplete="email" />
+                                <span asp-validation-for="Email"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Direccion" class="edit-label">Dirección</label>
+                                <textarea asp-for="Direccion" class="form-control" rows="3" placeholder="Ingrese la dirección del cliente" autocomplete="street-address" style="resize:vertical; min-height:90px;"></textarea>
+                                <span asp-validation-for="Direccion"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="edit-card-footer">
+                        <span class="footer-hint"><i class="bi bi-shield-check me-1"></i>Revisa la información antes de guardar.</span>
+                        <div class="footer-actions d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-cancel d-inline-flex align-items-center">Cancelar</a>
+                            <button type="submit" class="btn btn-save d-inline-flex align-items-center">
+                                <i class="bi bi-check2-circle me-2"></i>Guardar cambios
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </section>
         </div>
-    </form>
+    </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const firstName = document.getElementById("Nombre");
+            const lastName = document.getElementById("Apellido");
+            const previewName = document.getElementById("clientPreviewName");
+            const previewAvatar = document.getElementById("clientPreviewAvatar");
+
+            function updatePreview() {
+                const first = firstName ? firstName.value.trim() : "";
+                const last = lastName ? lastName.value.trim() : "";
+                const fullName = (first + " " + last).trim();
+                previewName.textContent = fullName || "Nombre del cliente";
+
+                const initials = ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+                previewAvatar.textContent = initials || "CL";
+            }
+
+            if (firstName) firstName.addEventListener("input", updatePreview);
+            if (lastName) lastName.addEventListener("input", updatePreview);
+        })();
+    </script>
 }
-```

@@ -1,0 +1,1040 @@
+@model CharlieShop.Models.DetalleCuentaPorCobrarViewModel
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Detalle de cuenta por cobrar";
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+    {
+        ("Inicio", "Home", "Index"),
+        ("Cuentas por cobrar", "CuentasPorCobrar", "Index"),
+        ("Detalle de cuenta", null, null)
+    };
+
+    var vencida = Model.Estado == "VENCIDA";
+    var pagada = Model.Estado == "PAGADA";
+    var tieneSaldo = Model.SaldoPendiente > 0;
+    var cultura = new CultureInfo("es-CR");
+    var totalAbonado = Math.Max(0, Model.Total - Model.SaldoPendiente);
+    var porcentajePagado = Model.Total > 0 ? (totalAbonado / Model.Total) * 100 : 0;
+    porcentajePagado = Math.Clamp(porcentajePagado, 0, 100);
+    var pagos = Model.Pagos ?? new();
+}
+
+<div class="cxc-detail-page">
+    <div class="detail-heading">
+        <div>
+            <div class="detail-eyebrow"><i class="bi bi-wallet2"></i> Cuentas por cobrar</div>
+            <h1>Detalle de cuenta</h1>
+            <p>Consulta la información, controla el saldo y registra nuevos abonos.</p>
+        </div>
+        <a asp-controller="CuentasPorCobrar" asp-action="Index" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            <span>Volver a cuentas</span>
+        </a>
+    </div>
+
+    @if (TempData["ExitoPago"] != null)
+    {
+        <div class="detail-alert success" role="alert">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@TempData["ExitoPago"]</span>
+            <button type="button" class="alert-dismiss" data-bs-dismiss="alert" aria-label="Cerrar">&times;</button>
+        </div>
+    }
+    @if (TempData["ErrorPago"] != null)
+    {
+        <div class="detail-alert danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@TempData["ErrorPago"]</span>
+            <button type="button" class="alert-dismiss" data-bs-dismiss="alert" aria-label="Cerrar">&times;</button>
+        </div>
+    }
+
+    <section class="overview-grid">
+        <article class="detail-card account-card">
+            <div class="card-heading">
+                <div class="heading-icon"><i class="bi bi-receipt"></i></div>
+                <div>
+                    <span class="section-kicker">Información principal</span>
+                    <h2>Cuenta #@Model.IdCxc</h2>
+                </div>
+                <span class="status-pill @(pagada ? "status-paid" : vencida ? "status-overdue" : Model.Estado == "PARCIAL" ? "status-partial" : "status-pending")">
+                    <span class="status-dot"></span>
+                    @Model.Estado
+                </span>
+            </div>
+
+            <div class="account-details">
+                <div class="detail-field">
+                    <span class="field-label">Cliente</span>
+                    <strong>@Model.NombreCliente</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Identificación</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Identificacion) ? "No disponible" : Model.Identificacion)</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Teléfono</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Telefono) ? "No disponible" : Model.Telefono)</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Correo electrónico</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Email) ? "No disponible" : Model.Email)</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Venta asociada</span>
+                    <strong><span class="field-reference">#@Model.IdVenta</span></strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Forma de pago</span>
+                    <strong>@Model.FormaPago</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Fecha de emisión</span>
+                    <strong><i class="bi bi-calendar3 field-icon"></i>@Model.Fecha.ToString("dd/MM/yyyy")</strong>
+                </div>
+                <div class="detail-field">
+                    <span class="field-label">Fecha de vencimiento</span>
+                    <strong class="@(vencida ? "text-overdue" : "")"><i class="bi bi-calendar-event field-icon"></i>@Model.FechaVencimiento.ToString("dd/MM/yyyy")</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="detail-card balance-card">
+            <div class="card-heading">
+                <div class="heading-icon balance-icon"><i class="bi bi-cash-stack"></i></div>
+                <div>
+                    <span class="section-kicker">Estado financiero</span>
+                    <h2>Resumen de cuenta</h2>
+                </div>
+            </div>
+
+            <div class="balance-main">
+                <span>Saldo pendiente</span>
+                <strong class="balance-amount">@Model.SaldoPendiente.ToString("C2", cultura)</strong>
+                <small>@(pagada ? "Cuenta cancelada" : "Monto restante por pagar")</small>
+            </div>
+
+            <div class="balance-breakdown">
+                <div><span>Total original</span><strong>@Model.Total.ToString("C2", cultura)</strong></div>
+                <div><span>Total abonado</span><strong class="amount-paid">@totalAbonado.ToString("C2", cultura)</strong></div>
+            </div>
+
+            <div class="payment-progress">
+                <div class="progress-caption">
+                    <span>Progreso de pago</span>
+                    <strong>@porcentajePagado.ToString("N1")%</strong>
+                </div>
+                <div class="progress-track" role="progressbar" aria-valuenow="@porcentajePagado.ToString("0.##", CultureInfo.InvariantCulture)" aria-valuemin="0" aria-valuemax="100" aria-label="Porcentaje pagado">
+                    <div class="progress-value" style="width:@porcentajePagado.ToString("0.##", CultureInfo.InvariantCulture)%"></div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    @if (tieneSaldo)
+    {
+        <section class="detail-card payment-card">
+            <div class="section-header">
+                <div class="section-heading-group">
+                    <div class="heading-icon payment-icon"><i class="bi bi-plus-lg"></i></div>
+                    <div>
+                        <span class="section-kicker">Gestión de cuenta</span>
+                        <h2>Registrar un pago</h2>
+                        <p>Ingresa los datos del abono para actualizar el saldo pendiente.</p>
+                    </div>
+                </div>
+                <div class="available-balance">
+                    <span>Saldo disponible</span>
+                    <strong>@Model.SaldoPendiente.ToString("C2", cultura)</strong>
+                </div>
+            </div>
+
+            <form asp-controller="CuentasPorCobrar" asp-action="RegistrarPago" method="post" id="paymentForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdCxc" value="@Model.IdCxc" />
+
+                <div class="payment-fields">
+                    <div class="form-field">
+                        <label for="Monto">Monto del pago <span>*</span></label>
+                        <div class="input-money">
+                            <span>₡</span>
+                            <input type="number" id="Monto" name="Monto"
+                                   min="0.01"
+                                   max="@Model.SaldoPendiente.ToString(CultureInfo.InvariantCulture)"
+                                   step="0.01" required placeholder="0.00" />
+                        </div>
+                        <small>Máximo permitido: @Model.SaldoPendiente.ToString("C2", cultura)</small>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="MetodoPago">Método de pago <span>*</span></label>
+                        <select id="MetodoPago" name="MetodoPago" required>
+                            <option value="">Seleccione un método</option>
+                            <option value="EFECTIVO">Efectivo</option>
+                            <option value="TARJETA">Tarjeta</option>
+                            <option value="TRANSFERENCIA">Transferencia</option>
+                            <option value="SINPE">SINPE Móvil</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="Referencia">Referencia</label>
+                        <input type="text" id="Referencia" name="Referencia" maxlength="100" placeholder="Número de referencia" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="Observaciones">Observaciones</label>
+                        <input type="text" id="Observaciones" name="Observaciones" placeholder="Detalle adicional (opcional)" />
+                    </div>
+                </div>
+
+                <div class="payment-footer">
+                    <span><i class="bi bi-shield-check"></i> Verifica el monto antes de registrar el pago.</span>
+                    <button type="submit" class="btn-primary-dark">
+                        <i class="bi bi-check2-circle"></i>
+                        Registrar pago
+                    </button>
+                </div>
+            </form>
+        </section>
+    }
+    else
+    {
+        <div class="settled-notice">
+            <div class="settled-icon"><i class="bi bi-check2-circle"></i></div>
+            <div>
+                <strong>Cuenta cancelada</strong>
+                <p>Esta cuenta ya fue pagada completamente. No tiene saldo pendiente.</p>
+            </div>
+        </div>
+    }
+
+    <section class="detail-card history-card">
+        <div class="section-header history-header">
+            <div class="section-heading-group">
+                <div class="heading-icon history-icon"><i class="bi bi-clock-history"></i></div>
+                <div>
+                    <span class="section-kicker">Movimientos</span>
+                    <h2>Historial de pagos</h2>
+                    <p>Abonos registrados para esta cuenta.</p>
+                </div>
+            </div>
+            <div class="history-actions">
+                <span class="records-count">@pagos.Count pago(s)</span>
+                <a asp-controller="CuentasPorCobrar" asp-action="HistorialPagos" asp-route-idCxc="@Model.IdCxc" class="btn-outline-dark">
+                    Ver historial completo <i class="bi bi-arrow-up-right"></i>
+                </a>
+            </div>
+        </div>
+
+        @if (pagos.Any())
+        {
+            <div class="table-responsive">
+                <table class="payments-table">
+                    <thead>
+                        <tr>
+                            <th>Pago</th>
+                            <th>Fecha</th>
+                            <th>Método de pago</th>
+                            <th>Referencia</th>
+                            <th>Usuario</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pago in pagos)
+                        {
+                            <tr>
+                                <td><span class="payment-id">#@pago.IdPago</span></td>
+                                <td>@pago.FechaPago.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><span class="method-label"><i class="bi bi-credit-card"></i>@pago.MetodoPago</span></td>
+                                <td>@(string.IsNullOrWhiteSpace(pago.Referencia) ? "—" : pago.Referencia)</td>
+                                <td>@(string.IsNullOrWhiteSpace(pago.Usuario) ? "—" : pago.Usuario)</td>
+                                <td class="text-end amount-cell">@pago.Monto.ToString("C2", cultura)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-history">
+                <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+                <strong>No hay pagos registrados</strong>
+                <p>Los abonos realizados aparecerán aquí.</p>
+            </div>
+        }
+
+        <div class="history-footer">
+            <span>Cuenta #@Model.IdCxc</span>
+            <span>@pagos.Count pago(s) registrado(s)</span>
+        </div>
+    </section>
+</div>
+
+<style>
+    .cxc-detail-page {
+        --ink: #202631;
+        --muted: #858e9c;
+        --line: #e9edf2;
+        --blue: #3267c8;
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 4px 2px 36px;
+        color: var(--ink);
+    }
+
+    .detail-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        margin-bottom: 22px;
+    }
+
+    .detail-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #718096;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+        .detail-eyebrow i {
+            color: var(--blue);
+            font-size: 14px;
+        }
+
+    .detail-heading h1 {
+        font-size: 26px;
+        font-weight: 750;
+        letter-spacing: -.7px;
+        margin: 0 0 5px;
+    }
+
+    .detail-heading p {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0;
+    }
+
+    .btn-back, .btn-outline-dark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid #dfe4eb;
+        background: #fff;
+        color: #475365;
+        border-radius: 9px;
+        padding: 10px 14px;
+        font-size: 12px;
+        font-weight: 650;
+        text-decoration: none;
+        transition: .18s ease;
+        white-space: nowrap;
+    }
+
+        .btn-back:hover, .btn-outline-dark:hover {
+            border-color: #b9c5d5;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+
+    .detail-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+        .detail-alert.success {
+            background: #edf8f2;
+            color: #24764e;
+            border: 1px solid #d6efdf;
+        }
+
+        .detail-alert.danger {
+            background: #fff1f0;
+            color: #b53d36;
+            border: 1px solid #f5d8d5;
+        }
+
+    .alert-dismiss {
+        margin-left: auto;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 22px;
+        line-height: 1;
+        opacity: .7;
+    }
+
+    .overview-grid {
+        display: grid;
+        grid-template-columns: minmax(0,1.7fr) minmax(300px,.9fr);
+        gap: 17px;
+        margin-bottom: 17px;
+        align-items: stretch;
+    }
+
+    .detail-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(25,39,62,.035);
+        overflow: hidden;
+    }
+
+    .account-card, .balance-card {
+        padding: 21px 22px;
+    }
+
+    .card-heading, .section-heading-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .card-heading {
+        margin-bottom: 22px;
+    }
+
+    .heading-icon {
+        width: 39px;
+        height: 39px;
+        flex: 0 0 39px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        background: #edf3ff;
+        color: #3267c8;
+        font-size: 17px;
+    }
+
+    .section-kicker {
+        display: block;
+        color: #929baa;
+        font-size: 9px;
+        font-weight: 750;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+    }
+
+    .card-heading h2, .section-heading-group h2 {
+        color: #252d39;
+        font-size: 16px;
+        font-weight: 750;
+        margin: 0;
+        letter-spacing: -.2px;
+    }
+
+    .status-pill {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .04em;
+        white-space: nowrap;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .status-paid {
+        background: #eaf7f0;
+        color: #218052;
+    }
+
+    .status-overdue {
+        background: #fff0ef;
+        color: #c54c43;
+    }
+
+    .status-partial {
+        background: #fff6e8;
+        color: #a96a16;
+    }
+
+    .status-pending {
+        background: #edf3ff;
+        color: #3267c8;
+    }
+
+    .account-details {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 19px 28px;
+        padding-left: 2px;
+    }
+
+    .detail-field {
+        min-width: 0;
+    }
+
+    .field-label {
+        display: block;
+        color: #929baa;
+        font-size: 10px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .detail-field strong {
+        display: block;
+        color: #303a49;
+        font-size: 12px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }
+
+    .field-reference {
+        color: #3267c8;
+    }
+
+    .field-icon {
+        color: #9aa4b2;
+        margin-right: 6px;
+        font-size: 11px;
+    }
+
+    .text-overdue {
+        color: #c54c43 !important;
+    }
+
+    .balance-icon {
+        background: #edf7f2;
+        color: #32966b;
+    }
+
+    .balance-main {
+        padding: 2px 0 17px;
+        border-bottom: 1px solid var(--line);
+    }
+
+        .balance-main span, .balance-main small {
+            display: block;
+            color: #8791a0;
+            font-size: 11px;
+        }
+
+    .balance-amount {
+        display: block;
+        color: #263246;
+        font-size: 27px;
+        font-weight: 800;
+        letter-spacing: -.8px;
+        margin: 5px 0 2px;
+    }
+
+    .balance-main small {
+        font-size: 10px;
+    }
+
+    .balance-breakdown {
+        padding: 13px 0 3px;
+    }
+
+        .balance-breakdown div {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+
+        .balance-breakdown span {
+            color: #8993a1;
+        }
+
+        .balance-breakdown strong {
+            color: #364152;
+            font-weight: 700;
+        }
+
+        .balance-breakdown .amount-paid {
+            color: #299267;
+        }
+
+    .payment-progress {
+        margin-top: 5px;
+    }
+
+    .progress-caption {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        font-size: 10px;
+        color: #8791a0;
+    }
+
+        .progress-caption strong {
+            color: #299267;
+            font-weight: 750;
+        }
+
+    .progress-track {
+        height: 7px;
+        overflow: hidden;
+        background: #edf1f5;
+        border-radius: 10px;
+    }
+
+    .progress-value {
+        height: 100%;
+        background: linear-gradient(90deg,#54b58a,#2d946a);
+        border-radius: 10px;
+        transition: width .25s ease;
+    }
+
+    .payment-card, .history-card {
+        padding: 21px 22px 19px;
+        margin-bottom: 17px;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 20px;
+    }
+
+    .section-heading-group p {
+        color: #929baa;
+        font-size: 11px;
+        margin: 4px 0 0;
+    }
+
+    .payment-icon {
+        background: #f0f2ff;
+        color: #6d70c9;
+    }
+
+    .available-balance {
+        padding: 9px 13px;
+        background: #f7f9fc;
+        border: 1px solid #edf0f4;
+        border-radius: 9px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+        .available-balance span {
+            display: block;
+            color: #929baa;
+            font-size: 9px;
+            margin-bottom: 3px;
+        }
+
+        .available-balance strong {
+            color: #2d5fae;
+            font-size: 13px;
+            font-weight: 750;
+        }
+
+    .payment-fields {
+        display: grid;
+        grid-template-columns: repeat(4,minmax(0,1fr));
+        gap: 14px;
+    }
+
+    .form-field {
+        min-width: 0;
+    }
+
+        .form-field label {
+            display: block;
+            color: #515c6b;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+            .form-field label span {
+                color: #d45a52;
+            }
+
+        .form-field input, .form-field select {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #dfe5ec;
+            border-radius: 8px;
+            padding: 9px 11px;
+            background: #fff;
+            color: #344052;
+            font-size: 11px;
+            outline: none;
+            transition: .15s ease;
+        }
+
+            .form-field input::placeholder {
+                color: #a7afba;
+            }
+
+            .form-field input:focus, .form-field select:focus {
+                border-color: #91afe0;
+                box-shadow: 0 0 0 3px rgba(50,103,200,.09);
+            }
+
+        .form-field small {
+            display: block;
+            color: #9aa3af;
+            font-size: 9px;
+            margin-top: 6px;
+        }
+
+    .input-money {
+        display: flex;
+        align-items: center;
+        border: 1px solid #dfe5ec;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .input-money:focus-within {
+            border-color: #91afe0;
+            box-shadow: 0 0 0 3px rgba(50,103,200,.09);
+        }
+
+        .input-money span {
+            padding: 0 11px;
+            color: #7c8796;
+            background: #f7f9fb;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            border-right: 1px solid #e5e9ef;
+            font-size: 12px;
+        }
+
+        .input-money input {
+            border: 0;
+            border-radius: 0;
+            box-shadow: none !important;
+        }
+
+    .payment-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #eef1f4;
+    }
+
+        .payment-footer > span {
+            color: #9aa3af;
+            font-size: 10px;
+        }
+
+            .payment-footer > span i {
+                color: #3d9a70;
+                margin-right: 5px;
+            }
+
+    .btn-primary-dark {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 0;
+        border-radius: 8px;
+        background: #202631;
+        color: #fff;
+        padding: 11px 17px;
+        font-size: 11px;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+
+        .btn-primary-dark:hover {
+            background: #354154;
+            transform: translateY(-1px);
+        }
+
+    .settled-notice {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 17px 19px;
+        margin-bottom: 17px;
+        background: #eff8f3;
+        border: 1px solid #dcefe4;
+        border-radius: 12px;
+    }
+
+    .settled-icon {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: #dff2e7;
+        color: #278052;
+        font-size: 18px;
+    }
+
+    .settled-notice strong {
+        display: block;
+        color: #28764e;
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    .settled-notice p {
+        color: #638875;
+        font-size: 11px;
+        margin: 0;
+    }
+
+    .history-icon {
+        background: #f1f3f7;
+        color: #65748a;
+    }
+
+    .history-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .records-count {
+        color: #8490a0;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .btn-outline-dark {
+        padding: 9px 12px;
+        font-size: 10px;
+    }
+
+    .payments-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+    }
+
+        .payments-table thead th {
+            padding: 12px 15px;
+            background: #f8f9fb;
+            color: #8792a1;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .045em;
+            white-space: nowrap;
+            border-top: 1px solid #eff1f4;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        .payments-table tbody td {
+            padding: 14px 15px;
+            color: #596575;
+            font-size: 11px;
+            border-bottom: 1px solid #eff1f4;
+        }
+
+        .payments-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .payments-table tbody tr:hover {
+            background: #fafbfd;
+        }
+
+    .payment-id {
+        color: #3267c8;
+        font-weight: 750;
+    }
+
+    .method-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: #536174;
+    }
+
+        .method-label i {
+            color: #8d9aae;
+        }
+
+    .amount-cell {
+        color: #27865d !important;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .empty-history {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 35px 15px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        background: #f2f5f8;
+        color: #9aa5b3;
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .empty-history strong {
+        color: #596575;
+        font-size: 12px;
+    }
+
+    .empty-history p {
+        color: #9aa3af;
+        font-size: 10px;
+        margin: 4px 0 0;
+    }
+
+    .history-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 15px 0;
+        border-top: 1px solid #eff1f4;
+        color: #9aa3af;
+        font-size: 9px;
+    }
+
+    @@media (max-width: 1100px) {
+        .payment-fields {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+    }
+
+    @@media (max-width: 800px) {
+        .overview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .section-header {
+            align-items: flex-start;
+        }
+
+        .history-header {
+            flex-direction: column;
+        }
+
+        .history-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .cxc-detail-page {
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        .detail-heading h1 {
+            font-size: 22px;
+        }
+
+        .account-card, .balance-card, .payment-card, .history-card {
+            padding: 17px 15px;
+        }
+
+        .account-details {
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 12px;
+        }
+
+        .status-pill {
+            font-size: 8px;
+            padding: 5px 7px;
+        }
+
+        .payment-fields {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .btn-primary-dark {
+            justify-content: center;
+        }
+
+        .available-balance {
+            display: none;
+        }
+
+        .history-actions {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .history-footer {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('paymentForm');
+            const amount = document.getElementById('Monto');
+
+            if (form && amount) {
+                form.addEventListener('submit', function (event) {
+                    const value = Number(amount.value);
+                    const max = Number(amount.max);
+
+                    if (!Number.isFinite(value) || value <= 0 || value > max) {
+                        event.preventDefault();
+                        amount.setCustomValidity('Ingrese un monto válido que no supere el saldo pendiente.');
+                        amount.reportValidity();
+                        return;
+                    }
+
+                    amount.setCustomValidity('');
+                });
+
+                amount.addEventListener('input', function () {
+                    amount.setCustomValidity('');
+                });
+            }
+        })();
+    </script>
+}

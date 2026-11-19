@@ -1,277 +1,654 @@
-﻿@{
+﻿@model CharlieShop.Models.CuentaPorCobrarViewModel
+
+@{
     ViewData["Title"] = "Cuentas por cobrar";
+
+    ViewData["Breadcrumbs"] =
+        new List<(string Texto, string? Controlador, string? Accion)>
+        {
+            ("Cuentas por cobrar", null, null)
+        };
+
+    var cuentas =
+        ViewBag.Cuentas as List<CharlieShop.Models.CuentaPorCobrarViewModel>
+        ?? new List<CharlieShop.Models.CuentaPorCobrarViewModel>();
+
+    decimal totalCuentas = cuentas.Sum(c => c.Total);
+    decimal saldoTotal = cuentas.Sum(c => c.SaldoPendiente);
+
+    int cantidadCuentas = cuentas.Count;
+    int cantidadVencidas = cuentas.Count(c =>
+        c.Estado.Equals("VENCIDA", StringComparison.OrdinalIgnoreCase));
+
+    string formatoMoneda(decimal valor) =>
+        valor.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("es-CR"));
 }
 
-<div class="d-flex justify-content-between align-items-start mb-3">
+<style>
+    .cxc-page {
+        padding: 4px 2px 28px;
+        color: #263445;
+    }
 
-    <div>
+    .cxc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
 
-        <div class="page-title">
-            Cuentas por cobrar
+        .cxc-header h1 {
+            font-size: 25px;
+            font-weight: 700;
+            margin: 0 0 6px;
+            color: #202b3a;
+        }
+
+        .cxc-header p {
+            color: #8993a1;
+            font-size: 13px;
+            margin: 0;
+        }
+
+    .cxc-actions {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+    }
+
+    .cxc-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid #e2e7ed;
+        background: white;
+        color: #455468;
+        transition: .2s;
+    }
+
+        .cxc-btn:hover {
+            background: #f5f8fb;
+            color: #1d5fa7;
+        }
+
+    .cxc-btn-primary {
+        background: #1d5fa7;
+        color: white;
+        border-color: #1d5fa7;
+    }
+
+        .cxc-btn-primary:hover {
+            background: #174e8a;
+            color: white;
+        }
+
+    .cxc-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .cxc-card {
+        background: #fff;
+        border: 1px solid #e9edf2;
+        border-radius: 11px;
+        padding: 17px;
+        min-width: 0;
+    }
+
+    .cxc-card-label {
+        color: #8993a1;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-bottom: 9px;
+    }
+
+    .cxc-card-value {
+        color: #263445;
+        font-size: 22px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .cxc-card-note {
+        color: #98a1ad;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .cxc-card-icon {
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9px;
+        background: #eef4fb;
+        color: #1d5fa7;
+        font-size: 16px;
+        margin-bottom: 13px;
+    }
+
+        .cxc-card-icon.warning {
+            background: #fff5e8;
+            color: #d28a22;
+        }
+
+        .cxc-card-icon.danger {
+            background: #fff0f0;
+            color: #cf4d4d;
+        }
+
+    .cxc-panel {
+        background: white;
+        border: 1px solid #e9edf2;
+        border-radius: 11px;
+        overflow: hidden;
+    }
+
+    .cxc-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 17px 19px;
+        border-bottom: 1px solid #edf0f3;
+    }
+
+        .cxc-panel-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+            color: #263445;
+        }
+
+        .cxc-panel-header span {
+            color: #8993a1;
+            font-size: 11px;
+        }
+
+    .cxc-filters {
+        display: flex;
+        gap: 10px;
+        padding: 15px 19px;
+        border-bottom: 1px solid #edf0f3;
+        flex-wrap: wrap;
+    }
+
+    .cxc-search {
+        flex: 1;
+        min-width: 220px;
+        position: relative;
+    }
+
+        .cxc-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #98a1ad;
+        }
+
+        .cxc-search input {
+            width: 100%;
+            height: 39px;
+            padding: 0 12px 0 35px;
+            border: 1px solid #e2e7ed;
+            border-radius: 7px;
+            font-size: 12px;
+            outline: none;
+        }
+
+            .cxc-search input:focus,
+            .cxc-filters select:focus {
+                border-color: #7ca8d3;
+                box-shadow: 0 0 0 3px rgba(29, 95, 167, .08);
+            }
+
+    .cxc-filters select {
+        min-width: 155px;
+        height: 39px;
+        padding: 0 11px;
+        border: 1px solid #e2e7ed;
+        border-radius: 7px;
+        font-size: 12px;
+        color: #455468;
+        background: white;
+        outline: none;
+    }
+
+    .cxc-filter-button {
+        height: 39px;
+        padding: 0 15px;
+        border: none;
+        border-radius: 7px;
+        background: #1d5fa7;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .cxc-filter-button:hover {
+            background: #174e8a;
+        }
+
+    .cxc-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .cxc-table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+        .cxc-table th {
+            background: #f8fafc;
+            color: #8993a1;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            padding: 13px 15px;
+            text-align: left;
+            border-bottom: 1px solid #edf0f3;
+        }
+
+        .cxc-table td {
+            padding: 14px 15px;
+            font-size: 12px;
+            color: #455468;
+            border-bottom: 1px solid #f0f2f5;
+            vertical-align: middle;
+        }
+
+        .cxc-table tbody tr:hover {
+            background: #fafcff;
+        }
+
+    .cxc-client {
+        color: #263445;
+        font-weight: 600;
+    }
+
+    .cxc-secondary {
+        display: block;
+        color: #9aa3ae;
+        font-size: 10px;
+        margin-top: 4px;
+    }
+
+    .cxc-amount {
+        font-weight: 600;
+        color: #263445;
+    }
+
+    .cxc-balance {
+        font-weight: 700;
+        color: #1d5fa7;
+    }
+
+    .cxc-status {
+        display: inline-flex;
+        padding: 5px 9px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .status-pendiente {
+        background: #eef4fb;
+        color: #3473ad;
+    }
+
+    .status-parcial {
+        background: #fff5e8;
+        color: #bd8125;
+    }
+
+    .status-vencida {
+        background: #fff0f0;
+        color: #c34d4d;
+    }
+
+    .status-pagada {
+        background: #eaf7f0;
+        color: #218052;
+    }
+
+    .cxc-detail {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #1d5fa7;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+        .cxc-detail:hover {
+            color: #174e8a;
+            text-decoration: underline;
+        }
+
+    .cxc-empty {
+        text-align: center;
+        padding: 45px 15px;
+        color: #98a1ad;
+    }
+
+        .cxc-empty i {
+            display: block;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .cxc-empty strong {
+            display: block;
+            color: #455468;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+    .cxc-footer {
+        padding: 13px 19px;
+        color: #98a1ad;
+        font-size: 11px;
+    }
+
+    .cxc-alert {
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 12px;
+        margin-bottom: 16px;
+    }
+
+    @@media (max-width: 1000px) {
+        .cxc-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .cxc-header {
+            flex-direction: column;
+        }
+
+        .cxc-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .cxc-filters {
+            flex-direction: column;
+        }
+
+            .cxc-search,
+            .cxc-filters select {
+                width: 100%;
+            }
+    }
+</style>
+
+<div class="cxc-page">
+
+    <div class="cxc-header">
+        <div>
+            <h1>Cuentas por cobrar</h1>
+            <p>Administración y seguimiento de saldos pendientes de clientes.</p>
         </div>
 
-        <div class="page-subtitle">
-            Seguimiento de saldos pendientes y pagos de clientes.
+        <div class="cxc-actions">
+            <a asp-controller="CuentasPorCobrar"
+               asp-action="HistorialPagos"
+               class="cxc-btn">
+                <i class="bi bi-clock-history"></i>
+                Historial de pagos
+            </a>
+
+            <a asp-controller="CuentasPorCobrar"
+               asp-action="Vencidas"
+               class="cxc-btn">
+                <i class="bi bi-exclamation-circle"></i>
+                Ver vencidas
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ExitoPago"] != null)
+    {
+        <div class="alert alert-success cxc-alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["ExitoPago"]
+        </div>
+    }
+
+    @if (TempData["ErrorPago"] != null)
+    {
+        <div class="alert alert-danger cxc-alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["ErrorPago"]
+        </div>
+    }
+
+    @if (ViewBag.ErrorCuentas != null)
+    {
+        <div class="alert alert-danger cxc-alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @ViewBag.ErrorCuentas
+        </div>
+    }
+
+    <div class="cxc-summary">
+
+        <div class="cxc-card">
+            <div class="cxc-card-icon">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="cxc-card-label">Cuentas encontradas</div>
+            <div class="cxc-card-value">@cantidadCuentas</div>
+            <div class="cxc-card-note">Cuentas con saldo pendiente</div>
+        </div>
+
+        <div class="cxc-card">
+            <div class="cxc-card-icon">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="cxc-card-label">Total de las cuentas</div>
+            <div class="cxc-card-value">@formatoMoneda(totalCuentas)</div>
+            <div class="cxc-card-note">Monto original registrado</div>
+        </div>
+
+        <div class="cxc-card">
+            <div class="cxc-card-icon">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="cxc-card-label">Saldo pendiente</div>
+            <div class="cxc-card-value">@formatoMoneda(saldoTotal)</div>
+            <div class="cxc-card-note">Monto pendiente de recuperación</div>
+        </div>
+
+        <div class="cxc-card">
+            <div class="cxc-card-icon danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="cxc-card-label">Cuentas vencidas</div>
+            <div class="cxc-card-value">@cantidadVencidas</div>
+            <div class="cxc-card-note">Dentro de los resultados actuales</div>
         </div>
 
     </div>
 
-    <div class="d-flex gap-2">
-        <a asp-action="HistorialPagos" class="btn btn-outline-primary">
-            <i class="bi bi-clock-history me-1"></i> Historial de pagos
-        </a>
-        <button class="btn btn-primary"><i class="bi bi-cash-coin me-1"></i> Registrar pago</button>
-    </div>
+    <div class="cxc-panel">
 
-</div>
-
-
-<!-- RESUMEN -->
-
-<div class="row g-3 mb-4">
-
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Total pendiente
+        <div class="cxc-panel-header">
+            <div>
+                <h2>Listado de cuentas</h2>
+                <span>Consulta, búsqueda y seguimiento de cuentas por cobrar</span>
             </div>
-
-            <div class="value">
-                ₡420.000
-            </div>
-
+            <span>@cantidadCuentas registros</span>
         </div>
 
-    </div>
+        <form asp-controller="CuentasPorCobrar"
+              asp-action="Index"
+              method="get"
+              class="cxc-filters">
 
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Clientes con saldo
+            <div class="cxc-search">
+                <i class="bi bi-search"></i>
+                <input type="text"
+                       name="busqueda"
+                       value="@Model.Busqueda"
+                       placeholder="Buscar por cliente, identificación o venta..." />
             </div>
 
-            <div class="value">
-                12
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-4">
-
-        <div class="card metric">
-
-            <div class="label">
-                Pagos registrados este mes
-            </div>
-
-            <div class="value">
-                ₡185.000
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- CUENTAS -->
-
-<div class="card p-4">
-
-    <div class="row mb-3">
-
-        <div class="col-md-5">
-
-            <input type="text"
-                   class="form-control"
-                   placeholder="Buscar cliente..." />
-
-        </div>
-
-        <div class="col-md-3">
-
-            <select class="form-select">
-
-                <option selected>
+            <select name="estadoFiltro">
+                <option value="TODOS"
+                        selected="@(Model.EstadoFiltro == "TODOS")">
                     Todos los estados
                 </option>
-
-                <option>
+                <option value="PENDIENTE"
+                        selected="@(Model.EstadoFiltro == "PENDIENTE")">
                     Pendiente
                 </option>
-
-                <option>Vencida</option>
-
-                <option>
-                    Pagada
+                <option value="PARCIAL"
+                        selected="@(Model.EstadoFiltro == "PARCIAL")">
+                    Parcial
                 </option>
-
+                <option value="VENCIDA"
+                        selected="@(Model.EstadoFiltro == "VENCIDA")">
+                    Vencida
+                </option>
+                <option value="PAGADA"
+                        selected="@(Model.EstadoFiltro == "PAGADA")">
+                    Completada / Pagada
+                </option>
             </select>
+
+            <button type="submit" class="cxc-filter-button">
+                <i class="bi bi-funnel me-1"></i>
+                Filtrar
+            </button>
+
+            <a asp-controller="CuentasPorCobrar"
+               asp-action="Index"
+               class="cxc-btn">
+                Limpiar
+            </a>
+
+        </form>
+
+        <div class="cxc-table-wrapper">
+
+            <table class="cxc-table">
+
+                <thead>
+                    <tr>
+                        <th>Cuenta</th>
+                        <th>Cliente</th>
+                        <th>Fecha emisión</th>
+                        <th>Vencimiento</th>
+                        <th>Total</th>
+                        <th>Saldo pendiente</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (cuentas.Any())
+                    {
+                        foreach (var cuenta in cuentas)
+                        {
+                            string estadoCss = cuenta.Estado.ToUpperInvariant() switch
+                            {
+                                "PENDIENTE" => "status-pendiente",
+                                "PARCIAL" => "status-parcial",
+                                "VENCIDA" => "status-vencida",
+                                "PAGADA" => "status-pagada",
+                                "COMPLETADA" => "status-pagada",
+                                _ => "status-pendiente"
+                            };
+
+                            <tr>
+                                <td>
+                                    <strong>#@cuenta.IdCxc</strong>
+                                    <span class="cxc-secondary">
+                                        Venta #@cuenta.IdVenta
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="cxc-client">
+                                        @cuenta.NombreCliente
+                                    </span>
+                                    <span class="cxc-secondary">
+                                        @(cuenta.Identificacion ?? "Sin identificación")
+                                    </span>
+                                </td>
+
+                                <td>@cuenta.Fecha.ToString("dd/MM/yyyy")</td>
+
+                                <td>@cuenta.FechaVencimiento.ToString("dd/MM/yyyy")</td>
+
+                                <td class="cxc-amount">
+                                    @formatoMoneda(cuenta.Total)
+                                </td>
+
+                                <td class="cxc-balance">
+                                    @formatoMoneda(cuenta.SaldoPendiente)
+                                </td>
+
+                                <td>
+                                    <span class="cxc-status @estadoCss">
+                                        @cuenta.Estado
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <a asp-controller="CuentasPorCobrar"
+                                       asp-action="Detalle"
+                                       asp-route-id="@cuenta.IdCxc"
+                                       class="cxc-detail">
+                                        Ver detalle
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <div class="cxc-empty">
+                                    <i class="bi bi-inbox"></i>
+                                    <strong>No se encontraron cuentas</strong>
+                                    No hay cuentas que coincidan con los filtros seleccionados.
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
 
         </div>
 
-    </div>
-
-
-    <div class="table-responsive">
-
-        <table class="table table-hover align-middle">
-
-            <thead>
-
-                <tr>
-
-                    <th>Cliente</th>
-                    <th>Venta</th>
-                    <th>Fecha</th>
-                    <th>Saldo</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <tr>
-
-                    <td>
-                        Carlos Mora
-                    </td>
-
-                    <td>
-                        #V-1047
-                    </td>
-
-                    <td>
-                        08/08/2026
-                    </td>
-
-                    <td>
-                        ₡72.500
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-warning text-dark">
-                            Pendiente
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-cash-coin"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        Sofía Vargas
-                    </td>
-
-                    <td>
-                        #V-1039
-                    </td>
-
-                    <td>
-                        02/08/2026
-                    </td>
-
-                    <td>
-                        ₡35.000
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-danger">
-                            Vencida · 7 días
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-primary">
-
-                            <i class="bi bi-cash-coin"></i>
-
-                        </button>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-
-                <tr>
-
-                    <td>
-                        María López
-                    </td>
-
-                    <td>
-                        #V-1035
-                    </td>
-
-                    <td>
-                        30/07/2026
-                    </td>
-
-                    <td>
-                        ₡0
-                    </td>
-
-                    <td>
-
-                        <span class="badge bg-success">
-                            Pagada
-                        </span>
-
-                    </td>
-
-                    <td>
-
-                        <button class="btn btn-sm btn-outline-secondary">
-
-                            <i class="bi bi-eye"></i>
-
-                        </button>
-
-                    </td>
-
-                </tr>
-
-            </tbody>
-
-        </table>
+        <div class="cxc-footer">
+            Mostrando @cantidadCuentas cuentas por cobrar.
+        </div>
 
     </div>
 

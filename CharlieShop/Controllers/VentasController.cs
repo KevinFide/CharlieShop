@@ -1,9 +1,12 @@
-﻿
-using System.Data;
+﻿using System.Data;
+using System.Globalization;
+using System.Net;
+using System.Text;
 using System.Security.Claims;
 using System.Text.Json;
 using CharlieShop.Data;
 using CharlieShop.Models;
+using CharlieShop.Services;
 using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +18,7 @@ namespace CharlieShop.Controllers
     public class VentasController : Controller
     {
         private readonly DbConnection _dbConnection;
+        private readonly EmailService _emailService;
 
         private readonly JsonSerializerOptions _jsonOptions =
             new JsonSerializerOptions
@@ -22,9 +26,12 @@ namespace CharlieShop.Controllers
                 PropertyNameCaseInsensitive = true
             };
 
-        public VentasController(DbConnection dbConnection)
+        public VentasController(
+            DbConnection dbConnection,
+            EmailService emailService)
         {
             _dbConnection = dbConnection;
+            _emailService = emailService;
         }
 
         // GET: /Ventas
@@ -84,7 +91,6 @@ namespace CharlieShop.Controllers
             {
                 using var connection = _dbConnection.CreateConnection();
 
-                // Consultar la información general de la venta.
                 var venta = connection.QuerySingleOrDefault<
                     ConsultaDetalleVentaViewModel>(
                     @"
@@ -118,7 +124,6 @@ namespace CharlieShop.Controllers
                     new { IdVenta = id }
                 );
 
-                // Si la venta no existe, informar al usuario.
                 if (venta == null)
                 {
                     return NotFound(
@@ -126,7 +131,6 @@ namespace CharlieShop.Controllers
                     );
                 }
 
-                // Consultar los productos asociados a la venta.
                 var productos = connection.Query<
                     ProductoConsultaDetalleVentaViewModel>(
                     @"
@@ -186,7 +190,61 @@ namespace CharlieShop.Controllers
                     Convert.ToInt32(TempData["IdVenta"]);
             }
 
+            if (TempData["ErrorVenta"] != null)
+            {
+                model.Mensaje = TempData["ErrorVenta"]?.ToString();
+            }
+
             return View(model);
+        }
+
+        // GET: /Ventas/BuscarClientes?busqueda=...
+        [HttpGet]
+        public IActionResult BuscarClientes(string? busqueda)
+        {
+            try
+            {
+                using var connection = _dbConnection.CreateConnection();
+
+                const string sql = @"
+                    SELECT
+                        id_cliente AS ""IdCliente"",
+                        nombre AS ""Nombre"",
+                        apellido AS ""Apellido"",
+                        identificacion AS ""Identificacion""
+                    FROM cliente
+                    WHERE estado = TRUE
+                      AND (
+                          NULLIF(BTRIM(@Busqueda), '') IS NULL
+                          OR nombre ILIKE '%' || BTRIM(@Busqueda) || '%'
+                          OR apellido ILIKE '%' || BTRIM(@Busqueda) || '%'
+                          OR identificacion ILIKE '%' || BTRIM(@Busqueda) || '%'
+                      )
+                    ORDER BY nombre, apellido
+                    LIMIT 25;";
+
+                var clientes = connection.Query(
+                    sql,
+                    new { Busqueda = busqueda?.Trim() ?? string.Empty }
+                )
+                .Select(c => new
+                {
+                    idCliente = (int)c.IdCliente,
+                    nombre = (string)c.Nombre,
+                    apellido = (string)c.Apellido,
+                    identificacion = (string?)c.Identificacion
+                })
+                .ToList();
+
+                return Json(clientes);
+            }
+            catch (Exception)
+            {
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { mensaje = "No fue posible consultar los clientes." }
+                );
+            }
         }
 
         // GET: /Ventas/BuscarProductos?busqueda=...
@@ -327,7 +385,7 @@ namespace CharlieShop.Controllers
         // POST: /Ventas/Finalizar
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Finalizar(CrearVentaViewModel model)
+        public async Task<IActionResult> Finalizar(CrearVentaViewModel model)
         {
             List<DetalleVentaViewModel> productos;
 
@@ -347,7 +405,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar carrito vacío.
             if (productos.Count == 0)
             {
                 TempData["ErrorVenta"] =
@@ -356,7 +413,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar identificadores y cantidades.
             if (productos.Any(p =>
                 p.IdProducto <= 0 ||
                 p.Cantidad <= 0 ||
@@ -368,7 +424,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // El SP espera una línea por producto.
             if (productos.GroupBy(p => p.IdProducto)
                          .Any(g => g.Count() > 1))
             {
@@ -378,7 +433,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar forma de pago.
             if (model.FormaPago != "CONTADO" &&
                 model.FormaPago != "CREDITO")
             {
@@ -388,7 +442,75 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Validar descuento.
+            if (!model.IdCliente.HasValue || model.IdCliente.Value <= 0)
+            {
+                TempData["ErrorVenta"] =
+                    "Seleccione un cliente para la venta.";
+
+                return RedirectToAction(nameof(Crear));
+            }
+
+            // El plazo de crédito se define manualmente para cada cuenta.
+            // Por eso, una venta a crédito debe incluir su fecha de vencimiento.
+            DateTime? fechaVencimiento = model.FechaVencimiento?.Date;
+
+            if (model.FormaPago == "CREDITO")
+            {
+                if (!fechaVencimiento.HasValue)
+                {
+                    TempData["ErrorVenta"] =
+                        "Debe indicar la fecha de vencimiento de la cuenta por cobrar.";
+
+                    return RedirectToAction(nameof(Crear));
+                }
+
+                if (fechaVencimiento.Value < DateTime.Today)
+                {
+                    TempData["ErrorVenta"] =
+                        "La fecha de vencimiento no puede ser anterior al día de hoy.";
+
+                    return RedirectToAction(nameof(Crear));
+                }
+            }
+            else if (fechaVencimiento.HasValue)
+            {
+                TempData["ErrorVenta"] =
+                    "Las ventas de contado no deben incluir una fecha de vencimiento.";
+
+                return RedirectToAction(nameof(Crear));
+            }
+
+            try
+            {
+                using var validacionCliente = _dbConnection.CreateConnection();
+
+                bool clienteValido = validacionCliente.ExecuteScalar<bool>(
+                    @"
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM cliente
+                        WHERE id_cliente = @IdCliente
+                          AND estado = TRUE
+                    );",
+                    new { IdCliente = model.IdCliente.Value }
+                );
+
+                if (!clienteValido)
+                {
+                    TempData["ErrorVenta"] =
+                        "El cliente seleccionado no existe o está inactivo.";
+
+                    return RedirectToAction(nameof(Crear));
+                }
+            }
+            catch (Exception)
+            {
+                TempData["ErrorVenta"] =
+                    "No fue posible validar el cliente seleccionado.";
+
+                return RedirectToAction(nameof(Crear));
+            }
+
             if (model.DescuentoPorcentaje < 0 ||
                 model.DescuentoPorcentaje > 100)
             {
@@ -398,7 +520,6 @@ namespace CharlieShop.Controllers
                 return RedirectToAction(nameof(Crear));
             }
 
-            // Obtener el usuario autenticado.
             var claimId = User.FindFirstValue(
                 ClaimTypes.NameIdentifier
             );
@@ -413,7 +534,6 @@ namespace CharlieShop.Controllers
                 using var connection =
                     _dbConnection.CreateConnection();
 
-                // PostgreSQL consulta los precios y valida las existencias.
                 var productosJson = JsonSerializer.Serialize(
                     productos.Select(p => new
                     {
@@ -426,7 +546,7 @@ namespace CharlieShop.Controllers
 
                 parametros.Add(
                     "p_cliente_id",
-                    model.IdCliente,
+                    model.IdCliente.Value,
                     DbType.Int32
                 );
 
@@ -454,13 +574,22 @@ namespace CharlieShop.Controllers
                     DbType.String
                 );
 
+                parametros.Add(
+                    "p_fecha_vencimiento",
+                    fechaVencimiento,
+                    DbType.Date
+                );
+
+                // El procedimiento Sprint 3 registra la venta y,
+                // cuando es crédito, crea la cuenta por cobrar.
                 var fila = connection.QuerySingle(
-                    @"CALL sp_registrar_venta(
+                    @"CALL sp_registrar_venta_sprint3(
                         @p_cliente_id,
                         @p_forma_pago,
                         @p_usuario_id,
                         @p_descuento_porcentaje,
                         CAST(@p_productos AS JSON),
+                        @p_fecha_vencimiento,
                         NULL::VARCHAR,
                         NULL::INTEGER
                     )",
@@ -484,9 +613,27 @@ namespace CharlieShop.Controllers
                 }
 
                 TempData["VentaExitosa"] =
-                    $"La venta #{idVenta.Value} se registró correctamente.";
+                    model.FormaPago == "CREDITO"
+                        ? $"La venta a crédito #{idVenta.Value} se registró correctamente y se creó su cuenta por cobrar."
+                        : $"La venta #{idVenta.Value} se registró correctamente.";
 
                 TempData["IdVenta"] = idVenta.Value;
+
+                // El envío del comprobante es independiente del registro de la venta.
+                // Si el correo falla, la venta permanece registrada.
+                try
+                {
+                    await EnviarComprobanteVentaAsync(
+                        connection,
+                        idVenta.Value
+                    );
+                }
+                catch (Exception)
+                {
+                    TempData["AvisoCorreo"] =
+                        "La venta se registró correctamente, pero no fue posible " +
+                        "enviar el comprobante al correo del cliente.";
+                }
 
                 return RedirectToAction(nameof(Crear));
             }
@@ -504,6 +651,248 @@ namespace CharlieShop.Controllers
 
                 return RedirectToAction(nameof(Crear));
             }
+
+        }
+
+        // =====================================================
+        // ENVIAR COMPROBANTE DE COMPRA POR CORREO
+        // Utiliza un procedimiento almacenado para obtener
+        // los datos de la venta, cliente y productos.
+        // =====================================================
+
+        private async Task EnviarComprobanteVentaAsync(
+            IDbConnection connection,
+            int idVenta)
+        {
+            var filaDetalle = connection.QuerySingle(
+                @"CALL public.sp_obtener_detalle_venta_correo(
+                    @p_id_venta,
+                    NULL::TEXT
+                )",
+                new { p_id_venta = idVenta },
+                commandType: CommandType.Text
+            );
+
+            string? json = Convert.ToString(filaDetalle.o_detalle);
+
+            if (string.IsNullOrWhiteSpace(json) || json == "null")
+                throw new InvalidOperationException(
+                    "No se encontró el detalle de la venta para generar el comprobante."
+                );
+
+            using var documento = JsonDocument.Parse(json);
+            JsonElement venta = documento.RootElement;
+
+            string email = ObtenerTexto(venta, "Email");
+            if (string.IsNullOrWhiteSpace(email))
+                throw new InvalidOperationException(
+                    "El cliente no tiene un correo electrónico registrado."
+                );
+
+            int numeroVenta = ObtenerEntero(venta, "IdVenta");
+            string nombreCliente = WebUtility.HtmlEncode(
+                ObtenerTexto(venta, "NombreCliente")
+            );
+            string formaPago = ObtenerTexto(venta, "FormaPago").ToUpperInvariant();
+
+            decimal subtotal = ObtenerDecimal(venta, "Subtotal");
+            decimal descuento = ObtenerDecimal(venta, "Descuento");
+            decimal impuesto = ObtenerDecimal(venta, "Impuesto");
+            decimal total = ObtenerDecimal(venta, "TotalNeto");
+            decimal saldoPendiente = ObtenerDecimal(venta, "SaldoPendiente");
+
+            DateTime fecha = ObtenerFecha(venta, "Fecha");
+            DateTime? fechaVencimiento =
+                ObtenerFechaNullable(venta, "FechaVencimiento");
+
+            bool esCredito = formaPago == "CREDITO";
+            string estadoPago = esCredito
+                ? saldoPendiente <= 0 ? "Pagada" : "Pendiente de pago"
+                : "Pagada";
+
+            var cultura = CultureInfo.GetCultureInfo("es-CR");
+            string moneda(decimal valor) => valor.ToString("C", cultura);
+
+            var filasProductos = new StringBuilder();
+
+            if (venta.TryGetProperty("Productos", out JsonElement productos) &&
+                productos.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement producto in productos.EnumerateArray())
+                {
+                    string codigo = WebUtility.HtmlEncode(
+                        ObtenerTexto(producto, "CodigoProducto")
+                    );
+                    string nombre = WebUtility.HtmlEncode(
+                        ObtenerTexto(producto, "NombreProducto")
+                    );
+                    decimal cantidad = ObtenerDecimal(producto, "Cantidad");
+                    decimal precio = ObtenerDecimal(producto, "PrecioUnitario");
+                    decimal descuentoProducto = ObtenerDecimal(producto, "Descuento");
+                    decimal impuestoProducto = ObtenerDecimal(producto, "Impuesto");
+                    decimal subtotalProducto = ObtenerDecimal(producto, "Subtotal");
+
+                    filasProductos.Append($"""
+                        <tr>
+                            <td style="padding:12px 8px;border-bottom:1px solid #e5e7eb;">
+                                <strong>{nombre}</strong><br>
+                                <span style="color:#737373;font-size:12px;">{codigo}</span>
+                            </td>
+                            <td style="padding:12px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">{cantidad:N2}</td>
+                            <td style="padding:12px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">{moneda(precio)}</td>
+                            <td style="padding:12px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">{moneda(descuentoProducto)}</td>
+                            <td style="padding:12px 8px;text-align:right;border-bottom:1px solid #e5e7eb;">{moneda(impuestoProducto)}</td>
+                            <td style="padding:12px 8px;text-align:right;border-bottom:1px solid #e5e7eb;"><strong>{moneda(subtotalProducto)}</strong></td>
+                        </tr>
+                        """);
+                }
+            }
+
+            if (filasProductos.Length == 0)
+                throw new InvalidOperationException(
+                    "La venta no contiene productos para generar el comprobante."
+                );
+
+            string detallePago = esCredito
+                ? $"""
+                    <p style="margin:8px 0;">Estado de pago: <strong>{estadoPago}</strong></p>
+                    <p style="margin:8px 0;">Saldo pendiente: <strong>{moneda(saldoPendiente)}</strong></p>
+                    <p style="margin:8px 0;">Fecha de vencimiento: <strong>{(fechaVencimiento.HasValue ? fechaVencimiento.Value.ToString("dd/MM/yyyy") : "No indicada")}</strong></p>
+                    """
+                : """
+                    <p style="margin:8px 0;">Estado de pago: <strong>Pagada en su totalidad</strong></p>
+                    <p style="margin:8px 0;">Saldo pendiente: <strong>₡0,00</strong></p>
+                    """;
+
+            string tipoCompra = esCredito
+                ? "Confirmación de compra a crédito"
+                : "Comprobante de compra - Pagada";
+
+            string cuerpoCorreo = $"""
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="margin:0;padding:24px;background:#f5f5f5;font-family:Arial,sans-serif;color:#262626;">
+                    <div style="max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+                        <div style="padding:24px;background:#171717;color:#ffffff;">
+                            <h1 style="margin:0;font-size:22px;">Charlie Shop</h1>
+                            <p style="margin:8px 0 0;color:#d4d4d4;">{tipoCompra}</p>
+                        </div>
+                        <div style="padding:24px;">
+                            <p>Hola <strong>{nombreCliente}</strong>,</p>
+                            <p>Gracias por tu compra. A continuación encontrarás el comprobante con el detalle de tu pedido.</p>
+
+                            <div style="padding:14px;background:#f5f5f5;border-radius:8px;margin:20px 0;">
+                                <p style="margin:6px 0;">Número de venta: <strong>#{numeroVenta}</strong></p>
+                                <p style="margin:6px 0;">Fecha: <strong>{fecha:dd/MM/yyyy HH:mm}</strong></p>
+                                <p style="margin:6px 0;">Forma de pago: <strong>{(esCredito ? "Crédito" : "Contado")}</strong></p>
+                            </div>
+
+                            <h3 style="margin:24px 0 10px;">Detalle de productos</h3>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                                    <thead>
+                                        <tr style="background:#f5f5f5;text-align:left;">
+                                            <th style="padding:10px 8px;">Producto</th>
+                                            <th style="padding:10px 8px;text-align:center;">Cant.</th>
+                                            <th style="padding:10px 8px;text-align:right;">Precio</th>
+                                            <th style="padding:10px 8px;text-align:right;">Desc.</th>
+                                            <th style="padding:10px 8px;text-align:right;">Impuesto</th>
+                                            <th style="padding:10px 8px;text-align:right;">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>{filasProductos}</tbody>
+                                </table>
+                            </div>
+
+                            <div style="max-width:340px;margin:20px 0 20px auto;padding:16px;background:#fafafa;border-radius:8px;">
+                                <p style="margin:7px 0;">Subtotal: <strong>{moneda(subtotal)}</strong></p>
+                                <p style="margin:7px 0;">Descuento: <strong>{moneda(descuento)}</strong></p>
+                                <p style="margin:7px 0;">Impuestos: <strong>{moneda(impuesto)}</strong></p>
+                                <p style="margin:12px 0 0;padding-top:12px;border-top:1px solid #e5e7eb;font-size:17px;">Total: <strong>{moneda(total)}</strong></p>
+                            </div>
+
+                            <div style="padding:16px;background:{(esCredito ? "#fff7ed" : "#f0fdf4")};border-radius:8px;">
+                                <h3 style="margin:0 0 10px;">Información de pago</h3>
+                                {detallePago}
+                            </div>
+
+                            <p style="margin-top:26px;">Gracias por confiar en Charlie Shop.</p>
+                            <p>Saludos,<br><strong>Charlie Shop</strong></p>
+                        </div>
+                        <div style="padding:14px 24px;background:#fafafa;border-top:1px solid #e5e7eb;color:#737373;font-size:12px;">
+                            Este correo es un comprobante informativo de compra y no sustituye una factura electrónica tributaria.
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """;
+
+            string asunto = esCredito
+                ? $"Charlie Shop - Compra a crédito #{numeroVenta}"
+                : $"Charlie Shop - Comprobante de compra #{numeroVenta}";
+
+            await _emailService.SendAsync(email, asunto, cuerpoCorreo);
+        }
+
+        private static string ObtenerTexto(JsonElement elemento, string propiedad)
+        {
+            if (!elemento.TryGetProperty(propiedad, out JsonElement valor) ||
+                valor.ValueKind == JsonValueKind.Null)
+                return string.Empty;
+
+            return valor.ValueKind == JsonValueKind.String
+                ? valor.GetString() ?? string.Empty
+                : valor.ToString();
+        }
+
+        private static int ObtenerEntero(JsonElement elemento, string propiedad)
+        {
+            return elemento.TryGetProperty(propiedad, out JsonElement valor) &&
+                   valor.TryGetInt32(out int resultado)
+                ? resultado
+                : 0;
+        }
+
+        private static decimal ObtenerDecimal(JsonElement elemento, string propiedad)
+        {
+            if (!elemento.TryGetProperty(propiedad, out JsonElement valor) ||
+                valor.ValueKind == JsonValueKind.Null)
+                return 0m;
+
+            if (valor.ValueKind == JsonValueKind.Number &&
+                valor.TryGetDecimal(out decimal numero))
+                return numero;
+
+            return decimal.TryParse(
+                valor.ToString(),
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out decimal resultado
+            ) ? resultado : 0m;
+        }
+
+        private static DateTime ObtenerFecha(JsonElement elemento, string propiedad)
+        {
+            return ObtenerFechaNullable(elemento, propiedad) ?? DateTime.MinValue;
+        }
+
+        private static DateTime? ObtenerFechaNullable(JsonElement elemento, string propiedad)
+        {
+            if (!elemento.TryGetProperty(propiedad, out JsonElement valor) ||
+                valor.ValueKind == JsonValueKind.Null ||
+                string.IsNullOrWhiteSpace(valor.ToString()))
+                return null;
+
+            return DateTime.TryParse(
+                valor.ToString(),
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeLocal,
+                out DateTime fecha
+            ) ? fecha : null;
         }
     }
 }

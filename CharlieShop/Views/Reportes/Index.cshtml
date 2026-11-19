@@ -1,236 +1,1339 @@
-﻿@{
+﻿@model CharlieShop.Models.ReportesViewModel
+@using System.Globalization
+
+@{
     ViewData["Title"] = "Reportes";
+    var esAnalisis = Model.ReporteActual == "analisis";
+    var esVentas = Model.ReporteActual == "ventas";
+    var esProductos = Model.ReporteActual == "productos";
+    var esInventario = Model.ReporteActual == "inventario";
+    var esCuentas = Model.ReporteActual == "cuentas";
+    var esClientes = Model.ReporteActual == "clientes";
+    var cr = new CultureInfo("es-CR");
+    var analisis = Model.AnalisisGeneral;
+    var maxDia = Math.Max(1m, analisis.MaxVentaDia);
+    var maxProducto = Math.Max(1m, analisis.MaxProducto);
+    var maxMovimiento = Math.Max(1m, analisis.TotalMovimientos);
+    var totalPagos = Math.Max(1m, analisis.TotalFormaPago);
 }
 
-<div class="page-title">
-    Reportes y Dashboard
+@section Styles {
+    <style>
+        .reports-page {
+            color: #20242b;
+        }
+
+        .reports-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+            .reports-heading h1 {
+                font-size: 25px;
+                font-weight: 700;
+                letter-spacing: -.5px;
+                margin: 0 0 5px;
+            }
+
+            .reports-heading p {
+                color: #818895;
+                font-size: 13px;
+                margin: 0;
+            }
+
+        .reports-shell {
+            display: grid;
+            grid-template-columns: 235px minmax(0,1fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .reports-nav, .reports-content, .report-card {
+            background: #fff;
+            border: 1px solid #e9ebef;
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(20,32,55,.035);
+        }
+
+        .reports-nav {
+            padding: 15px;
+            position: sticky;
+            top: 18px;
+        }
+
+        .reports-nav-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #9299a4;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            padding: 7px 10px 12px;
+        }
+
+        .report-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 10px;
+            border-radius: 9px;
+            color: #5c6572;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            transition: .15s ease;
+        }
+
+            .report-nav-link i {
+                font-size: 16px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .report-nav-link:hover {
+                background: #f6f8fb;
+                color: #2f64bd;
+            }
+
+            .report-nav-link.active {
+                color: #285eb7;
+                background: #edf3ff;
+            }
+
+        .reports-content {
+            padding: 22px;
+            min-width: 0;
+        }
+
+        .report-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+            .report-top h2 {
+                font-size: 18px;
+                font-weight: 700;
+                margin: 0 0 5px;
+            }
+
+            .report-top p {
+                color: #89919d;
+                font-size: 12px;
+                margin: 0;
+            }
+
+        .report-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #edf3ff;
+            color: #3267c8;
+            font-size: 19px;
+            flex-shrink: 0;
+        }
+
+        .report-filter {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #f8f9fb;
+            border: 1px solid #edf0f3;
+            border-radius: 11px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+
+            .report-filter .field {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                min-width: 145px;
+            }
+
+            .report-filter label {
+                color: #737c89;
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+            .report-filter input, .report-filter select {
+                border: 1px solid #e0e4ea;
+                border-radius: 8px;
+                padding: 9px 10px;
+                font-size: 12px;
+                color: #343b46;
+                background: #fff;
+            }
+
+        .btn-report {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            background: #20242b;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+
+            .btn-report:hover {
+                color: #fff;
+                background: #3b424c;
+            }
+
+        .report-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3,minmax(0,1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .report-stat {
+            border: 1px solid #edf0f3;
+            border-radius: 10px;
+            padding: 14px;
+            min-width: 0;
+        }
+
+            .report-stat span {
+                display: block;
+                color: #89919d;
+                font-size: 10px;
+                margin-bottom: 7px;
+            }
+
+            .report-stat strong {
+                color: #242a33;
+                font-size: 18px;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+        .report-table-wrap {
+            overflow-x: auto;
+            border: 1px solid #edf0f3;
+            border-radius: 10px;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 620px;
+        }
+
+            .report-table th {
+                color: #89919d;
+                background: #fafbfc;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .35px;
+                padding: 12px 13px;
+                border-bottom: 1px solid #edf0f3;
+                white-space: nowrap;
+            }
+
+            .report-table td {
+                color: #454d59;
+                padding: 12px 13px;
+                border-bottom: 1px solid #f0f2f5;
+                vertical-align: middle;
+            }
+
+            .report-table tr:last-child td {
+                border-bottom: 0;
+            }
+        /* Paginación de tablas */
+        .report-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 2px 2px;
+            color: #89919d;
+            font-size: 11px;
+        }
+
+            .report-pagination .pagination-info {
+                margin: 0;
+            }
+
+            .report-pagination .pagination-controls {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .report-pagination button {
+                min-width: 30px;
+                height: 30px;
+                padding: 0 9px;
+                border: 1px solid #e7eaf0;
+                border-radius: 7px;
+                background: #fff;
+                color: #596273;
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+                .report-pagination button:hover:not(:disabled), .report-pagination button.active {
+                    background: #edf3ff;
+                    border-color: #d9e5ff;
+                    color: #285eb7;
+                }
+
+                .report-pagination button:disabled {
+                    opacity: .4;
+                    cursor: not-allowed;
+                }
+
+            .report-pagination .page-size {
+                display: flex;
+                align-items: center;
+                gap: 7px;
+            }
+
+            .report-pagination select {
+                border: 1px solid #e7eaf0;
+                border-radius: 7px;
+                padding: 5px 8px;
+                color: #596273;
+                background: #fff;
+                font-size: 11px;
+            }
+
+        .report-primary {
+            color: #2f5fae;
+            font-weight: 700;
+        }
+
+        .report-muted {
+            color: #9299a4;
+            font-size: 10px;
+        }
+
+        .report-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #edf3ff;
+            color: #3567b8;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-good {
+            background: #eaf7f0;
+            color: #16865b;
+        }
+
+        .badge-warning {
+            background: #fff4e5;
+            color: #b87518;
+        }
+
+        .badge-danger {
+            background: #fff0ef;
+            color: #c4473e;
+        }
+
+        .empty-report {
+            text-align: center;
+            color: #8c949f;
+            padding: 30px 15px;
+            font-size: 12px;
+        }
+
+            .empty-report i {
+                display: block;
+                font-size: 25px;
+                margin-bottom: 8px;
+                color: #b0b7c1;
+            }
+
+        .report-alert {
+            border-radius: 9px;
+            padding: 12px 14px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+            .report-alert.error {
+                background: #fff0ef;
+                color: #b53f38;
+            }
+
+            .report-alert.info {
+                background: #edf5ff;
+                color: #3567b8;
+            }
+
+        /* Análisis general */
+        .analysis-kpis {
+            display: grid;
+            grid-template-columns: repeat(4,minmax(0,1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .analysis-kpi {
+            border: 1px solid #e9ebef;
+            border-radius: 12px;
+            padding: 15px;
+            min-width: 0;
+            background: #fff;
+        }
+
+        .analysis-kpi-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analysis-kpi-label {
+            color: #818995;
+            font-size: 11px;
+        }
+
+        .analysis-kpi-value {
+            color: #20242b;
+            font-size: 21px;
+            font-weight: 700;
+            margin-top: 9px;
+            letter-spacing: -.4px;
+            overflow-wrap: anywhere;
+        }
+
+        .analysis-kpi-note {
+            color: #969da7;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .analysis-kpi-icon {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: #edf3ff;
+            color: #3267c8;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: minmax(0,1.55fr) minmax(260px,1fr);
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+            .analysis-grid.equal {
+                grid-template-columns: repeat(2,minmax(0,1fr));
+            }
+
+        .analysis-panel {
+            background: #fff;
+            border: 1px solid #e9ebef;
+            border-radius: 12px;
+            padding: 17px;
+            min-width: 0;
+        }
+
+        .analysis-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+            .analysis-panel-head h3 {
+                margin: 0 0 4px;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .analysis-panel-head p {
+                margin: 0;
+                color: #9299a4;
+                font-size: 10px;
+            }
+
+            .analysis-panel-head i {
+                color: #87909d;
+            }
+
+        .sales-chart {
+            height: 190px;
+            display: flex;
+            align-items: stretch;
+            gap: 7px;
+            padding: 5px 2px 0;
+            border-bottom: 1px solid #edf0f3;
+            overflow-x: auto;
+        }
+
+        .sales-chart-col {
+            flex: 1;
+            min-width: 23px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .sales-chart-track {
+            height: 150px;
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .sales-chart-bar {
+            width: min(23px,75%);
+            min-height: 2px;
+            background: linear-gradient(180deg,#6d98ee,#3267c8);
+            border-radius: 5px 5px 1px 1px;
+        }
+
+        .sales-chart-label {
+            font-size: 9px;
+            color: #89919d;
+            white-space: nowrap;
+            padding-bottom: 8px;
+        }
+
+        .donut-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            min-height: 190px;
+            flex-wrap: wrap;
+        }
+
+        .donut {
+            width: 142px;
+            height: 142px;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .donut::after {
+                content: "";
+                position: absolute;
+                inset: 30px;
+                background: #fff;
+                border-radius: 50%;
+            }
+
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+            .donut-center strong {
+                font-size: 17px;
+                color: #242a33;
+            }
+
+            .donut-center span {
+                font-size: 9px;
+                color: #9299a4;
+            }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 110px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 10px;
+            color: #66707d;
+        }
+
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .legend-item strong {
+            margin-left: auto;
+            color: #343b46;
+            padding-left: 10px;
+        }
+
+        .rank-list {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+        }
+
+        .rank-row {
+            display: grid;
+            grid-template-columns: minmax(95px,1fr) minmax(70px,1.4fr) auto;
+            gap: 9px;
+            align-items: center;
+        }
+
+        .rank-name {
+            color: #535d69;
+            font-size: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rank-track {
+            height: 8px;
+            background: #f0f2f6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .rank-fill {
+            height: 100%;
+            background: linear-gradient(90deg,#8cb0f5,#3267c8);
+            border-radius: 10px;
+        }
+
+        .rank-value {
+            color: #414954;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .movement-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .movement-row {
+            display: grid;
+            grid-template-columns: 75px 1fr auto;
+            gap: 9px;
+            align-items: center;
+        }
+
+        .movement-name {
+            color: #626c79;
+            font-size: 10px;
+        }
+
+        .movement-track {
+            height: 10px;
+            background: #f0f2f6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .movement-fill {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .movement-number {
+            color: #424b57;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .analysis-subtitle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin: 18px 0 10px;
+        }
+
+            .analysis-subtitle h3 {
+                font-size: 13px;
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .analysis-subtitle span {
+                font-size: 10px;
+                color: #9299a4;
+            }
+
+        @@media(max-width:1100px) {
+            .analysis-kpis {
+                grid-template-columns: repeat(2,minmax(0,1fr));
+            }
+        }
+
+        @@media(max-width:900px) {
+            .reports-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .reports-nav {
+                position: static;
+            }
+
+            .reports-nav-items {
+                display: grid;
+                grid-template-columns: repeat(2,minmax(0,1fr));
+                gap: 4px;
+            }
+
+            .analysis-grid, .analysis-grid.equal {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media(max-width:600px) {
+            .reports-heading {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .reports-content {
+                padding: 15px;
+            }
+
+            .report-stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .report-filter .field {
+                flex: 1 1 100%;
+            }
+
+            .report-filter .btn-report {
+                width: 100%;
+            }
+
+            .analysis-kpis {
+                grid-template-columns: repeat(2,minmax(0,1fr));
+            }
+
+            .analysis-kpi {
+                padding: 12px;
+            }
+
+            .analysis-kpi-value {
+                font-size: 18px;
+            }
+        }
+    </style>
+}
+
+<div class="reports-page">
+    <div class="reports-heading">
+        <div>
+            <h1>Centro de reportes</h1>
+            <p>Consulta, analiza y da seguimiento a la información de Charlie Shop.</p>
+        </div>
+        <div class="text-secondary small"><i class="bi bi-bar-chart-line me-2"></i>Información actualizada desde el sistema</div>
+    </div>
+
+    <div class="reports-shell">
+        <aside class="reports-nav">
+            <div class="reports-nav-title">Reportes disponibles</div>
+            <div class="reports-nav-items">
+                <a asp-action="Index" asp-route-reporte="analisis" asp-route-fechaInicio="@Model.FechaInicio.ToString("yyyy-MM-dd")" asp-route-fechaFin="@Model.FechaFin.ToString("yyyy-MM-dd")" class="report-nav-link @(esAnalisis ? "active" : "")"><i class="bi bi-graph-up-arrow"></i>Análisis general</a>
+                <a asp-action="Index" asp-route-reporte="ventas" asp-route-fechaInicio="@Model.FechaInicio.ToString("yyyy-MM-dd")" asp-route-fechaFin="@Model.FechaFin.ToString("yyyy-MM-dd")" class="report-nav-link @(esVentas ? "active" : "")"><i class="bi bi-receipt"></i>Ventas por período</a>
+                <a asp-action="Index" asp-route-reporte="productos" class="report-nav-link @(esProductos ? "active" : "")"><i class="bi bi-trophy"></i>Productos más vendidos</a>
+                <a asp-action="Index" asp-route-reporte="inventario" class="report-nav-link @(esInventario ? "active" : "")"><i class="bi bi-box-seam"></i>Inventario</a>
+                <a asp-action="Index" asp-route-reporte="cuentas" class="report-nav-link @(esCuentas ? "active" : "")"><i class="bi bi-wallet2"></i>Cuentas por cobrar</a>
+                <a asp-action="Index" asp-route-reporte="clientes" class="report-nav-link @(esClientes ? "active" : "")"><i class="bi bi-people"></i>Clientes</a>
+            </div>
+        </aside>
+
+        <main class="reports-content">
+            @if (esAnalisis)
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.Error))
+                {
+                    <div class="report-alert error"><i class="bi bi-exclamation-circle me-2"></i>@Model.Error</div>
+                }
+
+                <div class="report-top">
+                    <div>
+                        <h2>Análisis general</h2>
+                        <p>Indicadores y tendencias comerciales del período seleccionado.</p>
+                    </div>
+                    <div class="report-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                </div>
+
+                <form method="get" asp-action="Index" class="report-filter" id="analysisFilter">
+                    <input type="hidden" name="reporte" value="analisis" />
+                    <div class="field">
+                        <label for="periodoRapido">Período</label>
+                        <select id="periodoRapido">
+                            <option value="">Personalizado</option>
+                            <option value="7">Últimos 7 días</option>
+                            <option value="30" selected>Últimos 30 días</option>
+                            <option value="mes">Este mes</option>
+                            <option value="anterior">Mes anterior</option>
+                            <option value="anio">Este año</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fechaInicio">Fecha inicial</label>
+                        <input id="fechaInicio" name="fechaInicio" type="date" value="@Model.FechaInicio.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="field">
+                        <label for="fechaFin">Fecha final</label>
+                        <input id="fechaFin" name="fechaFin" type="date" value="@Model.FechaFin.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <button type="submit" class="btn-report"><i class="bi bi-funnel"></i>Aplicar filtros</button>
+                </form>
+
+                <div class="analysis-kpis">
+                    <div class="analysis-kpi">
+                        <div class="analysis-kpi-head"><span class="analysis-kpi-label">Ticket promedio</span><span class="analysis-kpi-icon"><i class="bi bi-receipt"></i></span></div>
+                        <div class="analysis-kpi-value">@analisis.TicketPromedio.ToString("C2", cr)</div>
+                        <div class="analysis-kpi-note">Monto promedio por transacción</div>
+                    </div>
+                    <div class="analysis-kpi">
+                        <div class="analysis-kpi-head"><span class="analysis-kpi-label">Unidades vendidas</span><span class="analysis-kpi-icon"><i class="bi bi-box-seam"></i></span></div>
+                        <div class="analysis-kpi-value">@analisis.UnidadesVendidas.ToString("N0")</div>
+                        <div class="analysis-kpi-note">Unidades en ventas no canceladas</div>
+                    </div>
+                    <div class="analysis-kpi">
+                        <div class="analysis-kpi-head"><span class="analysis-kpi-label">Clientes compradores</span><span class="analysis-kpi-icon"><i class="bi bi-people"></i></span></div>
+                        <div class="analysis-kpi-value">@analisis.ClientesCompradores.ToString("N0")</div>
+                        <div class="analysis-kpi-note">Clientes únicos con compras</div>
+                    </div>
+                    <div class="analysis-kpi">
+                        <div class="analysis-kpi-head"><span class="analysis-kpi-label">Ventas a crédito</span><span class="analysis-kpi-icon"><i class="bi bi-credit-card"></i></span></div>
+                        <div class="analysis-kpi-value">@analisis.VentasCredito.ToString("C2", cr)</div>
+                        <div class="analysis-kpi-note">Monto vendido mediante crédito</div>
+                    </div>
+                </div>
+
+                <div class="analysis-grid">
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head">
+                            <div><h3>Evolución de ventas</h3><p>Ventas por día dentro del período seleccionado</p></div>
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                        @if (analisis.VentasPorDia.Any())
+                        {
+                            <div class="sales-chart">
+                                @foreach (var dia in analisis.VentasPorDia)
+                                {
+                                    var alto = dia.Total <= 0 ? 2 : Math.Max(2, (double)(dia.Total / maxDia * 100));
+                                    <div class="sales-chart-col" title="@dia.Fecha.ToString("dd/MM/yyyy") - @dia.Total.ToString("C2", cr)">
+                                        <div class="sales-chart-track"><div class="sales-chart-bar" style="height:@alto.ToString("0.##", CultureInfo.InvariantCulture)%"></div></div>
+                                        <span class="sales-chart-label">@dia.Fecha.ToString("dd/MM")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report"><i class="bi bi-bar-chart"></i>No hay ventas para este período.</div>
+                        }
+                    </section>
+
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head">
+                            <div><h3>Ventas por forma de pago</h3><p>Distribución por monto vendido</p></div>
+                            <i class="bi bi-pie-chart"></i>
+                        </div>
+                        @if (analisis.FormasPago.Any() && analisis.TotalFormaPago > 0)
+                        {
+                            var contado = analisis.FormasPago.FirstOrDefault(x => x.FormaPago == "CONTADO")?.Total ?? 0;
+                            var credito = analisis.FormasPago.FirstOrDefault(x => x.FormaPago == "CREDITO")?.Total ?? 0;
+                            var pctContado = (double)(contado / totalPagos * 100);
+                            var pctCredito = (double)(credito / totalPagos * 100);
+                            <div class="donut-layout">
+                                <div class="donut" style="background:conic-gradient(#3267c8 0% @pctContado.ToString("0.##", CultureInfo.InvariantCulture)%, #75b9a2 @pctContado.ToString("0.##", CultureInfo.InvariantCulture)% 100%)">
+                                    <div class="donut-center"><strong>@analisis.TotalFormaPago.ToString("C0", cr)</strong><span>Total del período</span></div>
+                                </div>
+                                <div class="legend">
+                                    <div class="legend-item"><span class="legend-dot" style="background:#3267c8"></span>Contado <strong>@pctContado.ToString("0")%</strong></div>
+                                    <div class="legend-item"><span class="legend-dot" style="background:#75b9a2"></span>Crédito <strong>@pctCredito.ToString("0")%</strong></div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report"><i class="bi bi-pie-chart"></i>No hay ventas para distribuir.</div>
+                        }
+                    </section>
+                </div>
+
+                <div class="analysis-grid equal">
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head"><div><h3>Productos con mayor facturación</h3><p>Top 5 por monto vendido</p></div><i class="bi bi-award"></i></div>
+                        @if (analisis.ProductosTop.Any())
+                        {
+                            <div class="rank-list">
+                                @foreach (var item in analisis.ProductosTop)
+                                {
+                                    var width = (double)(item.TotalVendido / maxProducto * 100);
+                                    <div class="rank-row">
+                                        <span class="rank-name" title="@item.Producto">@item.Producto</span>
+                                        <div class="rank-track"><div class="rank-fill" style="width:@width.ToString("0.##", CultureInfo.InvariantCulture)%"></div></div>
+                                        <span class="rank-value">@item.TotalVendido.ToString("C0", cr)</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report">No hay productos vendidos en este período.</div>
+                        }
+                    </section>
+
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head"><div><h3>Movimientos de inventario</h3><p>Entradas, salidas y ajustes por unidades</p></div><i class="bi bi-arrow-left-right"></i></div>
+                        @if (analisis.MovimientosPorTipo.Any())
+                        {
+                            <div class="movement-bars">
+                                @foreach (var item in analisis.MovimientosPorTipo)
+                                {
+                                    var width = (double)(item.Unidades / maxMovimiento * 100);
+                                    var color = item.TipoMovimiento == "ENTRADA" ? "#55a987" : item.TipoMovimiento == "SALIDA" ? "#e39a45" : "#7b83c9";
+                                    <div class="movement-row">
+                                        <span class="movement-name">@item.TipoMovimiento</span>
+                                        <div class="movement-track"><div class="movement-fill" style="width:@width.ToString("0.##", CultureInfo.InvariantCulture)%;background:@color"></div></div>
+                                        <span class="movement-number">@item.Unidades.ToString("N0")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report">No hay movimientos de inventario en este período.</div>
+                        }
+                    </section>
+                </div>
+
+                <div class="analysis-grid equal">
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head"><div><h3>Top 5 clientes</h3><p>Clientes con mayor monto de compras</p></div><i class="bi bi-people"></i></div>
+                        @if (analisis.ClientesTop.Any())
+                        {
+                            <div class="report-table-wrap">
+                                <table class="report-table" style="min-width:0">
+                                    <thead><tr><th>Cliente</th><th>Compras</th><th>Total</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var item in analisis.ClientesTop)
+                                        {
+                                            <tr><td class="fw-semibold">@item.Cliente</td><td>@item.CantidadCompras</td><td class="fw-semibold">@item.TotalCompras.ToString("C2", cr)</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report">No hay compras de clientes para este período.</div>
+                        }
+                    </section>
+                    <section class="analysis-panel">
+                        <div class="analysis-panel-head"><div><h3>Últimos movimientos</h3><p>Movimientos de inventario del período</p></div><i class="bi bi-clock-history"></i></div>
+                        @if (analisis.UltimosMovimientos.Any())
+                        {
+                            <div class="report-table-wrap">
+                                <table class="report-table" style="min-width:0">
+                                    <thead><tr><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Fecha</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var item in analisis.UltimosMovimientos)
+                                        {
+                                            var badge = item.TipoMovimiento == "ENTRADA" ? "badge-good" : item.TipoMovimiento == "SALIDA" ? "badge-warning" : "";
+                                            <tr><td class="fw-semibold">@item.Producto</td><td><span class="report-badge @badge">@item.TipoMovimiento</span></td><td>@item.Cantidad.ToString("N0")</td><td>@item.Fecha.ToString("dd/MM/yy")</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="empty-report">No hay movimientos registrados para este período.</div>
+                        }
+                    </section>
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.Error))
+                {
+                    <div class="report-alert error"><i class="bi bi-exclamation-circle me-2"></i>@Model.Error</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Mensaje))
+                {
+                    <div class="report-alert info"><i class="bi bi-info-circle me-2"></i>@Model.Mensaje</div>
+                }
+
+                <div class="report-top">
+                    <div>
+                        @if (esVentas)
+                        {
+                            <h2>Reporte de ventas</h2><p>Consulta las transacciones realizadas dentro de un período.</p>
+                        }
+                        else if (esProductos)
+                        {
+
+                            <h2>Productos más vendidos</h2><p>Identifica los artículos con mayor movimiento y facturación.</p>
+                        }
+                        else if (esInventario)
+                        {
+
+                            <h2>Reporte de inventario</h2><p>Revisa las existencias actuales y detecta niveles críticos.</p>
+                        }
+                        else if (esCuentas)
+                        {
+
+                            <h2>Cuentas por cobrar</h2><p>Da seguimiento a los saldos pendientes y vencimientos de clientes.</p>
+                        }
+                        else
+                        {
+
+                            <h2>Reporte de clientes</h2><p>Consulta los clientes registrados y su comportamiento de compra.</p>
+                        }
+                    </div>
+                    <div class="report-icon">
+                        @if (esVentas)
+                        {
+                            <i class="bi bi-receipt"></i>
+                        }
+                        else if (esProductos)
+                        {
+
+                            <i class="bi bi-trophy"></i>
+                        }
+                        else if (esInventario)
+                        {
+
+                            <i class="bi bi-box-seam"></i>
+                        }
+                        else if (esCuentas)
+                        {
+
+                            <i class="bi bi-wallet2"></i>
+                        }
+                        else
+                        {
+
+                            <i class="bi bi-people"></i>
+                        }
+                    </div>
+                </div>
+
+                @if (esVentas)
+                {
+                    <form method="get" asp-action="Index" class="report-filter">
+                        <input type="hidden" name="reporte" value="ventas" />
+                        <div class="field">
+                            <label for="fechaInicio">Fecha inicial</label>
+                            <input id="fechaInicio" name="fechaInicio" type="date" value="@Model.FechaInicio.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="field">
+                            <label for="fechaFin">Fecha final</label>
+                            <input id="fechaFin" name="fechaFin" type="date" value="@Model.FechaFin.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <button type="submit" class="btn-report"><i class="bi bi-search"></i>Consultar período</button>
+                    </form>
+                    <div class="report-stat-grid">
+                        <div class="report-stat"><span>Total vendido en el período</span><strong>@Model.TotalVentas.ToString("C2", cr)</strong></div>
+                        <div class="report-stat"><span>Ventas registradas</span><strong>@Model.CantidadVentas.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Período consultado</span><strong style="font-size:13px">@Model.FechaInicio.ToString("dd/MM/yy") – @Model.FechaFin.ToString("dd/MM/yy")</strong></div>
+                    </div>
+                    <div class="report-toolbar"><h3>Detalle de ventas</h3><span class="report-count">@Model.Ventas.Count registro(s)</span></div>
+                    @if (Model.Ventas.Any())
+                    {
+                        <div class="report-table-wrap">
+                            <table class="report-table">
+                                <thead><tr><th>Venta</th><th>Fecha</th><th>Cliente</th><th>Forma de pago</th><th>Total neto</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    @foreach (var item in Model.Ventas)
+                                    {
+                                        <tr><td class="report-primary">#@item.IdVenta</td><td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td><td>@item.Cliente</td><td>@item.FormaPago</td><td class="fw-semibold">@item.TotalNeto.ToString("C2", cr)</td><td><span class="report-badge @(item.Estado == "FINALIZADA" ? "badge-good" : "badge-warning")">@item.Estado.Replace("_", " ")</span></td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+
+                        <div class="empty-report"><i class="bi bi-receipt"></i>No hay ventas para los filtros seleccionados.</div>
+                    }
+                }
+                else if (esProductos)
+                {
+                    <div class="report-stat-grid">
+                        <div class="report-stat"><span>Productos con ventas</span><strong>@Model.ProductosMasVendidos.Count.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Unidades vendidas</span><strong>@Model.TotalUnidadesVendidas.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Facturación asociada</span><strong>@Model.ProductosMasVendidos.Sum(x => x.TotalVendido).ToString("C2", cr)</strong></div>
+                    </div>
+                    <div class="report-toolbar"><h3>Ranking de productos</h3><span class="report-count">Ordenado por unidades vendidas</span></div>
+                    @if (Model.ProductosMasVendidos.Any())
+                    {
+                        <div class="report-table-wrap">
+                            <table class="report-table">
+                                <thead><tr><th>Posición</th><th>Producto</th><th>Categoría</th><th>Unidades vendidas</th><th>Total vendido</th></tr></thead>
+                                <tbody>
+                                    @for (var i = 0; i < Model.ProductosMasVendidos.Count; i++)
+                                    {
+                                        var item = Model.ProductosMasVendidos[i];
+                                        <tr><td class="report-primary">#@(i + 1)</td><td class="fw-semibold">@item.Producto</td><td>@item.Categoria</td><td>@item.CantidadVendida.ToString("N0")</td><td class="fw-semibold">@item.TotalVendido.ToString("C2", cr)</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+
+                        <div class="empty-report"><i class="bi bi-trophy"></i>Aún no hay ventas de productos registradas.</div>
+                    }
+                }
+                else if (esInventario)
+                {
+                    <div class="report-stat-grid">
+                        <div class="report-stat"><span>Productos en inventario</span><strong>@Model.Inventario.Count.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Con stock crítico</span><strong>@Model.ProductosCriticos.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Productos agotados</span><strong>@Model.Inventario.Count(x => x.StockActual <= 0).ToString("N0")</strong></div>
+                    </div>
+                    <div class="report-toolbar"><h3>Existencias actuales</h3><span class="report-count">Información de inventario</span></div>
+                    @if (Model.Inventario.Any())
+                    {
+                        <div class="report-table-wrap">
+                            <table class="report-table">
+                                <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    @foreach (var item in Model.Inventario)
+                                    {
+                                        var badge = item.EstadoStock == "AGOTADO" ? "badge-danger" : item.EstadoStock == "BAJO" ? "badge-warning" : "badge-good";
+                                        <tr><td>@item.Codigo</td><td class="fw-semibold">@item.Producto</td><td>@item.Categoria</td><td>@item.StockActual.ToString("N0")</td><td>@item.StockMinimo.ToString("N0")</td><td><span class="report-badge @badge">@item.EstadoStock</span></td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+
+                        <div class="empty-report"><i class="bi bi-box-seam"></i>No hay existencias para mostrar.</div>
+                    }
+                }
+                else if (esCuentas)
+                {
+                    <div class="report-stat-grid">
+                        <div class="report-stat"><span>Cuentas pendientes</span><strong>@Model.CuentasPorCobrar.Count.ToString("N0")</strong></div>
+                        <div class="report-stat"><span>Saldo total pendiente</span><strong>@Model.TotalPorCobrar.ToString("C2", cr)</strong></div>
+                        <div class="report-stat"><span>Cuentas vencidas</span><strong>@Model.CuentasPorCobrar.Count(x => x.DiasVencida > 0).ToString("N0")</strong></div>
+                    </div>
+                    <div class="report-toolbar"><h3>Seguimiento de saldos</h3><span class="report-count">Cuentas con saldo pendiente</span></div>
+                    @if (Model.CuentasPorCobrar.Any())
+                    {
+                        <div class="report-table-wrap">
+                            <table class="report-table">
+                                <thead><tr><th>Cuenta</th><th>Cliente</th><th>Venta</th><th>Vencimiento</th><th>Saldo pendiente</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    @foreach (var item in Model.CuentasPorCobrar)
+                                    {
+                                        var badge = item.DiasVencida > 0 ? "badge-danger" : item.Estado == "PARCIAL" ? "badge-warning" : "badge-good";
+                                        <tr><td class="report-primary">#@item.IdCuenta</td><td>@item.Cliente</td><td>#@item.IdVenta</td><td>@item.FechaVencimiento.ToString("dd/MM/yyyy") @if(item.DiasVencida>0){
+                                            <div class="report-muted">@item.DiasVencida día(s) vencida</div>
+                                        }
+                                    </td><td class="fw-semibold">@item.SaldoPendiente.ToString("C2", cr)</td><td><span class="report-badge @badge">@item.Estado</span></td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+
+                    <div class="empty-report"><i class="bi bi-check-circle"></i>No hay cuentas con saldos pendientes.</div>
+                }
+            }
+            else
+            {
+                <div class="report-stat-grid">
+                    <div class="report-stat"><span>Clientes registrados</span><strong>@Model.Clientes.Count.ToString("N0")</strong></div>
+                    <div class="report-stat"><span>Compras acumuladas</span><strong>@Model.Clientes.Sum(x => x.CantidadCompras).ToString("N0")</strong></div>
+                    <div class="report-stat"><span>Saldo pendiente de clientes</span><strong>@Model.Clientes.Sum(x => x.SaldoPendiente).ToString("C2", cr)</strong></div>
+                </div>
+                <div class="report-toolbar"><h3>Directorio de clientes</h3><span class="report-count">@Model.Clientes.Count registro(s)</span></div>
+                @if (Model.Clientes.Any())
+                {
+                    <div class="report-table-wrap">
+                        <table class="report-table">
+                            <thead><tr><th>Cliente</th><th>Identificación</th><th>Contacto</th><th>Compras</th><th>Total comprado</th><th>Saldo pendiente</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in Model.Clientes)
+                                {
+                                    <tr><td><div class="fw-semibold">@item.NombreCompleto</div><div class="report-muted">Registrado: @item.FechaRegistro.ToString("dd/MM/yyyy")</div></td><td>@(string.IsNullOrWhiteSpace(item.Identificacion) ? "—" : item.Identificacion)</td><td>@(string.IsNullOrWhiteSpace(item.Telefono) ? "—" : item.Telefono)<div class="report-muted">@item.Email</div></td><td>@item.CantidadCompras.ToString("N0")</td><td class="fw-semibold">@item.TotalCompras.ToString("C2", cr)</td><td>@item.SaldoPendiente.ToString("C2", cr)</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+
+                    <div class="empty-report"><i class="bi bi-people"></i>No hay clientes registrados.</div>
+                }
+            }
+        }
+    </main>
+</div>
 </div>
 
-<div class="page-subtitle">
-    Información e indicadores para apoyar la toma de decisiones.
-</div>
-
-
-<div class="row g-3">
-
-    <!-- REPORTE DE VENTAS -->
-
-    <div class="col-md-4">
-
-        <div class="card p-4 h-100">
-
-            <div class="icon-box mb-3">
-
-                <i class="bi bi-cart-check"></i>
-
-            </div>
-
-            <h5>
-                Reporte de ventas
-            </h5>
-
-            <p class="text-secondary">
-                Consulta las ventas realizadas durante
-                un período determinado.
-            </p>
-
-            <a asp-controller="Ventas" asp-action="Historial" class="btn btn-outline-primary">
-                Ver reporte
-            </a>
-
-        </div>
-
-    </div>
-
-
-    <!-- PRODUCTOS -->
-
-    <div class="col-md-4">
-
-        <div class="card p-4 h-100">
-
-            <div class="icon-box mb-3">
-
-                <i class="bi bi-box-seam"></i>
-
-            </div>
-
-            <h5>
-                Productos más vendidos
-            </h5>
-
-            <p class="text-secondary">
-                Identificación de los productos con
-                mayor movimiento.
-            </p>
-
-            <button class="btn btn-outline-primary">
-                Ver reporte
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- CUENTAS -->
-
-    <div class="col-md-4">
-
-        <div class="card p-4 h-100">
-
-            <div class="icon-box mb-3">
-
-                <i class="bi bi-cash-stack"></i>
-
-            </div>
-
-            <h5>
-                Cuentas por cobrar
-            </h5>
-
-            <p class="text-secondary">
-                Consulta los saldos pendientes y
-                seguimiento de pagos.
-            </p>
-
-            <button class="btn btn-outline-primary">
-                Ver reporte
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div class="row g-3 mt-1">
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <div class="icon-box mb-3"><i class="bi bi-clipboard-data"></i></div>
-            <h5>Reporte de inventario</h5>
-            <p class="text-secondary">Existencias, valorización, rotación y productos con niveles críticos.</p>
-            <a asp-action="Inventario" class="btn btn-outline-primary">Ver reporte</a>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <div class="icon-box mb-3"><i class="bi bi-people"></i></div>
-            <h5>Reporte de clientes</h5>
-            <p class="text-secondary">Segmentación, comportamiento de compra y saldos de clientes.</p>
-            <a asp-action="Clientes" class="btn btn-outline-primary">Ver reporte</a>
-        </div>
-    </div>
-</div>
-
-
-<!-- INDICADORES -->
-
-<div class="card p-4 mt-4">
-
-    <h5 class="mb-4">
-        Indicadores generales
-    </h5>
-
-    <div class="row g-3">
-
-        <div class="col-md-3">
-
-            <div class="metric">
-
-                <div class="label">
-                    Ventas del mes
-                </div>
-
-                <div class="value">
-                    ₡1.250.000
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="metric">
-
-                <div class="label">
-                    Productos vendidos
-                </div>
-
-                <div class="value">
-                    156
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="metric">
-
-                <div class="label">
-                    Clientes atendidos
-                </div>
-
-                <div class="value">
-                    86
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="col-md-3">
-
-            <div class="metric">
-
-                <div class="label">
-                    Por cobrar
-                </div>
-
-                <div class="value">
-                    ₡420.000
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- RESUMEN -->
-
-<div class="card p-4 mt-4">
-
-    <h5 class="mb-3">
-        Resumen de ventas
-    </h5>
-
-    <div class="progress"
-         style="height: 28px;">
-
-        <div class="progress-bar"
-             style="width: 78%;">
-
-            78% de la meta mensual
-
-        </div>
-
-    </div>
-
-    <p class="text-secondary mt-3 mb-0">
-
-        Esta información será obtenida posteriormente
-        desde la base de datos del sistema.
-
-    </p>
-
-</div>
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('analysisFilter');
+            const preset = document.getElementById('periodoRapido');
+            const start = document.getElementById('fechaInicio');
+            const end = document.getElementById('fechaFin');
+
+            if (form && preset && start && end) {
+                preset.addEventListener('change', function () {
+                    const now = new Date();
+                    const yyyy = now.getFullYear();
+                    const mm = now.getMonth();
+                    const dd = now.getDate();
+                    const fmt = d => {
+                        const y = d.getFullYear();
+                        const m = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${y}-${m}-${day}`;
+                    };
+
+                    let from = new Date(yyyy, mm, dd);
+                    let to = new Date(yyyy, mm, dd);
+
+                    if (preset.value === '7') from.setDate(from.getDate() - 6);
+                    else if (preset.value === '30') from.setDate(from.getDate() - 29);
+                    else if (preset.value === 'mes') from = new Date(yyyy, mm, 1);
+                    else if (preset.value === 'anterior') {
+                        from = new Date(yyyy, mm - 1, 1);
+                        to = new Date(yyyy, mm, 0);
+                    }
+                    else if (preset.value === 'anio') from = new Date(yyyy, 0, 1);
+                    else return;
+
+                    start.value = fmt(from);
+                    end.value = fmt(to);
+                });
+            }
+
+
+            // Paginación común para todas las tablas de reportes.
+            document.querySelectorAll('.report-table-wrap .report-table').forEach(function (table, tableIndex) {
+                const body = table.tBodies[0];
+                if (!body) return;
+                const rows = Array.from(body.rows);
+                if (rows.length <= 10) return;
+
+                let currentPage = 1;
+                let pageSize = 10;
+                const wrapper = table.closest('.report-table-wrap');
+                const pager = document.createElement('div');
+                pager.className = 'report-pagination';
+                pager.innerHTML = `
+                    <div class="pagination-info" aria-live="polite"></div>
+                    <div class="page-size"><label for="reportPageSize${tableIndex}">Filas:</label>
+                        <select id="reportPageSize${tableIndex}" aria-label="Filas por página">
+                            <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option>
+                        </select>
+                    </div>
+                    <div class="pagination-controls" aria-label="Paginación"></div>`;
+                wrapper.insertAdjacentElement('afterend', pager);
+
+                const info = pager.querySelector('.pagination-info');
+                const controls = pager.querySelector('.pagination-controls');
+                const sizeSelect = pager.querySelector('select');
+
+                function render() {
+                    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+                    currentPage = Math.min(currentPage, totalPages);
+                    const start = (currentPage - 1) * pageSize;
+                    const end = Math.min(start + pageSize, rows.length);
+                    rows.forEach((row, index) => { row.hidden = index < start || index >= end; });
+                    info.textContent = `Mostrando ${start + 1}–${end} de ${rows.length} registros`;
+                    controls.innerHTML = '';
+
+                    function addButton(label, page, disabled, active) {
+                        const button = document.createElement('button');
+                        button.type = 'button'; button.textContent = label;
+                        button.disabled = disabled;
+                        if (active) { button.classList.add('active'); button.setAttribute('aria-current', 'page'); }
+                        button.addEventListener('click', () => { currentPage = page; render(); });
+                        controls.appendChild(button);
+                    }
+                    addButton('‹', currentPage - 1, currentPage === 1, false);
+                    for (let page = 1; page <= totalPages; page++) {
+                        if (totalPages > 7 && page > 2 && page < totalPages - 1 && Math.abs(page - currentPage) > 1) {
+                            if (page === 3 || page === totalPages - 2) {
+                                const dots = document.createElement('span'); dots.textContent = '…'; dots.style.padding = '0 3px'; controls.appendChild(dots);
+                            }
+                            continue;
+                        }
+                        addButton(String(page), page, false, page === currentPage);
+                    }
+                    addButton('›', currentPage + 1, currentPage === totalPages, false);
+                }
+                sizeSelect.addEventListener('change', function () { pageSize = Number(this.value); currentPage = 1; render(); });
+                render();
+            });
+
+            const salesStart = document.getElementById('fechaInicio');
+            const salesEnd = document.getElementById('fechaFin');
+            if (salesStart && salesEnd) {
+                salesStart.addEventListener('change', function () {
+                    salesEnd.min = salesStart.value;
+                    if (salesEnd.value && salesEnd.value < salesStart.value) salesEnd.value = salesStart.value;
+                });
+                salesEnd.addEventListener('change', function () {
+                    salesStart.max = salesEnd.value;
+                });
+            }
+        })();
+    </script>
+}

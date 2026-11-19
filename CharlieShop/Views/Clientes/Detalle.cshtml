@@ -8,113 +8,163 @@
         ("Clientes", "Clientes", "Index"),
         ("Detalle de cliente", null, null)
     };
+
+    var nombreCompleto = $"{Model.Nombre} {Model.Apellido}".Trim();
+    var iniciales = $"{(string.IsNullOrWhiteSpace(Model.Nombre) ? "" : Model.Nombre.Substring(0, 1))}{(string.IsNullOrWhiteSpace(Model.Apellido) ? "" : Model.Apellido.Substring(0, 1))}".ToUpperInvariant();
 }
 
-<div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-        <div class="page-title">Detalle de cliente</div>
-        <div class="page-subtitle">
-            Información personal y estado del cliente.
+<style>
+    .client-detail-page { color:#25282d; }
+    .client-detail-page .detail-heading { font-size:25px; font-weight:750; letter-spacing:-.65px; margin:0; }
+    .client-detail-page .detail-subtitle { color:#858b95; font-size:13px; margin-top:5px; }
+    .client-detail-page .detail-card { background:#fff; border:1px solid #eceef1; border-radius:15px; box-shadow:0 3px 12px rgba(20,25,35,.035); }
+    .client-detail-page .detail-top-actions { display:flex; gap:9px; flex-wrap:wrap; }
+    .client-detail-page .btn-back { background:#fff; color:#3d424a; border:1px solid #e2e5e9; border-radius:9px; padding:9px 13px; font-size:12px; font-weight:600; }
+    .client-detail-page .btn-edit-client { background:#202124; color:#fff; border:1px solid #202124; border-radius:9px; padding:9px 14px; font-size:12px; font-weight:600; }
+    .client-detail-page .btn-back:hover { background:#f7f8f9; }
+    .client-detail-page .btn-edit-client:hover { background:#383a3d; color:#fff; }
+    .client-detail-page .profile-card { padding:28px 22px; text-align:center; height:100%; }
+    .client-detail-page .profile-avatar { width:82px; height:82px; margin:0 auto 16px; border-radius:24px; display:flex; align-items:center; justify-content:center; background:#f0f1f3; color:#292c31; font-size:25px; font-weight:750; letter-spacing:.5px; }
+    .client-detail-page .profile-name { font-size:19px; font-weight:750; letter-spacing:-.35px; margin:0; overflow-wrap:anywhere; }
+    .client-detail-page .profile-id { color:#9298a1; font-size:12px; margin-top:7px; }
+    .client-detail-page .status-pill { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:6px 10px; font-size:11px; font-weight:650; margin-top:15px; }
+    .client-detail-page .status-pill.active { background:#eaf7ef; color:#267746; }
+    .client-detail-page .status-pill.inactive { background:#f0f1f3; color:#6b717a; }
+    .client-detail-page .profile-divider { border:0; border-top:1px solid #eff0f2; margin:23px 0 17px; }
+    .client-detail-page .profile-hint { color:#9298a1; font-size:11px; line-height:1.6; margin:0; }
+    .client-detail-page .section-card { padding:23px; }
+    .client-detail-page .section-heading { display:flex; align-items:center; gap:11px; padding-bottom:18px; margin-bottom:20px; border-bottom:1px solid #eff0f2; }
+    .client-detail-page .section-icon { width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center; justify-content:center; border-radius:11px; background:#f3f4f6; color:#454a52; font-size:17px; }
+    .client-detail-page .section-title { font-size:14px; font-weight:750; margin:0; }
+    .client-detail-page .section-description { color:#9298a1; font-size:11px; margin-top:3px; }
+    .client-detail-page .detail-field { min-height:66px; padding:2px 0 9px; }
+    .client-detail-page .field-label { display:flex; align-items:center; gap:7px; color:#8a9099; font-size:11px; font-weight:600; margin-bottom:8px; }
+    .client-detail-page .field-label i { font-size:13px; }
+    .client-detail-page .field-value { color:#30343a; font-size:13px; font-weight:600; overflow-wrap:anywhere; line-height:1.55; }
+    .client-detail-page .field-value.missing { color:#a1a6ae; font-weight:450; }
+    .client-detail-page .registration-note { display:flex; gap:10px; align-items:flex-start; padding:13px 14px; border-radius:10px; background:#f7f8f9; color:#737983; font-size:11px; line-height:1.6; margin-top:4px; }
+    .client-detail-page .registration-note i { color:#747b85; font-size:15px; }
+    @@media (max-width: 767.98px) {
+        .client-detail-page .detail-heading { font-size:22px; }
+        .client-detail-page .detail-header { gap:16px; }
+        .client-detail-page .detail-top-actions { width:100%; }
+        .client-detail-page .detail-top-actions a { flex:1; text-align:center; justify-content:center; }
+        .client-detail-page .section-card { padding:18px; }
+        .client-detail-page .profile-card { padding:23px 18px; }
+    }
+</style>
+
+<div class="client-detail-page">
+    <div class="d-flex justify-content-between align-items-start flex-wrap mb-4 detail-header">
+        <div>
+            <h1 class="detail-heading">Detalle de cliente</h1>
+            <p class="detail-subtitle mb-0">Consulta la información personal y los datos de registro del cliente.</p>
+        </div>
+
+        <div class="detail-top-actions">
+            <a asp-action="Index" class="btn btn-back d-inline-flex align-items-center">
+                <i class="bi bi-arrow-left me-2"></i>Volver al listado
+            </a>
+            <a asp-action="Editar" asp-route-id="@Model.IdCliente" class="btn btn-edit-client d-inline-flex align-items-center">
+                <i class="bi bi-pencil-square me-2"></i>Editar cliente
+            </a>
         </div>
     </div>
 
-    <div class="d-flex gap-2">
-        <a asp-action="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>
-            Volver
-        </a>
-
-        <a asp-action="Editar"
-           asp-route-id="@Model.IdCliente"
-           class="btn btn-primary">
-            <i class="bi bi-pencil me-1"></i>
-            Editar cliente
-        </a>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm p-4 text-center">
-            <div class="mb-3">
-                <i class="bi bi-person-circle" style="font-size: 4rem;"></i>
-            </div>
-
-            <h2 class="h4 fw-bold">
-                @Model.Nombre @Model.Apellido
-            </h2>
-
-            <p class="text-muted mb-3">
-                Cliente #@Model.IdCliente
-            </p>
-
-            @if (Model.Estado)
-            {
-                <div>
-                    <span class="badge bg-success">Activo</span>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="detail-card profile-card">
+                <div class="profile-avatar" aria-hidden="true">
+                    @(string.IsNullOrWhiteSpace(iniciales) ? "CL" : iniciales)
                 </div>
-            }
-            else
-            {
-                <div>
-                    <span class="badge bg-secondary">Inactivo</span>
-                </div>
-            }
+
+                <h2 class="profile-name">@nombreCompleto</h2>
+                <div class="profile-id">Código de cliente #@Model.IdCliente</div>
+
+                @if (Model.Estado)
+                {
+                    <span class="status-pill active"><i class="bi bi-check-circle-fill"></i>Cliente activo</span>
+                }
+                else
+                {
+                    <span class="status-pill inactive"><i class="bi bi-pause-circle-fill"></i>Cliente inactivo</span>
+                }
+
+                <hr class="profile-divider" />
+                <p class="profile-hint mb-0">
+                    <i class="bi bi-person-vcard me-1"></i>
+                    Perfil e información general del cliente registrado en el sistema.
+                </p>
+            </section>
         </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm p-4">
-            <h3 class="h5 fw-bold mb-4">
-                <i class="bi bi-person-lines-fill me-2"></i>
-                Información personal
-            </h3>
-
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Nombre</div>
-                    <div class="fw-semibold">@Model.Nombre</div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Apellido</div>
-                    <div class="fw-semibold">@Model.Apellido</div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Identificación</div>
-                    <div class="fw-semibold">
-                        @(Model.Identificacion ?? "No registrada")
+        <div class="col-lg-8">
+            <section class="detail-card section-card">
+                <div class="section-heading">
+                    <div class="section-icon"><i class="bi bi-person-lines-fill"></i></div>
+                    <div>
+                        <h2 class="section-title">Información personal</h2>
+                        <div class="section-description">Datos de identificación y contacto</div>
                     </div>
                 </div>
 
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Teléfono</div>
-                    <div class="fw-semibold">
-                        @(Model.Telefono ?? "No registrado")
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-person"></i>Nombre</div>
+                            <div class="field-value">@Model.Nombre</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-person"></i>Apellido</div>
+                            <div class="field-value">@Model.Apellido</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-card-text"></i>Identificación</div>
+                            <div class="field-value @(string.IsNullOrWhiteSpace(Model.Identificacion) ? "missing" : "")">
+                                @(string.IsNullOrWhiteSpace(Model.Identificacion) ? "No registrada" : Model.Identificacion)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-telephone"></i>Teléfono</div>
+                            <div class="field-value @(string.IsNullOrWhiteSpace(Model.Telefono) ? "missing" : "")">
+                                @(string.IsNullOrWhiteSpace(Model.Telefono) ? "No registrado" : Model.Telefono)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-envelope"></i>Correo electrónico</div>
+                            <div class="field-value @(string.IsNullOrWhiteSpace(Model.Email) ? "missing" : "")">
+                                @(string.IsNullOrWhiteSpace(Model.Email) ? "No registrado" : Model.Email)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-calendar3"></i>Fecha de registro</div>
+                            <div class="field-value">@Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="detail-field">
+                            <div class="field-label"><i class="bi bi-geo-alt"></i>Dirección</div>
+                            <div class="field-value @(string.IsNullOrWhiteSpace(Model.Direccion) ? "missing" : "")">
+                                @(string.IsNullOrWhiteSpace(Model.Direccion) ? "No registrada" : Model.Direccion)
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </section>
 
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Correo electrónico</div>
-                    <div class="fw-semibold">
-                        @(Model.Email ?? "No registrado")
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Fecha de registro</div>
-                    <div class="fw-semibold">
-                        @Model.FechaRegistro.ToString("dd/MM/yyyy HH:mm")
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <div class="text-muted small mb-1">Dirección</div>
-                    <div class="fw-semibold">
-                        @(Model.Direccion ?? "No registrada")
-                    </div>
-                </div>
+            <div class="registration-note">
+                <i class="bi bi-info-circle"></i>
+                <div>La información mostrada corresponde a los datos registrados para este cliente. Puedes utilizar <strong>Editar cliente</strong> para actualizar sus datos.</div>
             </div>
         </div>
     </div>
