@@ -1,14 +1,18 @@
-﻿
-@model CharlieShop.Models.InventarioIndexViewModel
+﻿@model CharlieShop.Models.InventarioIndexViewModel
 
 @{
     ViewData["Title"] = "Inventario";
     var estadoActual = string.IsNullOrWhiteSpace(Model.Estado)
         ? "TODOS"
         : Model.Estado;
+    ViewData["Breadcrumbs"] = new List<(string Texto, string? Controlador, string? Accion)>
+{
+    ("Inventario", null, null)
+};
 }
 
 <div class="inventory-page">
+
     <div class="inventory-header">
         <div class="inventory-header-info">
             <div class="inventory-page-icon">
@@ -22,34 +26,16 @@
 
         <div class="inventory-header-actions">
             <a asp-action="Historial" class="btn btn-outline-dark">
-                <i class="bi bi-clock-history me-1"></i> Historial
+                <i class="bi bi-clock-history me-1"></i> Historial de Movimientos
             </a>
-            <a asp-action="AjustarInventario" class="btn btn-outline-dark">
-                <i class="bi bi-sliders me-1"></i> Ajustar stock
-            </a>
-            <a asp-action="RegistrarMovimiento" class="btn btn-dark">
-                <i class="bi bi-arrow-left-right me-1"></i> Registrar movimiento
+            <a asp-controller="Inventario"
+               asp-action="Crear"
+               class="btn btn-dark">
+                <i class="bi bi-plus-lg me-1"></i>
+                Nuevo producto
             </a>
         </div>
     </div>
-
-    @if (TempData["Exito"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>@TempData["Exito"]
-            <button type="button" class="btn-close"
-                    data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-circle me-2"></i>@TempData["Error"]
-            <button type="button" class="btn-close"
-                    data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-    }
 
     @if (!ViewData.ModelState.IsValid)
     {
@@ -187,8 +173,8 @@
                     <tr>
                         <th>Producto</th>
                         <th>Categoría</th>
+                        <th>Precio de venta</th>
                         <th>Stock actual</th>
-                        <th>Stock mínimo</th>
                         <th>Estado</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -205,7 +191,7 @@
 
                             var claseStock = agotado
                                 ? "stock-number-danger"
-                                : bajo ? "stock-number-warning" : "";
+                                : bajo ? "stock-number-warning" : "stock-number-normal";
 
                             var claseEstado = agotado
                                 ? "status-out"
@@ -252,14 +238,15 @@
                                 </td>
 
                                 <td>
-                                    <span class="stock-number @claseStock">
-                                        @producto.StockActual.ToString("0.##")
+                                    <span class="inventory-price">
+                                        ₡ @producto.PrecioVenta.ToString("#,##0.00", System.Globalization.CultureInfo.InvariantCulture)
                                     </span>
-                                    <span class="stock-unit">unidades</span>
                                 </td>
 
                                 <td>
-                                    @producto.StockMinimo.ToString("0.##")
+                                    <span class="stock-number @claseStock">
+                                        @producto.StockActual.ToString("0.##")
+                                    </span>
                                 </td>
 
                                 <td>
@@ -271,21 +258,23 @@
 
                                 <td>
                                     <div class="inventory-actions">
-                                        <a asp-action="RegistrarMovimiento"
-                                           asp-route-idProducto="@producto.IdProducto"
-                                           class="action-button"
-                                           title="Registrar movimiento"
-                                           aria-label="Registrar movimiento">
-                                            <i class="bi bi-arrow-left-right"></i>
-                                        </a>
+                                        <button type="button"
+                                                class="action-button btn-open-product"
+                                                data-product-id="@producto.IdProducto"
+                                                title="Editar producto y registrar movimiento"
+                                                aria-label="Editar producto y registrar movimiento">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
 
-                                        <a asp-action="AjustarInventario"
-                                           asp-route-idProducto="@producto.IdProducto"
-                                           class="action-button"
-                                           title="Ajustar stock"
-                                           aria-label="Ajustar stock">
-                                            <i class="bi bi-sliders"></i>
-                                        </a>
+                                        <button type="button"
+                                                class="action-button action-button-delete btn-delete-product"
+                                                data-product-id="@producto.IdProducto"
+                                                data-product-code="@producto.Codigo"
+                                                data-product-name="@producto.Nombre"
+                                                title="Eliminar producto"
+                                                aria-label="Eliminar producto">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -336,11 +325,309 @@
     </div>
 </div>
 
+<!-- PANEL LATERAL: EDICIÓN Y MOVIMIENTOS -->
+<div class="offcanvas offcanvas-end inventory-offcanvas" tabindex="-1" id="productEditorPanel"
+     aria-labelledby="productEditorTitle" data-bs-backdrop="true" data-bs-scroll="false">
+    <div class="offcanvas-header border-bottom">
+        <div>
+            <h5 class="offcanvas-title fw-bold" id="productEditorTitle">Editar producto</h5>
+            <small class="text-muted" id="panelProductSubtitle">Información y movimientos de inventario</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+
+    <div class="offcanvas-body">
+        <div id="panelAlert" class="alert d-none" role="alert"></div>
+        <div id="panelLoading" class="text-center py-5">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">Cargando producto...</span>
+        </div>
+
+        <div id="panelContent" class="d-none">
+            <section class="panel-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-box-seam me-2"></i>Datos del producto</h6>
+                    <span id="panelStatusBadge" class="badge rounded-pill"></span>
+                </div>
+                <form id="editProductForm" method="post" action="@Url.Action("GuardarEdicion", "Inventario")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdProducto" id="editIdProducto" />
+                    <div class="mb-3">
+                        <label class="form-label" for="editCodigo">Código</label>
+                        <input class="form-control" id="editCodigo" name="Codigo" maxlength="50" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="editNombre">Nombre del producto</label>
+                        <input class="form-control" id="editNombre" name="Nombre" maxlength="150" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="editDescripcion">Descripción</label>
+                        <textarea class="form-control" id="editDescripcion" name="Descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="editCategoria">Categoría</label>
+                            <select class="form-select" id="editCategoria" name="Categoria" required>
+                                <option value="">Seleccionar categoría</option>
+                                @foreach (var categoria in (Model.Productos ?? new List<CharlieShop.Models.InventarioItemViewModel>())
+                                    .Select(p => p.Categoria)
+                                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                                    .Distinct()
+                                    .OrderBy(c => c))
+                                {
+                                    <option value="@categoria">@categoria</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="editUnidadMedida">Unidad de medida</label>
+                            <input class="form-control" id="editUnidadMedida" name="UnidadMedida" maxlength="20" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="editCostoDisplay">Costo</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input class="form-control currency-display" type="text" id="editCostoDisplay"
+                                       inputmode="decimal" autocomplete="off" placeholder="0,00" />
+                            </div>
+                            <input type="hidden" id="editCosto" name="Costo" value="0" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label" for="editPrecioVentaDisplay">Precio de venta</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₡</span>
+                                <input class="form-control currency-display" type="text" id="editPrecioVentaDisplay"
+                                       inputmode="decimal" autocomplete="off" placeholder="0,00" required />
+                            </div>
+                            <input type="hidden" id="editPrecioVenta" name="PrecioVenta" value="0" />
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between border rounded-3 p-3 mb-3">
+                        <div>
+                            <div class="fw-semibold small">Estado del producto</div>
+                            <small class="text-muted">Activar o desactivar en el catálogo</small>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="editEstado" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100" id="saveProductButton">
+                        <i class="bi bi-check-lg me-1"></i> Guardar cambios
+                    </button>
+                </form>
+            </section>
+
+            <hr class="my-4" />
+
+            <section class="panel-section">
+                <h6 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-2"></i>Registrar movimiento</h6>
+
+                <div class="d-flex align-items-center justify-content-between rounded-3 border bg-light px-3 py-2 mb-3">
+                    <span class="small text-muted">Stock actual</span>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <strong class="fs-5" id="movementCurrentStock">0</strong>
+                        <span class="small text-muted" id="movementUnitLabel"></span>
+                    </div>
+                </div>
+
+                <!-- Los mensajes de registrar movimiento se muestran aquí mismo. -->
+                <div id="movementAlert" class="alert d-none" role="alert" aria-live="polite"></div>
+
+                <form id="movementForm" method="post" action="@Url.Action("RegistrarMovimientoPanel", "Inventario")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="IdProducto" id="movementIdProducto" />
+                    <div class="mb-3">
+                        <label class="form-label" for="movementType">Tipo de movimiento</label>
+                        <select class="form-select" id="movementType" name="TipoMovimiento" required>
+                            <option value="ENTRADA">Entrada</option>
+                            <option value="SALIDA">Salida</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="movementQuantity">Cantidad</label>
+                        <input class="form-control" type="number" id="movementQuantity" name="Cantidad" min="1" step="1" inputmode="numeric" required placeholder="0" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="movementReference">Referencia</label>
+                        <input class="form-control" id="movementReference" name="Referencia" maxlength="100" placeholder="Compra, factura o pedido" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="movementObservations">Observaciones</label>
+                        <textarea class="form-control" id="movementObservations" name="Observaciones" rows="2" placeholder="Detalles adicionales"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-dark w-100" id="saveMovementButton">
+                        <i class="bi bi-check-lg me-1"></i> Registrar movimiento
+                    </button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal de confirmación para eliminar producto -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1"
+     aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProductModalLabel">
+                    <i class="bi bi-trash3 text-danger me-2"></i>Eliminar producto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">¿Estás seguro de que deseas eliminar este producto?</p>
+                <div class="rounded border bg-light p-3">
+                    <div class="fw-semibold" id="deleteProductName"></div>
+                    <small class="text-muted" id="deleteProductCode"></small>
+                </div>
+                <p class="text-muted small mt-3 mb-0">
+                    Si el producto tiene ventas o movimientos de inventario asociados,
+                    el sistema impedirá su eliminación.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <form asp-controller="Inventario" asp-action="EliminarProducto"
+                      method="post" id="deleteProductForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteProductId" />
+                    <input type="hidden" name="nombreProducto" id="deleteProductNameInput" />
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteProduct">
+                        <i class="bi bi-trash3 me-1"></i>Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var deleteResultType = TempData["EliminarTipo"]?.ToString();
+    var deleteResultMessage = TempData["EliminarMensaje"]?.ToString();
+    var deleteResultName = TempData["EliminarNombre"]?.ToString();
+    var hasDeleteResult = !string.IsNullOrWhiteSpace(deleteResultType);
+    var deleteResultIsSuccess = deleteResultType == "success";
+    var deleteResultIsWarning = deleteResultType == "warning";
+}
+
+@if (hasDeleteResult)
+{
+    <div class="modal fade" id="deleteResultModal" tabindex="-1"
+         aria-labelledby="deleteResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteResultModalLabel">
+                        @if (deleteResultIsSuccess)
+                        {
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <text>Producto eliminado</text>
+                        }
+                        else if (deleteResultIsWarning)
+                        {
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                            <text>No se puede eliminar</text>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                            <text>No fue posible eliminar</text>
+                        }
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(deleteResultName))
+                    {
+                        <p class="fw-semibold mb-2">@deleteResultName</p>
+                    }
+                    <p class="mb-0">@deleteResultMessage</p>
+                    @if (deleteResultIsWarning)
+                    {
+                        <div class="alert alert-light border mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Podés conservar el historial y evitar que el producto siga
+                            utilizándose desactivándolo desde la edición del producto.
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
+    .inventory-price {
+        color: #222;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
     .inventory-page {
         max-width: 1450px;
         margin: 0 auto;
     }
+
+    .inventory-breadcrumb {
+        display: block !important;
+        width: 100%;
+        margin: 0 0 22px;
+        padding: 0 0 12px;
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+        .inventory-breadcrumb .breadcrumb {
+            display: flex !important;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-size: 12px;
+        }
+
+        .inventory-breadcrumb .breadcrumb-item,
+        .inventory-breadcrumb .breadcrumb-item a {
+            color: #858585;
+            text-decoration: none;
+        }
+
+            .inventory-breadcrumb .breadcrumb-item.active {
+                color: #222;
+                font-weight: 600;
+            }
+
+    .inventory-breadcrumb {
+        margin-bottom: 18px;
+    }
+
+        .inventory-breadcrumb .breadcrumb {
+            margin-bottom: 0;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .inventory-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+            color: #aaa;
+        }
+
+        .inventory-breadcrumb .breadcrumb-item.active {
+            color: #333;
+            font-weight: 600;
+        }
 
     .inventory-header {
         display: flex;
@@ -390,22 +677,22 @@
         flex-wrap: wrap;
     }
 
-    .inventory-header-actions .btn {
-        padding: 10px 14px;
-        border-radius: 9px;
-        font-size: 13px;
-        font-weight: 600;
-    }
+        .inventory-header-actions .btn {
+            padding: 10px 14px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+        }
 
-    .inventory-header-actions .btn-dark {
-        background: #111;
-        border-color: #111;
-    }
+        .inventory-header-actions .btn-dark {
+            background: #111;
+            border-color: #111;
+        }
 
-    .inventory-header-actions .btn-dark:hover {
-        background: #303030;
-        border-color: #303030;
-    }
+            .inventory-header-actions .btn-dark:hover {
+                background: #303030;
+                border-color: #303030;
+            }
 
     .inventory-summary {
         margin-bottom: 25px;
@@ -494,18 +781,18 @@
         padding: 24px 25px 20px;
     }
 
-    .inventory-card-header h2 {
-        margin: 0;
-        color: #171717;
-        font-size: 17px;
-        font-weight: 700;
-    }
+        .inventory-card-header h2 {
+            margin: 0;
+            color: #171717;
+            font-size: 17px;
+            font-weight: 700;
+        }
 
-    .inventory-card-header p {
-        margin: 5px 0 0;
-        color: #858585;
-        font-size: 13px;
-    }
+        .inventory-card-header p {
+            margin: 5px 0 0;
+            color: #858585;
+            font-size: 13px;
+        }
 
     .inventory-record-count {
         padding: 7px 10px;
@@ -532,19 +819,19 @@
         position: relative;
     }
 
-    .inventory-search > i {
-        position: absolute;
-        top: 50%;
-        left: 14px;
-        z-index: 2;
-        transform: translateY(-50%);
-        color: #858585;
-        pointer-events: none;
-    }
+        .inventory-search > i {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            z-index: 2;
+            transform: translateY(-50%);
+            color: #858585;
+            pointer-events: none;
+        }
 
-    .inventory-search .form-control {
-        padding-left: 39px;
-    }
+        .inventory-search .form-control {
+            padding-left: 39px;
+        }
 
     .inventory-filters .form-control,
     .inventory-filters .form-select {
@@ -555,11 +842,11 @@
         box-shadow: none;
     }
 
-    .inventory-filters .form-control:focus,
-    .inventory-filters .form-select:focus {
-        border-color: #777;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, .05);
-    }
+        .inventory-filters .form-control:focus,
+        .inventory-filters .form-select:focus {
+            border-color: #777;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, .05);
+        }
 
     .btn-filter-reset {
         min-height: 43px;
@@ -575,43 +862,43 @@
         align-items: center;
     }
 
-    .btn-filter-reset:hover {
-        background: #f5f5f5;
-        border-color: #ccc;
-        color: #111;
-    }
+        .btn-filter-reset:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+            color: #111;
+        }
 
     .inventory-table {
-        min-width: 850px;
+        min-width: 950px;
     }
 
-    .inventory-table thead th {
-        padding: 14px 17px;
-        background: #f8f8f8;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #e8e8e8;
-        color: #666;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .35px;
-        white-space: nowrap;
-    }
+        .inventory-table thead th {
+            padding: 14px 17px;
+            background: #f8f8f8;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #e8e8e8;
+            color: #666;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            white-space: nowrap;
+        }
 
-    .inventory-table tbody td {
-        padding: 16px 17px;
-        border-bottom: 1px solid #f0f0f0;
-        color: #444;
-        font-size: 13px;
-    }
+        .inventory-table tbody td {
+            padding: 16px 17px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #444;
+            font-size: 13px;
+        }
 
-    .inventory-table tbody tr:last-child td {
-        border-bottom: none;
-    }
+        .inventory-table tbody tr:last-child td {
+            border-bottom: none;
+        }
 
-    .inventory-table tbody tr:hover {
-        background: #fafafa;
-    }
+        .inventory-table tbody tr:hover {
+            background: #fafafa;
+        }
 
     .inventory-product {
         display: flex;
@@ -662,24 +949,31 @@
     }
 
     .stock-number {
-        color: #222;
-        font-size: 14px;
-        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 22px;
+        padding: 0 9px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .stock-number-normal {
+        color: #087443;
+        background-color: #e9fbf1;
     }
 
     .stock-number-warning {
-        color: #b7791f;
+        color: #9b6918;
+        background-color: #fff5df;
     }
 
     .stock-number-danger {
-        color: #c83c43;
-    }
-
-    .stock-unit {
-        display: block;
-        margin-top: 3px;
-        color: #999;
-        font-size: 11px;
+        color: #d93036;
+        background-color: #fff0f0;
     }
 
     .inventory-status {
@@ -738,11 +1032,22 @@
         transition: background .15s ease, border-color .15s ease;
     }
 
-    .action-button:hover {
-        border-color: #aaa;
-        background: #f2f2f2;
-        color: #111;
+        .action-button:hover {
+            border-color: #aaa;
+            background: #f2f2f2;
+            color: #111;
+        }
+
+    .action-button-delete {
+        color: #b52e37;
+        border-color: #f0c9cc;
     }
+
+        .action-button-delete:hover {
+            color: #fff;
+            border-color: #b52e37;
+            background: #b52e37;
+        }
 
     .inventory-pagination {
         display: flex;
@@ -845,9 +1150,9 @@
             width: 100%;
         }
 
-        .inventory-header-actions .btn {
-            flex: 1 1 auto;
-        }
+            .inventory-header-actions .btn {
+                flex: 1 1 auto;
+            }
 
         .inventory-card-header {
             align-items: flex-start;
@@ -865,8 +1170,347 @@
             padding: 16px;
         }
     }
+
+    .inventory-offcanvas {
+        width: min(640px, 100vw);
+    }
+
+        .inventory-offcanvas .offcanvas-header {
+            padding: 20px 24px;
+        }
+
+        .inventory-offcanvas .offcanvas-body {
+            padding: 22px 24px 30px;
+        }
+
+        .inventory-offcanvas .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .inventory-offcanvas .form-control, .inventory-offcanvas .form-select {
+            min-height: 40px;
+            border-color: #dedede;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .inventory-offcanvas textarea.form-control {
+            min-height: auto;
+        }
+
+        .inventory-offcanvas .form-check-input {
+            width: 2.5em;
+            height: 1.3em;
+            cursor: pointer;
+        }
+
+        .inventory-offcanvas .btn {
+            min-height: 42px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .inventory-offcanvas .panel-section h6 {
+            color: #222;
+        }
+
+        .inventory-offcanvas .offcanvas-title {
+            font-size: 18px;
+        }
+
+    .inventory-actions .action-button {
+        cursor: pointer;
+    }
+
 </style>
 
+@section Scripts {
+    <script>
+        (() => {
+            const deleteModalElement = document.getElementById('deleteProductModal');
+            const deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalElement);
+            const deleteForm = document.getElementById('deleteProductForm');
+            const deleteButton = document.getElementById('confirmDeleteProduct');
+            const resultModalElement = document.getElementById('deleteResultModal');
+            if (resultModalElement) {
+                bootstrap.Modal.getOrCreateInstance(resultModalElement).show();
+            }
+
+            document.querySelectorAll('.btn-delete-product').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.getElementById('deleteProductId').value = button.dataset.productId;
+                    document.getElementById('deleteProductName').textContent = button.dataset.productName;
+                    document.getElementById('deleteProductNameInput').value = button.dataset.productName;
+                    document.getElementById('deleteProductCode').textContent = `Código: ${button.dataset.productCode}`;
+                    deleteModal.show();
+                });
+            });
+
+            deleteForm.addEventListener('submit', () => {
+                deleteButton.disabled = true;
+                deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+            });
+
+            const panelElement = document.getElementById('productEditorPanel');
+            if (!panelElement || !window.bootstrap) return;
+
+            const panel = bootstrap.Offcanvas.getOrCreateInstance(panelElement);
+            const loading = document.getElementById('panelLoading');
+            const content = document.getElementById('panelContent');
+            const alertBox = document.getElementById('panelAlert');
+            const movementAlert = document.getElementById('movementAlert');
+            let currentProductState = false;
+            let updatingState = false;
+
+            const showAlert = (message, type = 'danger', target = alertBox) => {
+                target.className = `alert alert-${type}`;
+                target.textContent = message;
+            };
+            const clearAlert = (target = alertBox) => {
+                target.className = 'alert d-none';
+                target.textContent = '';
+            };
+            const antiforgery = form => form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            async function readJsonResponse(response) {
+                const raw = await response.text();
+
+                if (!raw || !raw.trim()) {
+                    throw new Error(`El servidor devolvió una respuesta vacía (HTTP ${response.status}).`);
+                }
+
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    throw new Error(`El servidor no devolvió JSON válido (HTTP ${response.status}). Revisá la acción del controlador y la respuesta en Network.`);
+                }
+            }
+
+            const currencyFormatter = new Intl.NumberFormat('es-CR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            function parseCurrency(value) {
+                if (value === null || value === undefined || value === '') return 0;
+                const normalized = String(value)
+                    .replace(/[^0-9,.-]/g, '')
+                    .replace(/\./g, '')
+                    .replace(',', '.');
+                const parsed = Number(normalized);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function setCurrencyField(displayId, hiddenId, value) {
+                const numericValue = Number(value ?? 0);
+                const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+                document.getElementById(hiddenId).value = safeValue.toFixed(2).replace('.', ',');
+                document.getElementById(displayId).value = currencyFormatter.format(safeValue);
+            }
+
+            function syncCurrencyFields() {
+                const cost = parseCurrency(document.getElementById('editCostoDisplay').value);
+                const salePrice = parseCurrency(document.getElementById('editPrecioVentaDisplay').value);
+                document.getElementById('editCosto').value = cost.toFixed(2).replace('.', ',');
+                document.getElementById('editPrecioVenta').value = salePrice.toFixed(2).replace('.', ',');
+            }
+
+            ['editCostoDisplay', 'editPrecioVentaDisplay'].forEach(id => {
+                const input = document.getElementById(id);
+                input.addEventListener('focus', () => {
+                    const value = parseCurrency(input.value);
+                    input.value = value ? String(value).replace('.', ',') : '';
+                });
+                input.addEventListener('blur', () => {
+                    const hiddenId = id === 'editCostoDisplay' ? 'editCosto' : 'editPrecioVenta';
+                    const value = parseCurrency(input.value);
+                    document.getElementById(hiddenId).value = value.toFixed(2);
+                    input.value = currencyFormatter.format(value);
+                });
+                input.addEventListener('input', () => {
+                    const hiddenId = id === 'editCostoDisplay' ? 'editCosto' : 'editPrecioVenta';
+                    document.getElementById(hiddenId).value = parseCurrency(input.value).toFixed(2);
+                });
+            });
+
+            document.querySelectorAll('.btn-open-product').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const id = button.dataset.productId;
+                    clearAlert();
+                    content.classList.add('d-none');
+                    loading.classList.remove('d-none');
+                    panel.show();
+                    try {
+                        const response = await fetch(`@Url.Action("ObtenerProducto", "Inventario")?id=${encodeURIComponent(id)}`);
+                        const data = await readJsonResponse(response);
+                        if (!response.ok || !data.success) throw new Error(data.message || 'No fue posible cargar el producto.');
+                        const p = data.producto;
+
+                        // Dapper puede serializar esta columna como IdProducto (PascalCase)
+                        // o idProducto (camelCase), según la configuración JSON.
+                        // Si no se contempla ambas variantes, el formulario envía "undefined".
+                        // El DTO del controlador entrega propiedades camelCase.
+                        // Se conservan fallbacks PascalCase para tolerar configuraciones JSON distintas.
+                        const value = (camelName, pascalName = camelName) =>
+                            p[camelName] ?? p[pascalName] ?? null;
+
+                        const productId = value('idProducto', 'IdProducto') ?? id;
+                        if (!productId || Number.isNaN(Number(productId))) {
+                            throw new Error('El servidor no devolvió un identificador válido para el producto.');
+                        }
+
+                        const code = value('codigo', 'Codigo') ?? '';
+                        const name = value('nombre', 'Nombre') ?? '';
+                        const description = value('descripcion', 'Descripcion') ?? '';
+                        const category = value('categoria', 'Categoria') ?? '';
+                        const unit = value('unidadMedida', 'UnidadMedida') ?? '';
+                        const cost = value('costo', 'Costo') ?? 0;
+                        const salePrice = value('precioVenta', 'PrecioVenta') ?? 0;
+                        const active = Boolean(value('estado', 'Estado'));
+                        const stock = Number(value('stockActual', 'StockActual') ?? 0);
+
+                        document.getElementById('editIdProducto').value = productId;
+                        document.getElementById('movementIdProducto').value = productId;
+                        document.getElementById('editCodigo').value = code;
+                        document.getElementById('editNombre').value = name;
+                        document.getElementById('editDescripcion').value = description;
+
+                        const categorySelect = document.getElementById('editCategoria');
+                        if (category && ![...categorySelect.options].some(option => option.value === category)) {
+                            categorySelect.add(new Option(category, category));
+                        }
+                        categorySelect.value = category;
+
+                        document.getElementById('editUnidadMedida').value = unit;
+                        setCurrencyField('editCostoDisplay', 'editCosto', cost);
+                        setCurrencyField('editPrecioVentaDisplay', 'editPrecioVenta', salePrice);
+                        document.getElementById('editEstado').checked = active;
+                        currentProductState = active;
+                        document.getElementById('panelProductSubtitle').textContent = `${code} · ${name}`;
+
+                        document.getElementById('movementCurrentStock').textContent = stock.toLocaleString('es-CR');
+                        document.getElementById('movementUnitLabel').textContent = unit;
+
+                        updateStateBadge();
+                        document.getElementById('movementForm').reset();
+                        document.getElementById('movementIdProducto').value = productId;
+                        document.getElementById('movementType').value = 'ENTRADA';
+                        clearAlert(movementAlert);
+                        loading.classList.add('d-none');
+                        content.classList.remove('d-none');
+                    } catch (error) {
+                        loading.classList.add('d-none');
+                        showAlert(error.message);
+                    }
+                });
+            });
+
+            function updateStateBadge() {
+                const badge = document.getElementById('panelStatusBadge');
+                badge.textContent = currentProductState ? 'Activo' : 'Inactivo';
+                badge.className = `badge rounded-pill ${currentProductState ? 'text-bg-success' : 'text-bg-secondary'}`;
+            }
+
+            document.getElementById('editEstado').addEventListener('change', async event => {
+                if (updatingState) return;
+                const desiredState = event.target.checked;
+                const form = document.getElementById('editProductForm');
+                const body = new FormData();
+                body.append('idProducto', document.getElementById('editIdProducto').value);
+                body.append('estado', desiredState);
+                body.append('__RequestVerificationToken', antiforgery(form));
+                updatingState = true;
+                event.target.disabled = true;
+                try {
+                    const response = await fetch('@Url.Action("CambiarEstadoProducto", "Inventario")', { method: 'POST', body });
+                    const data = await readJsonResponse(response);
+                    if (!response.ok || !data.success) throw new Error(data.message || 'No fue posible cambiar el estado.');
+                    currentProductState = desiredState;
+                    updateStateBadge();
+                    showAlert(data.message, 'success');
+                } catch (error) {
+                    event.target.checked = currentProductState;
+                    showAlert(error.message);
+                } finally {
+                    event.target.disabled = false;
+                    updatingState = false;
+                }
+            });
+
+            async function submitPanelForm(form, button) {
+                const isMovementForm = form.id === 'movementForm';
+                const messageTarget = isMovementForm ? movementAlert : alertBox;
+
+                clearAlert(messageTarget);
+                if (!form.reportValidity()) return;
+
+                button.disabled = true;
+                if (form.id === 'editProductForm') {
+                    syncCurrencyFields();
+                }
+
+                const original = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form)
+                    });
+                    const data = await readJsonResponse(response);
+
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'No fue posible completar la operación.');
+                    }
+
+                    showAlert(data.message, 'success', messageTarget);
+
+                    if (isMovementForm) {
+                        // Limpiar solo los datos del movimiento y conservar el producto seleccionado.
+                        const productId = document.getElementById('movementIdProducto').value;
+                        document.getElementById('movementQuantity').value = '';
+                        document.getElementById('movementReference').value = '';
+                        document.getElementById('movementObservations').value = '';
+                        document.getElementById('movementIdProducto').value = productId;
+                        window.setTimeout(() => window.location.reload(), 1200);
+                    } else {
+                        window.setTimeout(() => window.location.reload(), 700);
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'danger', messageTarget);
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = original;
+                }
+            }
+
+            document.getElementById('editProductForm').addEventListener('submit', event => {
+                event.preventDefault();
+                submitPanelForm(event.currentTarget, document.getElementById('saveProductButton'));
+            });
+            const movementQuantity = document.getElementById('movementQuantity');
+            movementQuantity.addEventListener('input', () => {
+                movementQuantity.value = movementQuantity.value.replace(/\D/g, '');
+            });
+
+            document.getElementById('movementForm').addEventListener('submit', event => {
+                event.preventDefault();
+                if (!Number.isInteger(Number(movementQuantity.value)) || Number(movementQuantity.value) < 1) {
+                    movementQuantity.setCustomValidity('La cantidad debe ser un número entero mayor que cero.');
+                    movementQuantity.reportValidity();
+                    movementQuantity.setCustomValidity('');
+                    return;
+                }
+                submitPanelForm(event.currentTarget, document.getElementById('saveMovementButton'));
+            });
+        })();
+    </script>
+
+    <!-- Paginación del listado -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const table = document.querySelector(".inventory-table");
@@ -948,3 +1592,5 @@
         renderPagination();
     });
 </script>
+
+}

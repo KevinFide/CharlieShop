@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -27,6 +28,25 @@ namespace CharlieShop.Controllers
         public InventarioController(DbConnection dbConnection)
         {
             _dbConnection = dbConnection;
+        }
+
+        // DTO tipado para garantizar que todos los campos del panel
+        // se serialicen con nombres consistentes y sin depender de DapperRow.
+        private sealed class ProductoPanelDto
+        {
+            public int IdProducto { get; set; }
+            public string Codigo { get; set; } = string.Empty;
+            public string Nombre { get; set; } = string.Empty;
+            public string? Descripcion { get; set; }
+            public string? Categoria { get; set; }
+            public decimal PrecioVenta { get; set; }
+            public decimal? Costo { get; set; }
+            public string? UnidadMedida { get; set; }
+            public bool Estado { get; set; }
+            public decimal StockActual { get; set; }
+            public decimal StockMinimo { get; set; }
+            public decimal? StockMaximo { get; set; }
+            public string? Ubicacion { get; set; }
         }
 
         // =========================================
@@ -268,302 +288,361 @@ namespace CharlieShop.Controllers
         }
 
         // =========================================
-        // REGISTRAR MOVIMIENTO - GET
+        // Crear Producto - GET
         // =========================================
-
         [HttpGet]
-        public async Task<IActionResult> RegistrarMovimiento(int? idProducto)
+        public IActionResult Crear()
         {
-            var modelo = new RegistrarMovimientoViewModel
-            {
-                IdProducto = idProducto ?? 0,
-                TipoMovimiento = "ENTRADA"
-            };
-
-            try
-            {
-                using var connection = _dbConnection.CreateConnection();
-                modelo.Productos = await ObtenerProductosAsync(connection);
-
-                return View(modelo);
-            }
-            catch (Exception)
-            {
-                TempData["Error"] = "No fue posible cargar los productos.";
-                return RedirectToAction(nameof(Index));
-            }
+            return View(new CrearProductoViewModel());
         }
 
         // =========================================
-        // REGISTRAR MOVIMIENTO - POST
+        // Crear Producto - GET
         // =========================================
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegistrarMovimiento(
-            RegistrarMovimientoViewModel modelo)
+        public IActionResult Crear(CrearProductoViewModel modelo)
         {
-            // Validar cantidad en el servidor.
-            if (modelo.Cantidad <= 0)
-            {
-                ModelState.AddModelError(
-                    nameof(modelo.Cantidad),
-                    "La cantidad debe ser mayor que cero.");
-            }
-
-            modelo.TipoMovimiento = (modelo.TipoMovimiento ?? string.Empty)
-                .Trim()
-                .ToUpperInvariant();
-
-            if (modelo.TipoMovimiento != "ENTRADA" &&
-                modelo.TipoMovimiento != "SALIDA")
-            {
-                ModelState.AddModelError(
-                    nameof(modelo.TipoMovimiento),
-                    "El tipo de movimiento debe ser ENTRADA o SALIDA.");
-            }
+            if (modelo.StockInicial < 0)
+                ModelState.AddModelError(nameof(modelo.StockInicial), "El stock inicial no puede ser negativo.");
 
             if (!ModelState.IsValid)
-            {
-                await CargarProductosAsync(modelo);
                 return View(modelo);
-            }
 
-            if (!ObtenerIdUsuario(out int idUsuario))
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
             {
-                TempData["Error"] =
-                    "No fue posible identificar al usuario de la sesión.";
-
-                await CargarProductosAsync(modelo);
+                ModelState.AddModelError(string.Empty, "No fue posible identificar al usuario de la sesión.");
                 return View(modelo);
             }
 
             try
             {
+                using var connection = (NpgsqlConnection)_dbConnection.CreateConnection();
+                connection.Open();
+
+                using var command = new NpgsqlCommand(
+                    "CALL public.sp_crear_producto(@p_codigo, @p_nombre, @p_descripcion, @p_categoria, @p_precio_venta, @p_costo, @p_unidad_medida, @p_stock_inicial, @p_usuario_id, NULL);",
+                    connection);
+
+                command.Parameters.AddWithValue("p_codigo", modelo.Codigo.Trim());
+                command.Parameters.AddWithValue("p_nombre", modelo.Nombre.Trim());
+                command.Parameters.AddWithValue("p_descripcion", (object?)modelo.Descripcion ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_categoria", (object?)modelo.Categoria ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_precio_venta", modelo.PrecioVenta);
+                command.Parameters.AddWithValue("p_costo", (object?)modelo.Costo ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_unidad_medida", (object?)modelo.UnidadMedida ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_stock_inicial", modelo.StockInicial);
+                command.Parameters.AddWithValue("p_usuario_id", idUsuario);
+
+                var resultado = command.ExecuteScalar()?.ToString();
+
+                if (resultado == "CREADO")
+                {
+                    TempData["Exito"] = "El producto y su inventario fueron registrados correctamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ModelState.AddModelError(string.Empty, resultado switch
+                {
+                    "CODIGO_EXISTENTE" => "El código del producto ya existe.",
+                    "STOCK_INVALIDO" => "El stock inicial no puede ser negativo.",
+                    "USUARIO_INVALIDO" => "El usuario de la sesión no es válido.",
+                    _ => resultado ?? "No fue posible registrar el producto y su inventario."
+                });
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "No fue posible registrar el producto. Verificá la base de datos e intentá nuevamente.");
+            }
+
+            return View(modelo);
+        }
+
+        // =========================================
+        // EDICIÓN DE PRODUCTO DESDE EL PANEL LATERAL
+        // =========================================
+
+        [HttpGet]
+        public async Task<IActionResult> ObtenerProducto(int id)
+        {
+            if (id <= 0)
+                return BadRequest(new { success = false, message = "Identificador de producto inválido." });
+
+            try
+            {
                 using var connection = _dbConnection.CreateConnection();
+                const string sql = @"
+                    SELECT
+                        p.id_producto AS IdProducto,
+                        p.codigo AS Codigo,
+                        p.nombre AS Nombre,
+                        p.descripcion AS Descripcion,
+                        p.categoria AS Categoria,
+                        p.precio_venta AS PrecioVenta,
+                        p.costo AS Costo,
+                        p.unidad_medida AS UnidadMedida,
+                        p.estado AS Estado,
+                        COALESCE(i.stock_actual, 0) AS StockActual,
+                        COALESCE(i.stock_minimo, 0) AS StockMinimo,
+                        i.stock_maximo AS StockMaximo,
+                        i.ubicacion AS Ubicacion
+                    FROM public.producto p
+                    LEFT JOIN public.inventario i
+                        ON i.producto_id = p.id_producto
+                    WHERE p.id_producto = @IdProducto;";
 
-                var parametros = new DynamicParameters();
+                var producto = await connection.QueryFirstOrDefaultAsync<ProductoPanelDto>(
+                    sql,
+                    new { IdProducto = id });
 
-                parametros.Add("p_id_producto", modelo.IdProducto, DbType.Int32);
-                parametros.Add("p_direccion", modelo.TipoMovimiento, DbType.String);
-                parametros.Add("p_cantidad", modelo.Cantidad, DbType.Decimal);
-                parametros.Add("p_referencia", modelo.Referencia, DbType.String);
-                parametros.Add("p_observaciones", modelo.Observaciones, DbType.String);
-                parametros.Add("p_usuario_id", idUsuario, DbType.Int32);
+                if (producto == null)
+                    return NotFound(new { success = false, message = "El producto no existe." });
 
-                parametros.Add(
-                    "o_resultado",
-                    dbType: DbType.String,
-                    direction: ParameterDirection.Output);
+                return Json(new { success = true, producto });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { success = false, message = "No fue posible cargar los datos del producto." });
+            }
+        }
 
-                await connection.ExecuteAsync(
-                    "sp_ajustar_inventario",
-                    parametros,
-                    commandType: CommandType.StoredProcedure);
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GuardarEdicion(EditarProductoViewModel modelo)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errores = ModelState.Values.SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage).Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
+                return BadRequest(new { success = false, message = errores.FirstOrDefault() ?? "Revisá los datos ingresados." });
+            }
 
-                string? resultado = parametros.Get<string?>("o_resultado");
+            try
+            {
+                await using var connection = (NpgsqlConnection)_dbConnection.CreateConnection();
+                await connection.OpenAsync();
+                await using var command = new NpgsqlCommand(
+                    "CALL public.sp_editar_producto(@p_id_producto, @p_codigo, @p_nombre, @p_descripcion, @p_categoria, @p_precio_venta, @p_costo, @p_unidad_medida, NULL);",
+                    connection);
 
+                command.Parameters.AddWithValue("p_id_producto", modelo.IdProducto);
+                command.Parameters.AddWithValue("p_codigo", modelo.Codigo.Trim());
+                command.Parameters.AddWithValue("p_nombre", modelo.Nombre.Trim());
+                command.Parameters.AddWithValue("p_descripcion", (object?)modelo.Descripcion ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_categoria", (object?)modelo.Categoria ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_precio_venta", modelo.PrecioVenta);
+                command.Parameters.AddWithValue("p_costo", (object?)modelo.Costo ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_unidad_medida", (object?)modelo.UnidadMedida ?? DBNull.Value);
+
+                var resultado = (await command.ExecuteScalarAsync())?.ToString();
+                return resultado == "ACTUALIZADO"
+                    ? Json(new { success = true, message = "Los datos del producto se actualizaron correctamente." })
+                    : BadRequest(new
+                    {
+                        success = false,
+                        message = resultado switch
+                        {
+                            "NO_ENCONTRADO" => "El producto ya no existe.",
+                            "CODIGO_EXISTENTE" => "Ya existe otro producto con ese código.",
+                            _ => resultado ?? "No fue posible actualizar el producto."
+                        }
+                    });
+            }
+            catch (PostgresException ex) when (ex.SqlState == "23505")
+            {
+                return BadRequest(new { success = false, message = "Ya existe un producto con ese código." });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { success = false, message = "Ocurrió un error al guardar los cambios." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarEstadoProducto(int idProducto, bool estado)
+        {
+            if (idProducto <= 0)
+                return BadRequest(new { success = false, message = "Identificador de producto inválido." });
+
+            try
+            {
+                await using var connection = (NpgsqlConnection)_dbConnection.CreateConnection();
+                await connection.OpenAsync();
+                await using var command = new NpgsqlCommand(
+                    "CALL public.sp_cambiar_estado_producto(@p_id_producto, @p_estado, NULL);", connection);
+                command.Parameters.AddWithValue("p_id_producto", idProducto);
+                command.Parameters.AddWithValue("p_estado", estado);
+                var resultado = (await command.ExecuteScalarAsync())?.ToString();
+
+                return resultado == (estado ? "ACTIVADO" : "DESACTIVADO")
+                    ? Json(new { success = true, estado, message = estado ? "Producto activado." : "Producto desactivado." })
+                    : BadRequest(new { success = false, message = resultado == "PRODUCTO_NO_ENCONTRADO" ? "El producto no existe." : "No fue posible cambiar el estado." });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { success = false, message = "Ocurrió un error al cambiar el estado del producto." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegistrarMovimientoPanel(
+            int idProducto, string tipoMovimiento, decimal cantidad,
+            string? referencia, string? observaciones)
+        {
+            tipoMovimiento = (tipoMovimiento ?? string.Empty).Trim().ToUpperInvariant();
+            if (idProducto <= 0 || cantidad <= 0 ||
+                (tipoMovimiento != "ENTRADA" && tipoMovimiento != "SALIDA"))
+                return BadRequest(new { success = false, message = "Verificá el tipo de movimiento y que la cantidad sea mayor que cero." });
+
+            if (!ObtenerIdUsuario(out int idUsuario))
+                return Unauthorized(new { success = false, message = "No fue posible identificar al usuario de la sesión." });
+
+            try
+            {
+                await using var connection = (NpgsqlConnection)_dbConnection.CreateConnection();
+                await connection.OpenAsync();
+                await using var command = new NpgsqlCommand(
+                    "CALL public.sp_ajustar_inventario(@p_id_producto, @p_direccion, @p_cantidad, @p_referencia, @p_observaciones, @p_usuario_id, NULL);",
+                    connection);
+                command.Parameters.AddWithValue("p_id_producto", idProducto);
+                command.Parameters.AddWithValue("p_direccion", tipoMovimiento);
+                command.Parameters.AddWithValue("p_cantidad", cantidad);
+                command.Parameters.AddWithValue("p_referencia", (object?)referencia ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_observaciones", (object?)observaciones ?? DBNull.Value);
+                command.Parameters.AddWithValue("p_usuario_id", idUsuario);
+
+                var resultado = (await command.ExecuteScalarAsync())?.ToString();
                 if (resultado == "OK" || resultado == "AJUSTADO")
+                    return Json(new { success = true, message = tipoMovimiento == "ENTRADA" ? "Entrada registrada correctamente." : "Salida registrada correctamente." });
+
+                var mensaje = resultado switch
                 {
-                    TempData["Exito"] = modelo.TipoMovimiento == "ENTRADA"
-                        ? "La entrada de inventario se registró correctamente."
-                        : "La salida de inventario se registró correctamente.";
-
-                    return RedirectToAction(nameof(Index));
-                }
-
-                TempData["Error"] = resultado switch
-                {
-                    "CANTIDAD_INVALIDA" =>
-                        "La cantidad debe ser mayor que cero.",
-
-                    "DIRECCION_INVALIDA" =>
-                        "El tipo de movimiento seleccionado no es válido.",
-
-                    "USUARIO_INVALIDO" =>
-                        "El usuario no es válido o está inactivo.",
-
-                    "PRODUCTO_NO_ENCONTRADO" =>
-                        "El producto no existe o está inactivo.",
-
-                    "INVENTARIO_NO_ENCONTRADO" =>
-                        "No existe un registro de inventario para realizar la salida.",
-
-                    "STOCK_INSUFICIENTE" =>
-                        "No hay existencias suficientes para realizar esa salida.",
-
-                    _ when resultado?.StartsWith("Error:", StringComparison.OrdinalIgnoreCase) == true =>
-                        resultado,
-
-                    _ =>
-                        "No fue posible registrar el movimiento de inventario."
+                    "CANTIDAD_INVALIDA" => "La cantidad debe ser mayor que cero.",
+                    "DIRECCION_INVALIDA" => "El tipo de movimiento no es válido.",
+                    "USUARIO_INVALIDO" => "El usuario no es válido o está inactivo.",
+                    "PRODUCTO_NO_ENCONTRADO" => "El producto no existe o está inactivo.",
+                    "INVENTARIO_NO_ENCONTRADO" => "No existe inventario para realizar la salida.",
+                    "STOCK_INSUFICIENTE" => "No hay existencias suficientes para realizar esa salida.",
+                    _ => resultado ?? "No fue posible registrar el movimiento."
                 };
-            }
-            catch (PostgresException)
-            {
-                TempData["Error"] =
-                    "Ocurrió un error de base de datos al registrar el movimiento.";
-            }
-            catch (NpgsqlException)
-            {
-                TempData["Error"] =
-                    "No fue posible conectar con la base de datos.";
+                return BadRequest(new { success = false, message = mensaje });
             }
             catch (Exception)
             {
-                TempData["Error"] =
-                    "Ocurrió un error inesperado al registrar el movimiento.";
-            }
-
-            await CargarProductosAsync(modelo);
-            return View(modelo);
-        }
-
-        // =========================================
-        // AJUSTAR INVENTARIO - GET
-        // =========================================
-
-        [HttpGet]
-        public async Task<IActionResult> AjustarInventario()
-        {
-            var modelo = new AjustarInventarioViewModel();
-
-            try
-            {
-                using var connection = _dbConnection.CreateConnection();
-                modelo.Productos = await ObtenerProductosAsync(connection);
-
-                return View(modelo);
-            }
-            catch (Exception)
-            {
-                TempData["Error"] = "No fue posible cargar los productos.";
-                return RedirectToAction(nameof(Index));
+                return StatusCode(500, new { success = false, message = "Ocurrió un error al registrar el movimiento." });
             }
         }
 
         // =========================================
-        // AJUSTAR INVENTARIO - POST
+        // ELIMINAR PRODUCTO DESDE INVENTARIO
         // =========================================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AjustarInventario(
-            AjustarInventarioViewModel modelo)
+        public async Task<IActionResult> EliminarProducto(
+            int id,
+            string? nombreProducto)
         {
-            // Validar la cantidad en el servidor sin usar Range con decimales.
-            if (modelo.Cantidad <= 0)
+            void SetDeleteResult(string tipo, string mensaje)
             {
-                ModelState.AddModelError(
-                    nameof(modelo.Cantidad),
-                    "La cantidad debe ser mayor que cero.");
+                TempData["EliminarTipo"] = tipo;
+                TempData["EliminarMensaje"] = mensaje;
+                TempData["EliminarNombre"] = nombreProducto;
             }
 
-            if (!ModelState.IsValid)
+            if (id <= 0)
             {
-                await CargarProductosAsync(modelo);
-                return View(modelo);
-            }
-
-            modelo.Direccion = (modelo.Direccion ?? string.Empty)
-                .Trim()
-                .ToUpperInvariant();
-
-            if (modelo.Direccion != "ENTRADA" &&
-                modelo.Direccion != "SALIDA")
-            {
-                ModelState.AddModelError(
-                    nameof(modelo.Direccion),
-                    "La dirección debe ser ENTRADA o SALIDA.");
-
-                await CargarProductosAsync(modelo);
-                return View(modelo);
-            }
-
-            if (!ObtenerIdUsuario(out int idUsuario))
-            {
-                TempData["Error"] =
-                    "No fue posible identificar al usuario de la sesión.";
-
-                await CargarProductosAsync(modelo);
-                return View(modelo);
+                SetDeleteResult(
+                    "error",
+                    "El identificador del producto no es válido. Actualizá la página e intentá nuevamente.");
+                return RedirectToAction(nameof(Index));
             }
 
             try
             {
-                using var connection = _dbConnection.CreateConnection();
+                await using var connection =
+                    (NpgsqlConnection)_dbConnection.CreateConnection();
 
-                var parametros = new DynamicParameters();
+                await connection.OpenAsync();
 
-                parametros.Add("p_id_producto", modelo.IdProducto, DbType.Int32);
-                parametros.Add("p_direccion", modelo.Direccion, DbType.String);
-                parametros.Add("p_cantidad", modelo.Cantidad, DbType.Decimal);
-                parametros.Add("p_referencia", modelo.Referencia, DbType.String);
-                parametros.Add("p_observaciones", modelo.Observaciones, DbType.String);
-                parametros.Add("p_usuario_id", idUsuario, DbType.Int32);
+                await using var command = new NpgsqlCommand(
+                    "CALL public.sp_eliminar_producto(@p_id_producto, NULL);",
+                    connection);
 
-                parametros.Add(
-                    "o_resultado",
-                    dbType: DbType.String,
-                    direction: ParameterDirection.Output);
+                command.Parameters.AddWithValue("p_id_producto", id);
 
-                await connection.ExecuteAsync(
-                    "sp_ajustar_inventario",
-                    parametros,
-                    commandType: CommandType.StoredProcedure);
+                var resultado =
+                    (await command.ExecuteScalarAsync())?.ToString()?.Trim();
 
-                string? resultado = parametros.Get<string?>("o_resultado");
-
-                if (resultado == "AJUSTADO" || resultado == "OK")
+                switch (resultado)
                 {
-                    TempData["Exito"] =
-                        "El ajuste de inventario se realizó correctamente.";
+                    case "ELIMINADO":
+                        SetDeleteResult(
+                            "success",
+                            "El producto fue eliminado correctamente.");
+                        break;
 
-                    return RedirectToAction(nameof(Index));
+                    case "NO_ENCONTRADO":
+                        SetDeleteResult(
+                            "error",
+                            "El producto no fue encontrado. Es posible que ya haya sido eliminado.");
+                        break;
+
+                    case "TIENE_VENTAS":
+                        SetDeleteResult(
+                            "warning",
+                            "Este producto tiene ventas asociadas. No se puede eliminar porque debe conservarse el historial de ventas.");
+                        break;
+
+                    case "TIENE_MOVIMIENTOS":
+                        SetDeleteResult(
+                            "warning",
+                            "Este producto tiene movimientos de inventario asociados. No se puede eliminar porque debe conservarse el historial de existencias.");
+                        break;
+
+                    case null:
+                    case "":
+                        SetDeleteResult(
+                            "error",
+                            "La base de datos no devolvió un resultado. No se confirmó la eliminación del producto.");
+                        break;
+
+                    default:
+                        SetDeleteResult(
+                            "error",
+                            "No fue posible eliminar el producto. Verificá sus registros relacionados e intentá nuevamente.");
+                        break;
                 }
-
-                TempData["Error"] = resultado switch
-                {
-                    "CANTIDAD_INVALIDA" =>
-                        "La cantidad debe ser mayor que cero.",
-
-                    "DIRECCION_INVALIDA" =>
-                        "La dirección seleccionada no es válida.",
-
-                    "USUARIO_INVALIDO" =>
-                        "El usuario no es válido o está inactivo.",
-
-                    "PRODUCTO_NO_ENCONTRADO" =>
-                        "El producto no existe o está inactivo.",
-
-                    "INVENTARIO_NO_ENCONTRADO" =>
-                        "No existe un registro de inventario para realizar la salida.",
-
-                    "STOCK_INSUFICIENTE" =>
-                        "No hay existencias suficientes para realizar esa salida.",
-
-                    _ =>
-                        "No fue posible realizar el ajuste de inventario."
-                };
+            }
+            catch (PostgresException ex) when (ex.SqlState == "23503")
+            {
+                SetDeleteResult(
+                    "warning",
+                    "El producto tiene registros relacionados en el sistema. No se puede eliminar para proteger la información histórica.");
             }
             catch (PostgresException)
             {
-                TempData["Error"] =
-                    "Ocurrió un error de base de datos al ajustar el inventario.";
+                SetDeleteResult(
+                    "error",
+                    "Ocurrió un error en la base de datos al intentar eliminar el producto.");
             }
             catch (NpgsqlException)
             {
-                TempData["Error"] =
-                    "No fue posible conectar con la base de datos.";
+                SetDeleteResult(
+                    "error",
+                    "No fue posible conectar con la base de datos. Revisá la conexión e intentá nuevamente.");
             }
             catch (Exception)
             {
-                TempData["Error"] =
-                    "Ocurrió un error inesperado al ajustar el inventario.";
+                SetDeleteResult(
+                    "error",
+                    "Ocurrió un error inesperado al intentar eliminar el producto.");
             }
 
-            await CargarProductosAsync(modelo);
-            return View(modelo);
+            return RedirectToAction(nameof(Index));
         }
 
         // =========================================
@@ -610,34 +689,6 @@ namespace CharlieShop.Controllers
 
             return Deserializar<List<ProductoInventarioOpcionViewModel>>(json)
                 ?? new List<ProductoInventarioOpcionViewModel>();
-        }
-
-        private async Task CargarProductosAsync(
-            RegistrarMovimientoViewModel modelo)
-        {
-            try
-            {
-                using var connection = _dbConnection.CreateConnection();
-                modelo.Productos = await ObtenerProductosAsync(connection);
-            }
-            catch (Exception)
-            {
-                modelo.Productos = new List<ProductoInventarioOpcionViewModel>();
-            }
-        }
-
-        private async Task CargarProductosAsync(
-            AjustarInventarioViewModel modelo)
-        {
-            try
-            {
-                using var connection = _dbConnection.CreateConnection();
-                modelo.Productos = await ObtenerProductosAsync(connection);
-            }
-            catch (Exception)
-            {
-                modelo.Productos = new List<ProductoInventarioOpcionViewModel>();
-            }
         }
 
         private bool ObtenerIdUsuario(out int idUsuario)
